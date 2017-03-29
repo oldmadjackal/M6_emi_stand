@@ -1,0 +1,209 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOGEX 0, 0, 388, 252
+STYLE DS_SETFONT | DS_CENTER | WS_CHILD
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    EDITTEXT        IDC_TESTPOS,359,7,22,14,NOT WS_VISIBLE | WS_DISABLED | NOT WS_TABSTOP,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_COMMAND,57,209,166,14,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN
+    CONTROL         "Custom",IDC_SHOW,"EmiRoot_show_class",0x0,7,7,278,197
+    EDITTEXT        IDC_CMD_PREFIX,7,211,47,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_CMD_POSTFIX,226,211,148,12,ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_CMD_ARROW,59,229,156,12,ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_CMD_ARROW_ALT,59,237,163,12,ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP,WS_EX_TRANSPARENT
+    LTEXT           "-->",IDC_TEXT_ARROW,49,228,9,8,0,WS_EX_TRANSPARENT
+    LTEXT           "Shift+ -->",IDC_TEXT_ARROW_ALT,29,237,29,8,0,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_STEP_ARROW,8,229,17,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_STEP_ARROW_ALT,8,237,17,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP,WS_EX_TRANSPARENT
+    EDITTEXT        IDC_STATUS_INFO,287,7,94,172,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
+END
+
+IDD_HELP DIALOG  0, 0, 350, 206
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Справка по командам секции Object Body"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LISTBOX         IDC_HELP_LIST,6,7,337,192,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_OBJECTS_LIST DIALOG  0, 0, 234, 207
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Общий список объектов"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LISTBOX         IDC_OBJECTS_LIST,7,7,220,193,LBS_SORT | LBS_NOINTEGRALHEIGHT | LBS_WANTKEYBOARDINPUT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_THREADS DIALOGEX 0, 0, 350, 52
+STYLE DS_SYSMODAL | DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Рабочие потоки"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    LISTBOX         IDC_THREADS_LIST,6,7,337,38,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_MODULES DIALOG  0, 0, 507, 178
+STYLE DS_SYSMODAL | DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Присоединенные модули"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LISTBOX         IDC_MODULES_LIST,7,7,493,164,LBS_SORT | LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    "IDD_MAIN", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 381
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 245
+    END
+
+    "IDD_HELP", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 343
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 199
+    END
+
+    "IDD_OBJECTS_LIST", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 227
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 200
+    END
+
+    "IDD_THREADS", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 343
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 45
+    END
+
+    "IDD_MODULES", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 500
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041904b0"
+        BEGIN
+            VALUE "CompanyName", "Bin"
+            VALUE "FileDescription", "Geo_2D"
+            VALUE "FileVersion", "1, 0, 0, 1"
+            VALUE "InternalName", "Geo_2D"
+            VALUE "LegalCopyright", "Copyright © 2003"
+            VALUE "OriginalFilename", "Geo_2D.exe"
+            VALUE "ProductName", "Bin Geo_2D"
+            VALUE "ProductVersion", "1, 0, 0, 1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x419, 1200
+    END
+END
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
