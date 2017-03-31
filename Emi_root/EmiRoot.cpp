@@ -446,7 +446,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-//          SETs(IDC_COMMAND, "@tests\\fast_1.geo") ;
+            SETs(IDC_COMMAND, "@Tests\\Markers.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -2063,6 +2063,8 @@ typedef  struct {
 
       if(error!=NULL)  SEND_ERROR(error) ;
 
+      if(arrow_flag && coord_cnt>1)  coord[0]=coord[coord_cnt-1] ;  /* Для стрелочного режима берем в качестве шага */
+                                                                    /*  самое последнее значение                    */
 /*-------------------------------------- Получение параметров камеры */
 
        status=EmiRoot_look("Main", "Get", &look_x, &look_y, &look_z,
@@ -2071,6 +2073,7 @@ typedef  struct {
                    SEND_ERROR("Неизвестное окно") ;
                       return(-1) ;
                }
+
 /*--------------------- Определение проекций стрелочных перемещений  */
 
                Point_Matrix.LoadZero   (3, 1) ;
@@ -2257,6 +2260,8 @@ typedef  struct {
 
       if(error!=NULL)  SEND_ERROR(error) ;
 
+      if(arrow_flag && coord_cnt>1)  coord[0]=coord[coord_cnt-1] ;  /* Для стрелочного режима берем в качестве шага */
+                                                                    /*  самое последнее значение                    */
 /*-------------------------------------- Получение параметров камеры */
 
        status=EmiRoot_look("Main", "Get",    NULL,    NULL,    NULL, 

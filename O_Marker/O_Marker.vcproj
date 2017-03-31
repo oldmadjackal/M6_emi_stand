@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="RSS_kernel"
-	ProjectGUID="{D7B9213B-1BD2-41A6-A4A8-5962E1C916E3}"
+	Name="O_Marker"
+	ProjectGUID="{67CF662B-F316-4663-B58C-14D594215CCF}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -42,18 +42,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/RSS_kernel.tlb"
+				TypeLibraryName=".\Debug/O_Marker.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;RSS_KERNEL_EXPORTS;_DLL"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;O_MARKER_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/RSS_kernel.pch"
+				PrecompiledHeaderFile=".\Debug/O_Marker.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -74,14 +73,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Debug/RSS_kernel.dll"
+				AdditionalDependencies="opengl32.lib glu32.lib"
+				OutputFile=".\Debug/O_Marker.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				ModuleDefinitionFile=".\O_Marker.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/RSS_kernel.pdb"
+				ProgramDatabaseFile=".\Debug/O_Marker.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/RSS_kernel.lib"
+				ImportLibrary=".\Debug/O_Marker.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -96,7 +97,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/RSS_kernel.bsc"
+				OutputFile=".\Debug/O_Marker.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -107,7 +108,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to Work area"
-				CommandLine="copy .\Debug\*.dll d:\_MGTU\M6_emi_stand\_Debug"
+				CommandLine="copy .\Debug\*.dll D:\_MGTU\M6_emi_stand\_Debug"
 			/>
 		</Configuration>
 		<Configuration
@@ -138,19 +139,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/RSS_kernel.tlb"
+				TypeLibraryName=".\Release/O_Marker.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				UseUnicodeResponseFiles="false"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="NDEBUG;_DLL;WIN32;_WINDOWS;_USRDLL;RSS_KERNEL_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;O_MARKER_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/RSS_kernel.pch"
+				PrecompiledHeaderFile=".\Release/O_Marker.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -170,13 +170,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Release/RSS_kernel.dll"
+				AdditionalDependencies="opengl32.lib glu32.lib"
+				OutputFile=".\Release/O_Marker.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/RSS_kernel.pdb"
+				ModuleDefinitionFile=".\O_Marker.def"
+				ProgramDatabaseFile=".\Release/O_Marker.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/RSS_kernel.lib"
+				ImportLibrary=".\Release/O_Marker.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -191,7 +193,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/RSS_kernel.bsc"
+				OutputFile=".\Release/O_Marker.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -202,7 +204,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to Work area"
-				CommandLine="copy .\Release\*.dll d:\_MGTU\M6_emi_stand\_Release"
+				CommandLine="copy .\Release\*.dll D:\_MGTU\M6_emi_stand\_Release"
 			/>
 		</Configuration>
 	</Configurations>
@@ -214,7 +216,27 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="RSS_kernel.cpp"
+				RelativePath="O_Marker.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="O_Marker_dialog.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -239,7 +261,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="RSS_kernel.h"
+				RelativePath="O_Marker.h"
 				>
 			</File>
 		</Filter>
@@ -247,6 +269,30 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
+			<File
+				RelativePath="O_Marker.def"
+				>
+			</File>
+			<File
+				RelativePath="O_Marker.rc"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

@@ -106,7 +106,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to Work area"
-				CommandLine="copy .\Debug\*.dll d:\_Dissertation\Geo_3000\Geo_2D"
+				CommandLine="copy .\Debug\*.dll d:\_MGTU\M6_emi_stand\_Debug"
 			/>
 		</Configuration>
 		<Configuration
@@ -200,7 +200,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to Work area"
-				CommandLine="copy .\Release\*.dll F:\Geo_3000\Work"
+				CommandLine="copy .\Release\*.dll d:\_MGTU\M6_emi_stand\_Release"
 			/>
 		</Configuration>
 	</Configurations>

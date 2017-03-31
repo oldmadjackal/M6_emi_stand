@@ -1,0 +1,4 @@
+LIBRARY O_Marker
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

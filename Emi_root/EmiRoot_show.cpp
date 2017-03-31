@@ -256,13 +256,15 @@
                glOrtho(-CONTEXT.Zoom*0.5, 
                         CONTEXT.Zoom*0.5, 
                        -CONTEXT.Zoom*0.5*xy_aspect,
-                        CONTEXT.Zoom*0.5*xy_aspect, 1., 100.) ;
+                        CONTEXT.Zoom*0.5*xy_aspect, 1., 100.*CONTEXT.Zoom) ;
+//                      CONTEXT.Zoom*0.5*xy_aspect, 1., 100.) ;
   
           glMatrixMode(GL_MODELVIEW) ;
         glLoadIdentity() ;
 
                Point_Matrix.LoadZero   (3, 1) ;
-               Point_Matrix.SetCell    (2, 0, 5.) ;
+//             Point_Matrix.SetCell    (2, 0, 5.) ;
+               Point_Matrix.SetCell    (2, 0, CONTEXT.Look_z) ;
 
                  Sum_Matrix.Load3d_azim(CONTEXT.Look_azim) ;
                 Oper_Matrix.Load3d_elev(CONTEXT.Look_elev) ;

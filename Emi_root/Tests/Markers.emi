@@ -1,0 +1,17 @@
+#step 0.
+
+#file tests\keys.keys
+
+zoom 3000
+marker cr m1 cross red
+m1 base 1000 0 0
+marker cr m2 cross red
+m2 base -1000 0 0
+marker cr m3 cross green
+m3 base 0 0 0
+marker cr m4 cross green
+m4 base 0 500 0
+marker cr m5 cross blue
+m5 base 0 0 1000
+
+eye 0 0 5000
