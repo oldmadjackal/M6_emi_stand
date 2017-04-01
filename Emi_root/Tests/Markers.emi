@@ -15,3 +15,7 @@ marker cr m5 cross blue
 m5 base 0 0 1000
 
 eye 0 0 5000
+eye>20
+lookat m3
+
+#remark Используйте стрелочки для управления положением камеры

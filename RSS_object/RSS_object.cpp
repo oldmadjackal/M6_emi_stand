@@ -46,8 +46,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      Parameters_cnt=  0 ;
        Features    =NULL ;
        Features_cnt=  0 ;
-     Morphology    =NULL ;
-     Morphology_cnt=  0 ;
 
         ErrorEnable=1 ;
 }
@@ -122,100 +120,44 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*   Return: число базовых точек                                    */
 
-     int  RSS_Object::vGetBasePoint(RSS_Point *points)
+     int  RSS_Object::vGetPosition(RSS_Point *points)
 
 {
+        points->x=x_base ;
+        points->y=y_base ;
+        points->z=z_base ;
+
+        points->azim=a_azim ;
+        points->elev=a_elev ;
+        points->roll=a_roll ;
+
     return(0) ;
 }
 
-    void  RSS_Object::vSetBasePoint(RSS_Point *points)
+    void  RSS_Object::vSetPosition(RSS_Point *points)
 
 {
+        x_base=points->x ;
+        y_base=points->y ;
+        z_base=points->z ;
+
+        a_azim=points->azim ;
+        a_elev=points->elev ;
+        a_roll=points->roll ;
 }
 
 
 /********************************************************************/
 /*								    */
-/*		      Работа с целевыми точками   		    */
-/*								    */
-/*   Return: число целевых точек                                    */
+/*                    Получение вектора скорости                    */
 
-     int  RSS_Object::vGetTargetPoint(RSS_Point *points)
-
+    int  RSS_Object::vGetVelocity(RSS_Vector *velocity)
 {
-    return(0) ;
-}
+        velocity->x=x_velocity ;
+        velocity->y=y_velocity ;
+        velocity->z=z_velocity ;
 
-    void  RSS_Object::vSetTargetPoint(RSS_Point *points, int  points_cnt)
-
-{
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Работа с сочленениями       		    */
-/*								    */
-/*   Return: число сочленений                                       */
-
-     int  RSS_Object::vGetJoints(RSS_Joint *joints)
-
-{
-    return(0) ;
-}
-
-    void  RSS_Object::vSetJoints(RSS_Joint *joints, int  joints_cnt)
-
-{
-}
-
-
-/********************************************************************/
-/*								    */
-/*                 Работа с неопределенностями схемы                */
-
-    int  RSS_Object::vGetAmbiguity(void)
-{
    return(0) ;
-}
-
-   void  RSS_Object::vSetAmbiguity(char *spec)
-{
-}
-
-
-/********************************************************************/
-/*								    */
-/*           Разрешить конфигурацию объекта по целевой точке        */
-
-     int  RSS_Object::vSolveByTarget(void)
-
-{
-    return(_RSS_OBJECT_NOTARGETED) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*           Разрешить конфигурацию объекта по сочленениям          */
-
-     int  RSS_Object::vSolveByJoints(void)
-
-{
-    return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*     Выдать координаты целевой точки, привязанной к объекту       */
-
-     int  RSS_Object::vGetTarget(char *part, RSS_Point *target)
-
-{
-    memset(target, 0, sizeof(*target)) ;
-
-    return(0) ;
 }
 
 
@@ -255,86 +197,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*                  Работа со срезом состояния                      */
-
-    RSS_Object *RSS_Object::vGetSlice(void)
-
-{
-   return(NULL) ;
-}
-
-
-    void  RSS_Object::vSetSlice(RSS_Object *slice)
-
-{
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Задание структуры объекта   		    */
-
-    void  RSS_Object::vEditStructure(void)
-{
-}
-
-
-/********************************************************************/
-/*								    */
 /*                        Специальные действия                      */
 
      int  RSS_Object::vSpecial(char *oper, void *data)
 {
   return(-1) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*                  Добавить элемент морфологии                     */
-
-    void  RSS_Object::vAddMorphology(RSS_Morphology *elem)
-{
-#define      M     Morphology[Morphology_cnt-1] 
-
-        Morphology_cnt++ ;
-        Morphology=(RSS_Morphology *)
-                     realloc(Morphology, Morphology_cnt*            /* Довыделяем список элементов */
-                                           sizeof(*Morphology)) ;
-     if(Morphology==NULL) {
-                              Morphology_cnt=0 ;
-                                  return ;
-                          }
-
-                         memset(&M, 0, sizeof(M)) ;                 /* Инициализация описания */
-
-                         strcpy(M.object, this->Name) ;
-   if(elem->link!=NULL)  strcpy(M.link,   elem->link) ;
-   if(elem->body!=NULL)  strcpy(M.body,   elem->body) ;
-        
-#undef   M
-}
-
-
-/********************************************************************/
-/*								    */
-/*                 Исправить элемент морфологии                     */
-
-    void  RSS_Object::vEditMorphology(RSS_Morphology *elem)
-{
-   int  i ;
-
-
-    for(i=0 ; i<Morphology_cnt ; i++)
-      if(Morphology[i].ptr==elem->ptr)  break ;
-                               
-      if(i>=Morphology_cnt) {
-                              vAddMorphology(elem) ;
-                            }
-      else                  {
-                if(elem->link!=NULL)  strcpy(Morphology[i].link, elem->link) ;
-                if(elem->body!=NULL)  strcpy(Morphology[i].body, elem->body) ;
-                            }
 }
 
 

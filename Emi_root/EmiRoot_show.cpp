@@ -256,7 +256,8 @@
                glOrtho(-CONTEXT.Zoom*0.5, 
                         CONTEXT.Zoom*0.5, 
                        -CONTEXT.Zoom*0.5*xy_aspect,
-                        CONTEXT.Zoom*0.5*xy_aspect, 1., 100.*CONTEXT.Zoom) ;
+                        CONTEXT.Zoom*0.5*xy_aspect, -100.*CONTEXT.Zoom, 100.*CONTEXT.Zoom) ;
+//                      CONTEXT.Zoom*0.5*xy_aspect, 1., 100.*CONTEXT.Zoom) ;
 //                      CONTEXT.Zoom*0.5*xy_aspect, 1., 100.) ;
   
           glMatrixMode(GL_MODELVIEW) ;
@@ -264,13 +265,15 @@
 
                Point_Matrix.LoadZero   (3, 1) ;
 //             Point_Matrix.SetCell    (2, 0, 5.) ;
-               Point_Matrix.SetCell    (2, 0, CONTEXT.Look_z) ;
+               Point_Matrix.SetCell    (2, 0, sqrt(CONTEXT.Look_x*CONTEXT.Look_x+
+                                                   CONTEXT.Look_y*CONTEXT.Look_y+
+                                                   CONTEXT.Look_z*CONTEXT.Look_z )) ;
 
                  Sum_Matrix.Load3d_azim(CONTEXT.Look_azim) ;
                 Oper_Matrix.Load3d_elev(CONTEXT.Look_elev) ;
                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
                Point_Matrix.LoadMul    (&Sum_Matrix, &Point_Matrix) ;
-            
+
              gluLookAt(CONTEXT.Look_x,
                        CONTEXT.Look_y,
                        CONTEXT.Look_z,
@@ -725,9 +728,6 @@
                     memset(name, 0, sizeof(name)) ;
                    strncpy(name, context->AtObject, sizeof(name)-1) ;
 
-                end=strchr(name, '.') ;
-             if(end!=NULL) {  *end=0 ;  end++ ;  }
-
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, name))  break ;
 
@@ -737,7 +737,7 @@
                              return(0) ;
                        }
 
-            OBJECTS[i]->vGetTarget(end, &target) ;
+            OBJECTS[i]->vGetPosition(&target) ;
 
                         x=target.x ;
                         y=target.y ;

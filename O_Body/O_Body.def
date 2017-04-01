@@ -1,0 +1,4 @@
+LIBRARY O_Body
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

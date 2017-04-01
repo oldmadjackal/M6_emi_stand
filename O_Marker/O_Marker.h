@@ -19,14 +19,6 @@
   class O_MARKER_API RSS_Object_Marker : public RSS_Object {
 
     public:
-                    double  x_base ;                    /* Координаты базовой точки */
-                    double  y_base ;
-                    double  z_base ;
-
-                    double  a_azim ;                    /* Углы ориентации */
-                    double  a_elev ;
-                    double  a_roll ;
-
                       char  model[64] ;                 /* Модель маркера */
                   COLORREF  color ;                     /* Цвет маркер */
                        int  dlist1_idx ;                /* Индексы дисплейных списков */
@@ -34,8 +26,6 @@
                     double  size ;                      /* Коэф.размера маркера */   
 
     public:
-               virtual  int  vGetBasePoint   (RSS_Point *) ;         /* Работа с базовой точкой */
-               virtual  int  vGetTarget      (char *, RSS_Point *) ; /* Выдать координаты 'целевой' точки */
                virtual void  vWriteSave      (std::string *) ;       /* Записать данные в строку */
                virtual  int  vListControlPars(RSS_ControlPar *) ;    /* Получить список параметров управления */
                virtual  int  vSetControlPar  (RSS_ControlPar *) ;    /* Установить значение параметра управления */

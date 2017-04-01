@@ -89,10 +89,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     NULL,
                    &RSS_Module_Show::cHelp       },
  { "color",   "c", "#COLOR   - установить цвет объекта", 
-                    NULL,
+                   " COLOR <имя> <название цвета>\n"
+                   "   Установить цвет объекта по названию: RED, GREEN, BLUE\n"
+                   " COLOR <имя> RGB <R-индекс>:<G-индекс>:<B-индекс>\n"
+                   "   Установить цвет объекта по RGB-компонентам\n",
                    &RSS_Module_Show::cColor      },
  { "visible", "v", "#VISIBLE - вкл./выкл. видимость объекта", 
-                    NULL,
+                   " VISIBLE <имя> 0\n"
+                   "   Скрыть объект\n"
+                   " VISIBLE <имя> 1\n"
+                   "   Показать объект\n",
                    &RSS_Module_Show::cVisible    },
  {  NULL }
                                                             } ;
@@ -110,7 +116,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      RSS_Module_Show::RSS_Module_Show(void)
 
 {
-	   keyword="Geo" ;
+	   keyword="EmiStand" ;
     identification="Show_feature" ;
 
         mInstrList=RSS_Module_Show_InstrList ;
@@ -299,7 +305,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Реализация инструкции Color                    */
 /*       COLOR  <Имя> <Название цвета>                              */
-/*       COLOR  <Имя> <R> <G> <B>                                   */
+/*       COLOR  <Имя> RGB <R-индекс>:<G-индекс>:<B-индекс>          */
 
   int  RSS_Module_Show::cColor(char *cmd)
 
@@ -308,7 +314,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       char *pars[_PARS_MAX] ;
       char *name ;
   COLORREF  color ;
-//     int  red, green, blue ;
+       int  red, green, blue ;
       char *end ;
       char  text[1024] ;
        int  i ;
@@ -338,25 +344,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                     "Например: COLOR <Имя_объекта> GREEN") ;
                                         return(-1) ;
                        } 
-/*- - - - - - - - - - - - - - - - - - - - - - Задание цвета по ИМЕНИ */
-     if(pars[2]==NULL) {
 
               if(!stricmp(pars[1], "RED"  ))  color=RGB(127,   0,   0) ;
          else if(!stricmp(pars[1], "GREEN"))  color=RGB(  0, 127,   0) ;
          else if(!stricmp(pars[1], "BLUE" ))  color=RGB(  0,   0, 127) ;
-         else                                {
+         else if(!stricmp(pars[1], "RGB"  )) {
 
+                 if(pars[2]!=NULL) {
+                                       green=0 ;
+                                        blue=0 ;
+                                         red=strtoul(pars[2], &end, 10) ;
+                         if(*end==':') green=strtoul(end+1  , &end, 10) ;
+                         if(*end==':')  blue=strtoul(end+1  , &end, 10) ;
+
+                                       color=RGB(red, green, blue) ;                                          
+                                   }
+                                             } 
+         else                                {
                          SEND_ERROR("Неизвестное название цвета") ;
                                         return(-1) ;
                                              }
-                       }
-/*- - - - - - - - - - - - - - - - - - - - Задание цвета компонентами */
-     else              {
-
-//      if(pars[2]!=NULL)  
-
-//                            color=RGB(red, green, blue) ;                                          
-                       }
 /*------------------------------------------- Поиск объекта по имени */ 
 
     if(name==NULL) {                                                /* Если имя не задано... */
@@ -374,7 +381,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                         SEND_ERROR(text) ;
                             return(NULL) ;
                        }
-
 /*---------------------------------- Подготовка отображения объектов */
 
     for(j=0 ; j<OBJECTS[i]->Features_cnt ; j++)

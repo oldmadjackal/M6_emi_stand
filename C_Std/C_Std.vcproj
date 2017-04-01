@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="RSS_object"
-	ProjectGUID="{D60124AD-C39B-4CC5-9B39-6E001A7802EF}"
+	Name="C_Std"
+	ProjectGUID="{4F6A6D34-8C92-49E6-8738-B3EAFD20985E}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -42,18 +42,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/RSS_object.tlb"
+				TypeLibraryName=".\Release/C_Std.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;RSS_OBJECT_EXPORTS;_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;C_STD_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/RSS_object.pch"
+				PrecompiledHeaderFile=".\Release/C_Std.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -73,13 +73,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile=".\Release/RSS_object.dll"
+				OutputFile=".\Release/C_Std.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/RSS_object.pdb"
+				ModuleDefinitionFile=".\C_Std.def"
+				ProgramDatabaseFile=".\Release/C_Std.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/RSS_object.lib"
+				ImportLibrary=".\Release/C_Std.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -94,7 +95,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/RSS_object.bsc"
+				OutputFile=".\Release/C_Std.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -105,7 +106,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy to Work area"
-				CommandLine="copy .\Release\*.dll d:\_MGTU\M6_emi_stand\_Release"
+				CommandLine="copy .\Release\*.dll D:\_MGTU\M6_emi_stand\_Release"
 			/>
 		</Configuration>
 		<Configuration
@@ -136,17 +137,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/RSS_object.tlb"
+				TypeLibraryName=".\Debug/C_Std.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;WIN32;_WINDOWS;_USRDLL;RSS_OBJECT_EXPORTS;_DLL"
-				MinimalRebuild="false"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;C_STD_EXPORTS"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/RSS_object.pch"
+				PrecompiledHeaderFile=".\Debug/C_Std.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -167,15 +168,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				UseUnicodeResponseFiles="false"
-				OutputFile=".\Debug/RSS_object.dll"
+				OutputFile=".\Debug/C_Std.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
+				ModuleDefinitionFile=".\C_Std.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/RSS_object.pdb"
+				ProgramDatabaseFile=".\Debug/C_Std.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/RSS_object.lib"
+				ImportLibrary=".\Debug/C_Std.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -190,7 +191,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/RSS_object.bsc"
+				OutputFile=".\Debug/C_Std.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -213,7 +214,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="RSS_object.cpp"
+				RelativePath="C_Std.cpp"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -238,7 +239,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="RSS_object.h"
+				RelativePath="C_Std.h"
 				>
 			</File>
 		</Filter>
@@ -246,6 +247,10 @@
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
+			<File
+				RelativePath="C_Std.def"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

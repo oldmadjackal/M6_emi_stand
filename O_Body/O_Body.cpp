@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "МАРКЕР"  		    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "ТЕЛО"  		    */
 /*								    */
 /********************************************************************/
 
@@ -15,15 +15,13 @@
 #include <time.h>
 #include <sys\stat.h>
 
-#include "gl\gl.h"
-#include "gl\glu.h"
-
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
+#include "..\F_Show\F_Show.h"
 
-#include "O_Marker.h"
+#include "O_Body.h"
 
 #pragma warning(disable : 4996)
 
@@ -52,21 +50,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_Marker  ProgramModule ;
+     static   RSS_Module_Body  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- O_MARKER_API char *Identify(void)
+ O_BODY_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- O_MARKER_API RSS_Kernel *GetEntry(void)
+ O_BODY_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -75,7 +73,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	  ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ "МАРКЕР"	   **/
+/**	  ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ "ТЕЛО"	   **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -84,21 +82,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_Marker_instr  RSS_Module_Marker_InstrList[]={
+  struct RSS_Module_Body_instr  RSS_Module_Body_InstrList[]={
 
  { "help",   "?",  "#HELP   - список доступных команд", 
                     NULL,
-                   &RSS_Module_Marker::cHelp   },
+                   &RSS_Module_Body::cHelp   },
  { "create", "cr", "#CREATE - создать объект",
-                   " CREATE <Имя> [<Модель> [<Цвет>]]\n"
-                   "   Создает именованный маркер заданных формы и цвета",
-                   &RSS_Module_Marker::cCreate },
+                   " CREATE <Имя> [<Модель> [<Список параметров>]]\n"
+                   "   Создает именованный обьект по параметризованной модели",
+                   &RSS_Module_Body::cCreate },
  { "info",   "i",  "#INFO - выдать информацию по объекту",
                    " INFO <Имя> \n"
                    "   Выдать основную нформацию по объекту в главное окно\n"
                    " INFO/ <Имя> \n"
                    "   Выдать полную информацию по объекту в отдельное окно",
-                   &RSS_Module_Marker::cInfo },
+                   &RSS_Module_Body::cInfo },
  { "base",   "b", "#BASE - задать базовую точку объекта",
                    " BASE <Имя> <x> <y> <z>\n"
                    "   Задает базовую точку объекта\n"
@@ -110,7 +108,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    "       (аналогично для Y и Z)\n"
                    " BASE> <Имя>\n"
                    "   Задает клавиатурное управление базовой точкой объекта\n",
-                   &RSS_Module_Marker::cBase },
+                   &RSS_Module_Body::cBase },
  { "angle",  "a", "#ANGLE - задать углы ориентации объекта",
                    "           A (AZIMUTH)   - азимут\n"
                    "           E (ELEVATION) - возвышение\n"
@@ -125,7 +123,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    "       (аналогично для E и R)\n"
                    " ANGLE> <Имя>\n"
                    "   Задает клавиатурное управление углами ориентации объекта\n",
-                   &RSS_Module_Marker::cAngle },
+                   &RSS_Module_Body::cAngle },
+ { "Visible", "v", "#VISIBLE - задание режима видимости объекта",
+                   " VISIBLE <Имя> \n"
+                   "   Изменить состояние видимости объекта на противоположное",
+                   &RSS_Module_Body::cVisible },
  {  NULL }
                                                             } ;
 
@@ -133,21 +135,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_Marker_instr *RSS_Module_Marker::mInstrList=NULL ;
+    struct RSS_Module_Body_instr *RSS_Module_Body::mInstrList=NULL ;
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_Marker::RSS_Module_Marker(void)
+     RSS_Module_Body::RSS_Module_Body(void)
 
 {
 	   keyword="EmiStand" ;
-    identification="Marker_object" ;
+    identification="Body_object" ;
 
-        mInstrList=RSS_Module_Marker_InstrList ;
-
-          mSize=50. ;
+        mInstrList=RSS_Module_Body_InstrList ;
 }
 
 
@@ -155,49 +155,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_Marker::~RSS_Module_Marker(void)
+    RSS_Module_Body::~RSS_Module_Body(void)
 
 {
-}
-
-
-/********************************************************************/
-/*								    */
-/*                Отобразить связанные данные                       */
-
-    void  RSS_Module_Marker::vShow(char *layer)
-
-{
-     int  status ;
-     int  i ;
-
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
-  
-/*----------------------------------------- Масштабирование картинки */
-
-  if(!stricmp(layer, "ZOOM")) {
-
-          status=RSS_Kernel::display.SetFirstContext("Show") ;
-    while(status==0) {                                              /* LOOP - Перебор контекстов отображения */
-
-     for(i=0 ; i<OBJECTS_CNT ; i++) {                               /* LOOP - Перебор маркеров */
-
-       if(stricmp(OBJECTS[i]->Type, "Marker"))  continue ;
-
-                PlaceMarker((RSS_Object_Marker *)OBJECTS[i]) ;
-
-                                    }                               /* ENDLOOP - Перебор маркеров */
-
-          status=RSS_Kernel::display.SetNextContext("Show") ;
-                     }                                              /* ENDLOOP  - Перебор контекстов отображения */
-
-                              }
-/*-------------------------------------------------------------------*/
-
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-
 }
 
 
@@ -205,7 +165,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_Marker::vExecuteCmd(const char *cmd)
+  int  RSS_Module_Body::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -215,8 +175,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "MARKER"
-#define  _SECTION_SHRT_NAME   "M"
+#define  _SECTION_FULL_NAME   "BODY"
+#define  _SECTION_SHRT_NAME   "BODY"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -242,7 +202,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Marker:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Body:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -282,7 +242,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция MARKER: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция BODY: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -300,23 +260,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Считать данные из строки		    */
 
-    void  RSS_Module_Marker::vReadSave(std::string *data)
+    void  RSS_Module_Body::vReadSave(std::string *data)
 
 {
-               char *buff ;
-                int  buff_size ;
-     RSS_Model_data  create_data ;
-  RSS_Object_Marker *object ;
-                int  status ;
-               char *entry ;
-               char *end ;
+             char *buff ;
+              int  buff_size ;
+   RSS_Model_data  create_data ;
+  RSS_Object_Body *object ;
+             char  name[128] ;
+              int  status ;
+             char *entry ;
+             char *end ;
+              int  i ;
 
 /*----------------------------------------------- Контроль заголовка */
 
-   if(memicmp(data->c_str(), "#BEGIN MODULE MARKER\n", 
-                      strlen("#BEGIN MODULE MARKER\n")) &&
-      memicmp(data->c_str(), "#BEGIN OBJECT MARKER\n", 
-                      strlen("#BEGIN OBJECT MARKER\n"))   )  return ;
+   if(memicmp(data->c_str(), "#BEGIN MODULE BODY\n", 
+                      strlen("#BEGIN MODULE BODY\n")) &&
+      memicmp(data->c_str(), "#BEGIN OBJECT BODY\n", 
+                      strlen("#BEGIN OBJECT BODY\n"))   )  return ;
 
 /*------------------------------------------------ Извлечение данных */
 
@@ -327,8 +289,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Создание объекта */
 
-   if(!memicmp(buff, "#BEGIN OBJECT MARKER\n", 
-              strlen("#BEGIN OBJECT MARKER\n"))) {                  /* IF.1 */
+   if(!memicmp(buff, "#BEGIN OBJECT BODY\n", 
+              strlen("#BEGIN OBJECT BODY\n"))) {                    /* IF.1 */
 /*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
               memset(&create_data, 0, sizeof(create_data)) ;
 
@@ -339,19 +301,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        *end= 0 ;
 
                                      entry=strstr(buff, "MODEL=") ; /* Извлекаем модель объекта */
-           strncpy(create_data.model, entry+strlen("MODEL="),
-                                       sizeof(create_data.model)-1) ;
-        end=strchr(create_data.model, '\n') ;
+           strncpy(create_data.path, entry+strlen("MODEL="),
+                                       sizeof(create_data.path)-1) ;
+        end=strchr(create_data.path, '\n') ;
        *end= 0 ;
+
+    for(i=0 ; i<_MODEL_PARS_MAX ; i++) {
+             sprintf(name, "PAR_%d=", i) ;
+        entry=strstr(buff, name) ;
+     if(entry!=NULL) {
+           strncpy(create_data.pars[i].value, entry+strlen(name), 
+                                        sizeof(create_data.pars[i].value)-1) ;
+        end=strchr(create_data.pars[i].value, '\n') ;
+       *end= 0 ;
+                     }
+                                       } 
 /*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
                 status=CreateObject(&create_data) ;
              if(status)  return ;
 
-        object=(RSS_Object_Marker *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
-/*- - - - - - - - - - - - - - - - - - - - - - Параметры визуализации */
-       entry=strstr(buff, "SIZE=") ;  object->size=atof(entry+strlen("SIZE=")) ;
-       entry=strstr(buff, "COLOR=") ; object->color=strtoul(entry+strlen("COLOR="), &end, 16) ;
+        object=(RSS_Object_Body *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
        entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
@@ -359,8 +329,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        entry=strstr(buff, "A_AZIM=") ; object->a_azim=atof(entry+strlen("A_AZIM=")) ;
        entry=strstr(buff, "A_ELEV=") ; object->a_elev=atof(entry+strlen("A_ELEV=")) ;
        entry=strstr(buff, "A_ROLL=") ; object->a_roll=atof(entry+strlen("A_ROLL=")) ;
+
+   for(i=0 ; i<object->Features_cnt ; i++) {
+        object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
+                                                  object->y_base, 
+                                                  object->z_base ) ;
+        object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
+                                                  object->a_elev, 
+                                                  object->a_roll ) ;
+                                           }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                     PlaceMarker_(object) ;
                                                }                    /* END.1 */
 /*-------------------------------------------- Освобождение ресурсов */
 
@@ -374,13 +352,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Module_Marker::vWriteSave(std::string *text)
+    void  RSS_Module_Body::vWriteSave(std::string *text)
 
 {
+  std::string  buff ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN MODULE MARKER\n" ;
+     *text="#BEGIN MODULE BODY\n" ;
 
 /*------------------------------------------------ Концовка описания */
 
@@ -392,26 +371,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*             Выполнить действие в контексте потока                */
-
-    void  RSS_Module_Marker::vChangeContext(void)
-
-{
-   if(!stricmp(mContextAction, "FORM" ))  FormMarker (mContextObject) ;
-   if(!stricmp(mContextAction, "PLACE"))  PlaceMarker(mContextObject) ;
-}
-
-
-/********************************************************************/
-/*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_Marker::cHelp(char *cmd)
+  int  RSS_Module_Body::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Object_Marker_Help_dialog) ;
+			   GetActiveWindow(), Object_Body_Help_dialog) ;
 
    return(0) ;
 }
@@ -421,9 +388,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции CREATE                  */
 /*								    */
-/*      CREATE <Имя> [<Модель> [<Цвет>]]                            */
+/*      CREATE <Имя> [<Модель> [<Список параметров>]]               */
 
-  int  RSS_Module_Marker::cCreate(char *cmd)
+  int  RSS_Module_Body::cCreate(char *cmd)
 
 {
  RSS_Model_data  data ;
@@ -431,6 +398,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            char *model ;
            char *pars[4] ;
            char *end ;
+           char  tmp[1024] ;
             int  status ;
             int  i ;
 
@@ -470,18 +438,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          strcpy(data.pars[i].text, "") ;
                                  }
 
-/*------------------------------------------------- Создание маркера */
+        sprintf(data.lib_path, "%s\\Body.lib", getcwd(tmp, sizeof(tmp))) ;
 
-      status=CreateObject(&data) ;
-   if(status!=0)  return(status) ;
+/*---------------------- Проверка необходимости уточнения параметров */
 
-/*------------------------------------------------ Отображение сцены */
+   if(data.name[0]!=0) {
+                            status=CreateObject(&data) ;
+                         if(status==0)  return(0) ;
+                       }
+/*----------------------------------------------- Проведение диалога */
 
-              this->kernel->vShow("REFRESH") ;
+      status=DialogBoxIndirectParam( GetModuleHandle(NULL),
+                                    (LPCDLGTEMPLATE)Resource("IDD_CREATE", RT_DIALOG),
+			             GetActiveWindow(), 
+                                     Object_Body_Create_dialog, 
+                                    (LPARAM)&data               ) ;
+   if(status)  return(status) ;
+
+            this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 
-   return(0) ;
+   return(status) ;
 }
 
 
@@ -492,19 +470,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_Marker::cInfo(char *cmd)
+  int  RSS_Module_Body::cInfo(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX   4
 
-               char  *name ;
-  RSS_Object_Marker  *object ;
-                int   all_flag ;   /* Флаг режима полной информации */
-               char  *end ;
-        std::string   info ;
-        std::string   f_info ;
-               char   text[4096] ;
+             char  *name ;
+  RSS_Object_Body  *object ;
+              int   all_flag ;   /* Флаг режима полной информации */
+             char  *end ;
+      std::string   info ;
+      std::string   f_info ;
+             char   text[4096] ;
+              int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -521,7 +500,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                            cmd=end+1 ;
                         }
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
                   name=cmd ;
                    end=strchr(name, ' ') ;
                 if(end!=NULL)  *end=0 ;
@@ -555,6 +534,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            info=text ;
 
+/*----------------------------------------------- Запрос на Свойства */
+
+   for(i=0 ; i<object->Features_cnt ; i++) {
+
+                      object->Features[i]->vGetInfo(&f_info) ;
+                                               info+=f_info ;
+                                               info+="\r\n" ;
+                                           }
 /*-------------------------------------------------- Выдача описания */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - В отдельное окно */
      if(all_flag) {
@@ -582,26 +569,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        BASE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*        BASE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Marker::cBase(char *cmd)
+  int  RSS_Module_Body::cBase(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX   4
 
-               char  *pars[_PARS_MAX] ;
-               char  *name ;
-               char **xyz ;
-             double   coord[_COORD_MAX] ;
-                int   coord_cnt ;
-             double   inverse ;
-  RSS_Object_Marker  *object ;
-                int   xyz_flag ;          /* Флаг режима одной координаты */
-                int   delta_flag ;        /* Флаг режима приращений */
-                int   arrow_flag ;        /* Флаг стрелочного режима */
-               char  *arrows ;
-               char  *error ;
-               char  *end ;
-                int   i ;
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+             char **xyz ;
+           double   coord[_COORD_MAX] ;
+              int   coord_cnt ;
+           double   inverse ;
+  RSS_Object_Body  *object ;
+              int   xyz_flag ;          /* Флаг режима одной координаты */
+              int   delta_flag ;        /* Флаг режима приращений */
+              int   arrow_flag ;        /* Флаг стрелочного режима */
+             char  *arrows ;
+             char  *error ;
+             char  *end ;
+              int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -729,11 +716,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               object->z_base=coord[2] ;
                             }
                   }
-/*------------------------------------------------ Отображение сцены */
+/*---------------------------------------------- Перенос на Свойства */
 
-                     PlaceMarker_(object) ;
+   for(i=0 ; i<object->Features_cnt ; i++)
+     object->Features[i]->vBodyBasePoint("Body.Body", object->x_base, 
+                                                      object->y_base, 
+                                                      object->z_base ) ;
 
-              this->kernel->vShow("REFRESH") ;
+/*------------------------------------------------------ Отображение */
+
+                      this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -754,26 +746,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*       ANGLE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*       ANGLE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Marker::cAngle(char *cmd)
+  int  RSS_Module_Body::cAngle(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX   4
 
-               char  *pars[_PARS_MAX] ;
-               char  *name ;
-               char **xyz ;
-             double   coord[_COORD_MAX] ;
-                int   coord_cnt ;
-             double   inverse ;
-  RSS_Object_Marker  *object ;
-                int   xyz_flag ;          /* Флаг режима одной координаты */
-                int   delta_flag ;        /* Флаг режима приращений */
-                int   arrow_flag ;        /* Флаг стрелочного режима */
-               char  *arrows ;
-               char  *error ;
-               char  *end ;
-                int   i ;
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+             char **xyz ;
+           double   coord[_COORD_MAX] ;
+              int   coord_cnt ;
+           double   inverse ;
+  RSS_Object_Body  *object ;
+              int   xyz_flag ;          /* Флаг режима одной координаты */
+              int   delta_flag ;        /* Флаг режима приращений */
+              int   arrow_flag ;        /* Флаг стрелочного режима */
+             char  *arrows ;
+             char  *error ;
+             char  *end ;
+              int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -913,17 +905,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      while(object->a_roll> 180.)  object->a_roll-=360. ;
      while(object->a_roll<-180.)  object->a_roll+=360. ;
 
-/*------------------------------------------------ Отображение сцены */
+/*---------------------------------------------- Перенос на Свойства */
 
-                       FormMarker_(object) ;
-                      PlaceMarker_(object) ;
+   for(i=0 ; i<object->Features_cnt ; i++)
+     object->Features[i]->vBodyAngles("Body.Body", object->a_azim, 
+                                                   object->a_elev, 
+                                                   object->a_roll ) ;
 
-              this->kernel->vShow("REFRESH") ;
+/*------------------------------------------------------ Отображение */
+
+                this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 
 #undef  _COORD_MAX   
-#undef   _PARS_MAX
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -931,9 +927,60 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		   Поиск обьекта типа MARKER по имени               */
+/*		      Реализация инструкции VISISBLE                */
+/*								    */
+/*        VISISBLE  <Имя>                                           */
 
-  RSS_Object_Marker *RSS_Module_Marker::FindObject(char *name)
+  int  RSS_Module_Body::cVisible(char *cmd)
+
+{
+#define   _PARS_MAX   4
+
+                 char  *name ;
+      RSS_Object_Body  *object ;
+                 char  *end ;
+                  int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
+                  name=cmd ;
+                   end=strchr(name, ' ') ;
+                if(end!=NULL)  *end=0 ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя объекта. \n"
+                                      "Например: VISIBLE <Имя_объекта> ...") ;
+                                     return(-1) ;
+                         }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------ Изменение свойстава видимости */
+
+     for(i=0 ; i<this->feature_modules_cnt ; i++)
+        if(!stricmp(object->Features[i]->Type, "Show")) {
+             object->Features[i]->vParameter("VISIBLE", "INVERT", NULL) ;
+                            break ;
+                                                        }
+/*------------------------------------------------------ Отображение */
+
+                      this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		   Поиск обьекта типа BODY по имени                 */
+
+  RSS_Object_Body *RSS_Module_Body::FindObject(char *name)
 
 {
      char   text[1024] ;
@@ -955,14 +1002,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        }
 /*-------------------------------------------- Контроль типа объекта */ 
 
-     if(stricmp(OBJECTS[i]->Type, "Marker")) {
+     if(strcmp(OBJECTS[i]->Type, "Body")) {
 
-           SEND_ERROR("Объект не является объектом типа MARKER") ;
+           SEND_ERROR("Объект не является объектом типа BODY") ;
                             return(NULL) ;
-                                             }
+                                          }
 /*-------------------------------------------------------------------*/ 
 
-   return((RSS_Object_Marker *)OBJECTS[i]) ;
+   return((RSS_Object_Body *)OBJECTS[i]) ;
   
 #undef   OBJECTS
 #undef   OBJECTS_CNT
@@ -974,75 +1021,84 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  int  RSS_Module_Marker::CreateObject(RSS_Model_data *data)
+  int  RSS_Module_Body::CreateObject(RSS_Model_data *data)
 
 {
-  RSS_Object_Marker *object ;
-               char *end ;
-//              int  status ;
-                int  i ;
+  RSS_Object_Body *object ;
+             char  models_list[4096] ;
+             char *end ;
+              int  i ;
+              int  j ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
 
-#define  COLOR  data->pars[0].value
+#define       PAR             object->Parameters
+#define       PAR_CNT         object->Parameters_cnt
  
 /*--------------------------------------------------- Проверка имени */
 
     if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция MARKER: Не задано имя объекта") ;
+              SEND_ERROR("Секция BODY: Не задано имя объекта") ;
                                 return(-1) ;
                          }
 
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция MARKER: Объект с таким именем уже существует") ;
+              SEND_ERROR("Секция BODY: Объект с таким именем уже существует") ;
                                 return(-1) ;
                                                     }
-/*--------------------------------------- Определение модели маркера */
+/*-------------------------------------- Считывание описания обьекта */
+/*- - - - - - - - - - - - Если модель задана названием и библиотекой */
+   if(data->path[0]==0) {
 
-    if(data->model[0]==0) {                                         /* Если модель по-умолчанию... */
-                             strcpy(data->model, "Cross") ;
+    if(data->model[0]==0) {                                         /* Если модель НЕ задано */
+              SEND_ERROR("Секция BODY: Не задана модель объекта") ;
+                                return(-1) ;
                           }
 
-    if(stricmp(data->model, "Cross"  ) &&
-       stricmp(data->model, "Pyramid")   ) {
-                 
-              SEND_ERROR("Секция MARKER: Неизвестная модель маркера") ;
-                                              return(-1) ;
-                                           }
-/*---------------------------------------- Определение цвета маркера */
+        RSS_Model_list(data->lib_path, models_list,                 /* Формирование списка моделей */
+                                sizeof(models_list)-1, "BODY" );
 
-   if(COLOR[0]==0) {                                                /* Если цвет по-умолчанию... */
-                      strcpy(COLOR, "Red") ;
-                   }
+        for(end=models_list ; *end ; ) {                            /* Ищем модель по списку */
+                        if(!stricmp(data->model, end))  break ;
+                                         end+=strlen(end)+1 ;
+                                         end+=strlen(end)+1 ;
+                                       }
 
-   if(stricmp(COLOR, "Red"  ) &&
-      stricmp(COLOR, "Green") && 
-      stricmp(COLOR, "Blue")    ) {
-                 
-              SEND_ERROR("Секция MARKER: Неизвестный цвет маркера") ;
-                                            return(-1) ;
-                                  }
+           if(*end==0) {
+              SEND_ERROR("Секция BODY: Неизвестная модель тела") ;
+                                return(-1) ;
+                       }
+
+                                    end+=strlen(end)+1 ;            /* Извлекаем имя файла */
+
+                      sprintf(data->path, "%s\\%s", data->lib_path, end) ;
+           RSS_Model_ReadPars(data) ;                               /* Считываем параметры модели */
+                        }
+/*- - - - - - - - - - - - - - - - -  Если модель задана полным путем */
+   else                 {
+                              RSS_Model_ReadPars(data) ;            /* Считываем параметры модели */
+                        }
+/*--------------------------------------- Контроль списка параметров */
+
+     for(i=0 ; i<5 ; i++)
+       if((data->pars[i].text [0]==0 &&
+           data->pars[i].value[0]!=0   ) ||
+          (data->pars[i].text [0]!=0 &&
+           data->pars[i].value[0]==0   )   ) {
+
+              SEND_ERROR("Секция BODY: Несоответствие числа параметров модели") ;
+                                return(-1) ;
+                                             }
 /*------------------------------------------------- Создание обьекта */
 
-       object=new RSS_Object_Marker ;
+       object=new RSS_Object_Body ;
     if(object==NULL) {
-              SEND_ERROR("Секция MARKER: Недостаточно памяти для создания объекта") ;
+              SEND_ERROR("Секция BODY: Недостаточно памяти для создания объекта") ;
                         return(-1) ;
                      }
-
-     strncpy(object->model, data->model, sizeof(object->model)-1) ;
-             object->size=mSize ;
-
-   if(!stricmp(COLOR, "Red"  ))  object->color=RGB(255,   0,   0) ;
-   if(!stricmp(COLOR, "Green"))  object->color=RGB(  0, 255,   0) ;
-   if(!stricmp(COLOR, "Blue" ))  object->color=RGB(  0,   0, 255) ;
-
 /*------------------------------------- Сохранения списка параметров */
-
-#define  PAR      object->Parameters
-#define  PAR_CNT  object->Parameters_cnt
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
      for(i=0 ; i<5 ; i++)
        if(data->pars[i].text[0]!=0) {
@@ -1050,48 +1106,66 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
              memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
             sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
                      PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
+                     PAR[PAR_CNT].ptr  = NULL ;
                          PAR_CNT++ ;
                                     }
 /*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
              memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#undef  PAR
-#undef  PAR_CNT
 
-/*--------------------------------------------- Формирование маркера */
+/*---------------------------------- Создание списка свойств обьекта */
 
-                       FormMarker_(object) ;
+      object->Features_cnt=this->feature_modules_cnt ;
+      object->Features    =(RSS_Feature **)
+                             calloc(this->feature_modules_cnt, 
+                                     sizeof(object->Features[0])) ;
 
-/*------------------ Формирование позиционирующего заголовка маркера */
+   for(i=0 ; i<this->feature_modules_cnt ; i++)
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
 
-                      PlaceMarker_(object) ;
+/*-------------------------------------- Считывание описаний свойств */
 
+           RSS_Model_ReadSect(data) ;                               /* Считываем секции описаний модели */
+
+   for(i=0 ; data->sections[i].title[0] ; i++) {
+
+     for(j=0 ; j<object->Features_cnt ; j++) {
+
+          object->Features[j]->vBodyPars(NULL, PAR) ;
+          object->Features[j]->vReadSave(data->sections[i].title, 
+                                         data->sections[i].decl, "Body.Body") ;
+                                             }
+
+                                         data->sections[i].title[0]= 0 ;
+                                        *data->sections[i].decl    ="" ;
+                                               }
 /*---------------------------------- Введение объекта в общий список */
 
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
     if(OBJECTS==NULL) {
-              SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+              SEND_ERROR("Секция BODY: Переполнение памяти") ;
                                 return(-1) ;
                       }
 
               OBJECTS[OBJECTS_CNT]=object ;
-       strcpy(OBJECTS[OBJECTS_CNT]->Name, data->name) ;
                       OBJECTS_CNT++ ;
+
+       strcpy(object->Name,       data->name) ;
+       strcpy(object->model_path, data->path) ;
 
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
@@ -1100,190 +1174,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #undef   OBJECTS
 #undef   OBJECTS_CNT
-#undef     COLOR
 
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*           Задание формы маркера с передачей контекста            */
-
-  int  RSS_Module_Marker::FormMarker_(RSS_Object_Marker *marker)
-
-{
-    strcpy(mContextAction, "FORM") ;
-           mContextObject=marker ;
-
-  SendMessage(RSS_Kernel::kernel_wnd, 
-                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
-                         (LPARAM) this                ) ;
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Задание формы маркера                         */
-
-  int  RSS_Module_Marker::FormMarker(RSS_Object_Marker *marker)
-
-{
-  int  status ;
-
-#define   M   marker
-
-/*-------------------------------- Резервирование дисплейного списка */
-
-     if(M->dlist2_idx==0)
-           M->dlist2_idx=RSS_Kernel::display.GetList(1) ;
-
-     if(M->dlist2_idx==0)  return(-1) ;
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetFirstContext("Show") ;
-    while(status==0) {                                              /* CIRCLE.1 */
-
-/*--------------------------------------- Формирование метки маркера */
-
-             glNewList(M->dlist2_idx, GL_COMPILE) ;                 /* Открытие группы */
-          glMatrixMode(GL_MODELVIEW) ;
-//            glEnable(GL_BLEND) ;                                  /* Вкл.смешивание цветов */
-//         glDepthMask(0) ;                                         /* Откл.запись Z-буфера */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Крест */
-    if(!stricmp(M->model, "Cross"  )) {
-
- double  s ;
-                     s=0.5 ;
-
-                     glColor4d(GetRValue(M->color)/256., 
-                               GetGValue(M->color)/256.,
-                               GetBValue(M->color)/256., 1.) ;
-
-                       glBegin(GL_LINES) ;
-                    glVertex3d(-s,  0,  0) ;
-                    glVertex3d( s,  0,  0) ;
-                    glVertex3d( 0, -s,  0) ;
-                    glVertex3d( 0,  s,  0) ;
-                    glVertex3d( 0,  0, -s) ;
-                    glVertex3d( 0,  0,  s) ;
-	                 glEnd();
-                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - Пирамида */
-    if(!stricmp(M->model, "Pyramid")) {
-
- double  s ;
- double  h ;
-
-                     s=0.5 ;
-                     h=1.0 ;
-
-                     glColor4d(GetRValue(M->color)/256., 
-                               GetGValue(M->color)/256.,
-                               GetBValue(M->color)/256., 0.2) ;
-
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( s, -h, -s) ;
-                    glVertex3d(-s, -h, -s) ;
-                    glVertex3d( 0, -h,  s) ;
-	                 glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d( s, -h, -s) ;
-                    glVertex3d(-s, -h, -s) ;
-	                 glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d(-s, -h, -s) ;
-                    glVertex3d( 0, -h,  s) ;
-              	         glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d( 0, -h,  s) ;
-                    glVertex3d( s, -h, -s) ;
-	                 glEnd();
-                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-//         glDepthMask(1) ;                                         /* Вкл.запись Z-буфера */
-//           glDisable(GL_BLEND) ;                                  /* Откл.смешивание цветов */
-             glEndList() ;                                          /* Закрытие группы */
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetNextContext("Show") ;
-                     }                                              /* CONTINUE.1 */
-/*-------------------------------------------------------------------*/
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*           Позиционирование маркера с передачей контекста         */
-
-  int  RSS_Module_Marker::PlaceMarker_(RSS_Object_Marker *marker)
-
-{
-    strcpy(mContextAction, "PLACE") ;
-           mContextObject=marker ;
-
-  SendMessage(RSS_Kernel::kernel_wnd, 
-                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
-                         (LPARAM) this                ) ;
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Позиционирование маркера                      */
-
-  int  RSS_Module_Marker::PlaceMarker(RSS_Object_Marker *marker)
-
-{
-  double  zoom ;  
-     int  status ;
-
-#define   M   marker
-
-/*-------------------------------- Резервирование дисплейного списка */
-
-     if(M->dlist1_idx==0)
-           M->dlist1_idx=RSS_Kernel::display.GetList(0) ;
-
-     if(M->dlist1_idx==0)  return(-1) ;
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetFirstContext("Show") ;
-    while(status==0) {                                              /* CIRCLE.1 */
-
-/*------------------ Формирование позиционирующей последовательности */
-
-             glNewList(M->dlist1_idx, GL_COMPILE) ;                 /* Открытие группы */
-
-          glMatrixMode(GL_MODELVIEW) ;
-
-          glTranslated(M->x_base, M->y_base, M->z_base) ;
-
-                       zoom=RSS_Kernel::display.GetContextPar("Zoom") ;
-                       zoom=zoom/M->size ;
-              glScaled(zoom, zoom, zoom) ;
-
-            glCallList(M->dlist2_idx) ;                             /* Отрисовка маркера */
-
-             glEndList() ;                                          /* Закрытие группы */
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetNextContext("Show") ;
-                     }                                              /* CONTINUE.1 */
-/*-------------------------------------------------------------------*/
+#undef   PAR
+#undef   PAR_CNT
 
   return(0) ;
 }
@@ -1292,7 +1185,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "МАРКЕР"	           **/
+/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "ТЕЛО"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -1301,24 +1194,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Object_Marker::RSS_Object_Marker(void)
+     RSS_Object_Body::RSS_Object_Body(void)
 
 {
-   strcpy(Type, "Marker") ;
+   strcpy(Type, "Body") ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-           x_base=0 ;
-           y_base=0 ;
-           z_base=0 ;
+      x_base=0 ;
+      y_base=0 ;
+      z_base=0 ;
 
-           a_azim=0 ;
-           a_elev=0 ;
-           a_roll=0 ;
-
-       dlist1_idx=0 ;
-       dlist2_idx=0 ;
+      a_azim=0 ;
+      a_elev=0 ;
+      a_roll=0 ;
 }
 
 
@@ -1326,14 +1216,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Object_Marker::~RSS_Object_Marker(void)
+    RSS_Object_Body::~RSS_Object_Body(void)
 
 {
-      if(this->dlist1_idx)
-           RSS_Kernel::display.ReleaseList(this->dlist1_idx) ;
+}
 
-      if(this->dlist2_idx)
-           RSS_Kernel::display.ReleaseList(this->dlist2_idx) ;
+
+/********************************************************************/
+/*								    */
+/*		       Освобождение ресурсов                        */
+
+  void   RSS_Object_Body::vFree(void)
+
+{
+  int  i ;
+
+
+   for(i=0 ; i<this->Features_cnt ; i++) {
+               this->Features[i]->vBodyDelete(NULL) ;
+          free(this->Features[i]) ;
+                                         }
+
+          free(this->Features) ;
 }
 
 
@@ -1341,28 +1245,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Object_Marker::vWriteSave(std::string *text)
+    void  RSS_Object_Body::vWriteSave(std::string *text)
 
 {
   char  field[1024] ;
+   int  i ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN OBJECT MARKER\n" ;
+     *text="#BEGIN OBJECT BODY\n" ;
 
 /*----------------------------------------------------------- Данные */
 
-    sprintf(field, "NAME=%s\n",       this->Name  ) ;  *text+=field ;
-    sprintf(field, "MODEL=%s\n",      this->model ) ;  *text+=field ;
-    sprintf(field, "COLOR=%x\n",      this->color ) ;  *text+=field ;
-    sprintf(field, "SIZE=%.10lf\n",   this->size  ) ;  *text+=field ;
-    sprintf(field, "X_BASE=%.10lf\n", this->x_base) ;  *text+=field ;
-    sprintf(field, "Y_BASE=%.10lf\n", this->y_base) ;  *text+=field ;
-    sprintf(field, "Z_BASE=%.10lf\n", this->z_base) ;  *text+=field ;
-    sprintf(field, "A_AZIM=%.10lf\n", this->a_azim) ;  *text+=field ;
-    sprintf(field, "A_ELEV=%.10lf\n", this->a_elev) ;  *text+=field ;
-    sprintf(field, "A_ROLL=%.10lf\n", this->a_roll) ;  *text+=field ;
+    sprintf(field, "NAME=%s\n",       this->Name      ) ;  *text+=field ;
+    sprintf(field, "X_BASE=%.10lf\n", this->x_base    ) ;  *text+=field ;
+    sprintf(field, "Y_BASE=%.10lf\n", this->y_base    ) ;  *text+=field ;
+    sprintf(field, "Z_BASE=%.10lf\n", this->z_base    ) ;  *text+=field ;
+    sprintf(field, "A_AZIM=%.10lf\n", this->a_azim    ) ;  *text+=field ;
+    sprintf(field, "A_ELEV=%.10lf\n", this->a_elev    ) ;  *text+=field ;
+    sprintf(field, "A_ROLL=%.10lf\n", this->a_roll    ) ;  *text+=field ;
+    sprintf(field, "MODEL=%s\n",      this->model_path) ;  *text+=field ;
 
+  for(i=0 ; i<this->Parameters_cnt ; i++) {
+    sprintf(field, "PAR_%d=%.10lf\n", 
+                          i, this->Parameters[i].value) ;  *text+=field ;
+                                          }
 /*------------------------------------------------ Концовка описания */
 
      *text+="#END\n" ;
@@ -1371,58 +1278,3 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
-/********************************************************************/
-/*								    */
-/*                Получить список параметров управления             */
-
-   int  RSS_Object_Marker::vListControlPars(RSS_ControlPar *list)
-
-{
- RSS_ControlPar  pars[6]={ 
-     { "x_base", "Базовая точка", "X",               "double" },
-     { "y_base", "Базовая точка", "Y",               "double" },
-     { "z_base", "Базовая точка", "Z",               "double" },
-     { "a_azim", "Ориентация",    "Азимут",          "double" },
-     { "a_elev", "Ориентация",    "Угол возвышения", "double" },
-     { "a_roll", "Ориентация",    "Угол крена",      "double" },
-                         } ;
-
-
-     if(list!=NULL)  memcpy(list, pars, sizeof(pars)) ;
-
-   return(6) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*               Установить значение параметра управления           */
-
-   int  RSS_Object_Marker::vSetControlPar(RSS_ControlPar *par)   
-
-{
-   double  value ;
-     char  text[1024] ;
-
-
-   if(!stricmp(par->type, "double"))  value=*((double *)par->value) ;
-   else                              {
-               sprintf(text, "Unknown value type %s for object %s", par->type, this->Name) ;
-            SEND_ERROR(text) ;
-                return(-1) ;
-                                     }
-
-        if(!stricmp(par->link, "x_base"))  this->x_base=value ;
-   else if(!stricmp(par->link, "y_base"))  this->y_base=value ;
-   else if(!stricmp(par->link, "z_base"))  this->z_base=value ;
-   else if(!stricmp(par->link, "a_azim"))  this->a_azim=value ;
-   else if(!stricmp(par->link, "a_elev"))  this->a_elev=value ;
-   else if(!stricmp(par->link, "a_roll"))  this->a_roll=value ;
-   else                                   {
-               sprintf(text, "Unknown control parameter %s for object %s", par->link, this->Name) ;
-            SEND_ERROR(text) ;
-                return(-1) ;
-                                          }
-
-     return(0) ;
-}

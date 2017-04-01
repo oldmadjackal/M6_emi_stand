@@ -1,0 +1,4 @@
+LIBRARY C_Std
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

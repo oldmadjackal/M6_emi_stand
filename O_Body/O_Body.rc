@@ -1,0 +1,131 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Russian resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+#ifdef _WIN32
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_HELP DIALOG  0, 0, 350, 206
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Справка по командам секции Object Body"
+FONT 8, "MS Sans Serif"
+BEGIN
+    LISTBOX         IDC_HELP_LIST,6,7,337,192,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_CREATE DIALOGEX 0, 0, 317, 154
+STYLE DS_SETFONT | DS_MODALFRAME | DS_SETFOREGROUND | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOPMOST
+CAPTION "Создание объекта ""Тело"""
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    PUSHBUTTON      "Создать",IDC_CREATE,64,132,208,14
+    EDITTEXT        IDC_NAME,110,8,69,12,ES_AUTOHSCROLL
+    LTEXT           "Название обьекта:",IDC_STATIC,43,10,66,8
+    LTEXT           "Библиотека моделей:",IDC_STATIC,34,26,74,8
+    EDITTEXT        IDC_LIBRARY_PATH,110,24,182,12,ES_AUTOHSCROLL
+    LTEXT           "Модель обьекта:",IDC_STATIC,50,42,58,8
+    COMBOBOX        IDC_MODEL,110,40,154,104,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "...",IDC_LIBRARY_BROWSE,294,24,11,11,NOT WS_TABSTOP
+    EDITTEXT        IDC_PAR_NAME_1,15,61,91,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_PAR_VALUE_1,111,59,69,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PAR_VALUE_2,111,72,69,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PAR_VALUE_3,111,85,69,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PAR_VALUE_4,111,98,69,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PAR_VALUE_5,111,111,69,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_PAR_NAME_2,15,74,91,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_PAR_NAME_3,15,87,91,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_PAR_NAME_4,15,99,91,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    EDITTEXT        IDC_PAR_NAME_5,15,112,91,12,ES_RIGHT | ES_AUTOHSCROLL | WS_DISABLED | NOT WS_BORDER | NOT WS_TABSTOP
+    CONTROL         "",IDC_PICTURE,"Static",SS_BITMAP | SS_SUNKEN,188,58,120,70
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    "IDD_HELP", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 343
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 199
+    END
+
+    "IDD_CREATE", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 147
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Russian resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
