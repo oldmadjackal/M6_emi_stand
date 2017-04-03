@@ -63,6 +63,23 @@
                      void *value ;               /* Устанавливаемое значение */
                   } RSS_ControlPar ;
 
+/*------------------------------------ Интерфейс передачи контекстов */
+
+  class RSS_OBJECT_API RSS_Transit {
+
+    public:
+                      char  action[1024] ;
+                RSS_Object *object ;
+
+    public:
+             virtual   int  vExecute(void) ;             /* Исполнение действия */
+                                             
+    public:
+                            RSS_Transit() ;              /* Конструктор */
+                           ~RSS_Transit() ;              /* Деструктор */
+
+                                   } ; 
+
 /*----------------------------------------- Описание класса "Объект" */
 
   class RSS_OBJECT_API RSS_Object {
@@ -90,6 +107,8 @@
                 RSS_Feature **Features ;       /* Список свойств */
                         int   Features_cnt ;
 
+                RSS_Transit  *Context ;        /* Интерфейс передачи контекстов */
+
                         int   ErrorEnable ;    /* Флаг выдачи сообщений об ошибках */
 
        public:
@@ -110,6 +129,8 @@
    virtual              int  vGetVelocity    (RSS_Vector *) ;       /* Получение вектора скорости */
 
    virtual              int  vSpecial        (char *, void *) ;     /* Специальные действия */
+
+   virtual              int  vCalculate      (double, double) ;     /* Расчет изменения состояния */
 
    virtual              int  vCheckFeatures  (void *) ;             /* Проверить корректность свойств */
    virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */

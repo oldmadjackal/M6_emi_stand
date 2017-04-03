@@ -53,6 +53,7 @@
                      int  cModules      (char *) ;              /* Инструкция MODULES */
                      int  cMemory       (char *) ;              /* Инструкция MEMORY */
                      int  cSrand        (char *) ;              /* Инструкция SRAND */
+                     int  cTime         (char *) ;              /* Инструкция TIME */
 
                     void  ShowExecute   (char *) ;              /* Отображение данных */
 

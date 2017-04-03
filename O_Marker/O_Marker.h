@@ -14,6 +14,19 @@
 
 /*---------------------------------------------- Параметры генерации */
 
+/*----------------------- Описание класса контекста объекта "Маркер" */
+
+  class O_MARKER_API RSS_Transit_Marker : public RSS_Transit {
+
+    public:
+             virtual   int  vExecute(void) ;             /* Исполнение действия */
+                                             
+    public:
+                            RSS_Transit_Marker() ;       /* Конструктор */
+                           ~RSS_Transit_Marker() ;       /* Деструктор */
+
+                                                             } ;
+
 /*--------------------------------- Описание класса объекта "Маркер" */
 
   class O_MARKER_API RSS_Object_Marker : public RSS_Object {
@@ -29,6 +42,10 @@
                virtual void  vWriteSave      (std::string *) ;       /* Записать данные в строку */
                virtual  int  vListControlPars(RSS_ControlPar *) ;    /* Получить список параметров управления */
                virtual  int  vSetControlPar  (RSS_ControlPar *) ;    /* Установить значение параметра управления */
+                        int  iFormMarker     (void) ;                /* Задание формы маркера */
+                        int  iFormMarker_    (void) ;                /* Задание формы маркера с передачей контекста */
+                        int  iPlaceMarker    (void) ;                /* Позиционирование маркера */
+                        int  iPlaceMarker_   (void) ;                /* Позиционирование маркера с передачей контекста */
 
 	                     RSS_Object_Marker() ;                   /* Конструктор */
 	                    ~RSS_Object_Marker() ;                   /* Деструктор */
@@ -53,7 +70,6 @@
      virtual         int  vExecuteCmd    (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave      (std::string *) ;   /* Чтение данных из строки */
      virtual        void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-     virtual        void  vChangeContext (void)  ;           /* Выполнить действие в контексте потока */
 
     public:
                      int  cHelp       (char *) ;             /* Инструкция HELP */ 
@@ -64,10 +80,6 @@
 
        RSS_Object_Marker *FindObject  (char *) ;             /* Поиск обьекта типа MARKER по имени */
                      int  CreateObject(RSS_Model_data *);    /* Создание объекта */ 
-                     int  FormMarker  (RSS_Object_Marker *); /* Задание формы маркера */
-                     int  FormMarker_ (RSS_Object_Marker *); /* Задание формы маркера с передачей контекста */
-                     int  PlaceMarker (RSS_Object_Marker *); /* Позиционирование маркера */
-                     int  PlaceMarker_(RSS_Object_Marker *); /* Позиционирование маркера с передачей контекста */
 
     public:
 	                  RSS_Module_Marker() ;              /* Конструктор */

@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "ТЕЛО"  		    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "ЛЕТУН"  		    */
 /*								    */
 /********************************************************************/
 
@@ -13,7 +13,13 @@
 #include <io.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 #include <sys\stat.h>
+
+#include "gl\gl.h"
+#include "gl\glu.h"
+
+#include "..\Matrix\Matrix.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
@@ -21,7 +27,7 @@
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 
-#include "O_Body.h"
+#include "O_Flyer.h"
 
 #pragma warning(disable : 4996)
 
@@ -50,21 +56,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_Body  ProgramModule ;
+     static   RSS_Module_Flyer  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- O_BODY_API char *Identify(void)
+ O_FLYER_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- O_BODY_API RSS_Kernel *GetEntry(void)
+ O_FLYER_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -73,7 +79,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	  ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ "ТЕЛО"	   **/
+/**	  ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ "ЛЕТУН"	   **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -82,52 +88,60 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_Body_instr  RSS_Module_Body_InstrList[]={
+  struct RSS_Module_Flyer_instr  RSS_Module_Flyer_InstrList[]={
 
- { "help",   "?",  "#HELP   - список доступных команд", 
-                    NULL,
-                   &RSS_Module_Body::cHelp   },
- { "create", "cr", "#CREATE - создать объект",
-                   " CREATE <Имя> [<Модель> [<Список параметров>]]\n"
-                   "   Создает именованный обьект по параметризованной модели",
-                   &RSS_Module_Body::cCreate },
- { "info",   "i",  "#INFO - выдать информацию по объекту",
-                   " INFO <Имя> \n"
-                   "   Выдать основную нформацию по объекту в главное окно\n"
-                   " INFO/ <Имя> \n"
-                   "   Выдать полную информацию по объекту в отдельное окно",
-                   &RSS_Module_Body::cInfo },
- { "base",   "b", "#BASE - задать базовую точку объекта",
-                   " BASE <Имя> <x> <y> <z>\n"
-                   "   Задает базовую точку объекта\n"
-                   " BASE/x <Имя> <x>\n"
-                   "   Задает координату X базовой точки объекта\n"
-                   "       (аналогично для Y и Z)\n"
-                   " BASE/+x <Имя> <x>\n"
-                   "   Задает приращение координаты X базовой точки объекта\n"
-                   "       (аналогично для Y и Z)\n"
-                   " BASE> <Имя>\n"
-                   "   Задает клавиатурное управление базовой точкой объекта\n",
-                   &RSS_Module_Body::cBase },
- { "angle",  "a", "#ANGLE - задать углы ориентации объекта",
-                   "           A (AZIMUTH)   - азимут\n"
-                   "           E (ELEVATION) - возвышение\n"
-                   "           R (ROLL)      - крен\n"
-                   " ANGLE <Имя> <a> <e> <r>\n"
-                   "   Задает углы ориентации объекта\n"
-                   " ANGLE/a <Имя> <a>\n"
-                   "   Задает угол ориентации A объекта\n"
-                   "       (аналогично для E и R)\n"
-                   " ANGLE/+a <Имя> <a>\n"
-                   "   Задает приращение угла ориентации A объекта\n"
-                   "       (аналогично для E и R)\n"
-                   " ANGLE> <Имя>\n"
-                   "   Задает клавиатурное управление углами ориентации объекта\n",
-                   &RSS_Module_Body::cAngle },
- { "Visible", "v", "#VISIBLE - задание режима видимости объекта",
-                   " VISIBLE <Имя> \n"
-                   "   Изменить состояние видимости объекта на противоположное",
-                   &RSS_Module_Body::cVisible },
+ { "help",    "?",  "#HELP   - список доступных команд", 
+                     NULL,
+                    &RSS_Module_Flyer::cHelp   },
+ { "create",  "cr", "#CREATE - создать объект",
+                    " CREATE <Имя> [<Модель> [<Список параметров>]]\n"
+                    "   Создает именованный обьект по параметризованной модели",
+                    &RSS_Module_Flyer::cCreate },
+ { "info",    "i",  "#INFO - выдать информацию по объекту",
+                    " INFO <Имя> \n"
+                    "   Выдать основную нформацию по объекту в главное окно\n"
+                    " INFO/ <Имя> \n"
+                    "   Выдать полную информацию по объекту в отдельное окно",
+                    &RSS_Module_Flyer::cInfo },
+ { "base",    "b", "#BASE - задать базовую точку объекта",
+                    " BASE <Имя> <x> <y> <z>\n"
+                    "   Задает базовую точку объекта\n"
+                    " BASE/x <Имя> <x>\n"
+                    "   Задает координату X базовой точки объекта\n"
+                    "       (аналогично для Y и Z)\n"
+                    " BASE/+x <Имя> <x>\n"
+                    "   Задает приращение координаты X базовой точки объекта\n"
+                    "       (аналогично для Y и Z)\n"
+                    " BASE> <Имя>\n"
+                    "   Задает клавиатурное управление базовой точкой объекта\n",
+                    &RSS_Module_Flyer::cBase },
+ { "angle",   "a", "#ANGLE - задать углы ориентации объекта",
+                    "           A (AZIMUTH)   - азимут\n"
+                    "           E (ELEVATION) - возвышение\n"
+                    "           R (ROLL)      - крен\n"
+                    " ANGLE <Имя> <a> <e> <r>\n"
+                    "   Задает углы ориентации объекта\n"
+                    " ANGLE/a <Имя> <a>\n"
+                    "   Задает угол ориентации A объекта\n"
+                    "       (аналогично для E и R)\n"
+                    " ANGLE/+a <Имя> <a>\n"
+                    "   Задает приращение угла ориентации A объекта\n"
+                    "       (аналогично для E и R)\n"
+                    " ANGLE> <Имя>\n"
+                    "   Задает клавиатурное управление углами ориентации объекта\n",
+                    &RSS_Module_Flyer::cAngle },
+ { "velocity", "v", "#VELOCITY - задание скорости движения объекта",
+                    " VELOCITY <Имя> <Скорость>\n"
+                    "   Задание абсолютного значения скорости объекта"
+                    " VELOCITY <Имя> <X-скорость> <Y-скорость> <Z-скорость>\n"
+                    "   Задание проекций скорости объекта",
+                    &RSS_Module_Flyer::cVelocity },
+ { "trace",    "t", "#TRACE - трассировка траектории объекта",
+                    " TRACE <Имя> [<Длительность>]\n"
+                    "   Трассировка траектории объекта в реальном времени\n"
+                    " TRACE/A <Имя> <Схема управления> [<Длительность>]\n"
+                    "   Трассировка траектории объекта для схемы управления\n",
+                    &RSS_Module_Flyer::cTrace },
  {  NULL }
                                                             } ;
 
@@ -135,19 +149,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_Body_instr *RSS_Module_Body::mInstrList=NULL ;
+    struct RSS_Module_Flyer_instr *RSS_Module_Flyer::mInstrList=NULL ;
+
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_Body::RSS_Module_Body(void)
+     RSS_Module_Flyer::RSS_Module_Flyer(void)
 
 {
 	   keyword="EmiStand" ;
-    identification="Body_object" ;
+    identification="Flyer_object" ;
 
-        mInstrList=RSS_Module_Body_InstrList ;
+        mInstrList=RSS_Module_Flyer_InstrList ;
 }
 
 
@@ -155,7 +170,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_Body::~RSS_Module_Body(void)
+    RSS_Module_Flyer::~RSS_Module_Flyer(void)
 
 {
 }
@@ -165,7 +180,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_Body::vExecuteCmd(const char *cmd)
+  int  RSS_Module_Flyer::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -175,8 +190,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "BODY"
-#define  _SECTION_SHRT_NAME   "BODY"
+#define  _SECTION_FULL_NAME   "FLYER"
+#define  _SECTION_SHRT_NAME   "FLYER"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -202,7 +217,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Body:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Flyer:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -242,7 +257,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция BODY: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция FLYER: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -260,13 +275,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Считать данные из строки		    */
 
-    void  RSS_Module_Body::vReadSave(std::string *data)
+    void  RSS_Module_Flyer::vReadSave(std::string *data)
 
 {
              char *buff ;
               int  buff_size ;
    RSS_Model_data  create_data ;
-  RSS_Object_Body *object ;
+ RSS_Object_Flyer *object ;
              char  name[128] ;
               int  status ;
              char *entry ;
@@ -275,10 +290,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------------- Контроль заголовка */
 
-   if(memicmp(data->c_str(), "#BEGIN MODULE BODY\n", 
-                      strlen("#BEGIN MODULE BODY\n")) &&
-      memicmp(data->c_str(), "#BEGIN OBJECT BODY\n", 
-                      strlen("#BEGIN OBJECT BODY\n"))   )  return ;
+   if(memicmp(data->c_str(), "#BEGIN MODULE FLYER\n", 
+                      strlen("#BEGIN MODULE FLYER\n")) &&
+      memicmp(data->c_str(), "#BEGIN OBJECT FLYER\n", 
+                      strlen("#BEGIN OBJECT FLYER\n"))   )  return ;
 
 /*------------------------------------------------ Извлечение данных */
 
@@ -289,8 +304,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Создание объекта */
 
-   if(!memicmp(buff, "#BEGIN OBJECT BODY\n", 
-              strlen("#BEGIN OBJECT BODY\n"))) {                    /* IF.1 */
+   if(!memicmp(buff, "#BEGIN OBJECT FLYER\n", 
+              strlen("#BEGIN OBJECT FLYER\n"))) {                   /* IF.1 */
 /*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
               memset(&create_data, 0, sizeof(create_data)) ;
 
@@ -321,7 +336,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 status=CreateObject(&create_data) ;
              if(status)  return ;
 
-        object=(RSS_Object_Body *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
+        object=(RSS_Object_Flyer *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
        entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
@@ -339,7 +354,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                   object->a_roll ) ;
                                            }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                                               }                    /* END.1 */
+                                                }                   /* END.1 */
 /*-------------------------------------------- Освобождение ресурсов */
 
                 free(buff) ;
@@ -352,14 +367,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Module_Body::vWriteSave(std::string *text)
+    void  RSS_Module_Flyer::vWriteSave(std::string *text)
 
 {
   std::string  buff ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN MODULE BODY\n" ;
+     *text="#BEGIN MODULE FLYER\n" ;
 
 /*------------------------------------------------ Концовка описания */
 
@@ -373,12 +388,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_Body::cHelp(char *cmd)
+  int  RSS_Module_Flyer::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Object_Body_Help_dialog) ;
+			   GetActiveWindow(), Object_Flyer_Help_dialog) ;
 
    return(0) ;
 }
@@ -390,7 +405,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      CREATE <Имя> [<Модель> [<Список параметров>]]               */
 
-  int  RSS_Module_Body::cCreate(char *cmd)
+  int  RSS_Module_Flyer::cCreate(char *cmd)
 
 {
  RSS_Model_data  data ;
@@ -444,14 +459,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(data.name[0]!=0) {
                             status=CreateObject(&data) ;
-                         if(status==0)  return(0) ;
+                         if(status==0) {
+                                          this->kernel->vShow(NULL) ;
+                                             return(0) ;
+                                       }
                        }
 /*----------------------------------------------- Проведение диалога */
 
       status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                     (LPCDLGTEMPLATE)Resource("IDD_CREATE", RT_DIALOG),
 			             GetActiveWindow(), 
-                                     Object_Body_Create_dialog, 
+                                     Object_Flyer_Create_dialog, 
                                     (LPARAM)&data               ) ;
    if(status)  return(status) ;
 
@@ -470,11 +488,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_Body::cInfo(char *cmd)
+  int  RSS_Module_Flyer::cInfo(char *cmd)
 
 {
              char  *name ;
-  RSS_Object_Body  *object ;
+ RSS_Object_Flyer  *object ;
               int   all_flag ;   /* Флаг режима полной информации */
              char  *end ;
       std::string   info ;
@@ -517,16 +535,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Формирование описания */
 
       sprintf(text, "%s\r\n%s\r\n"
-                    "Base X % 7.3lf\r\n" 
-                    "     Y % 7.3lf\r\n" 
-                    "     Z % 7.3lf\r\n"
-                    "Ang. A % 7.3lf\r\n" 
-                    "     E % 7.3lf\r\n" 
-                    "     R % 7.3lf\r\n"
+                    "Base X % 8.2lf\r\n" 
+                    "     Y % 8.2lf\r\n" 
+                    "     Z % 8.2lf\r\n"
+                    "Ang. A % 8.2lf\r\n" 
+                    "     E % 8.2lf\r\n" 
+                    "     R % 8.2lf\r\n"
+                    "Vel. V % 8.2lf\r\n" 
+                    "     X % 8.2lf\r\n" 
+                    "     Y % 8.2lf\r\n" 
+                    "     Z % 8.2lf\r\n"
                     "\r\n",
                         object->Name, object->Type, 
                         object->x_base, object->y_base, object->z_base,
-                        object->a_azim, object->a_elev, object->a_roll
+                        object->a_azim, object->a_elev, object->a_roll,
+                   sqrt(object->x_velocity*object->x_velocity+
+                        object->y_velocity*object->y_velocity+
+                        object->z_velocity*object->z_velocity ),
+                        object->x_velocity, object->y_velocity, object->z_velocity
                     ) ;
 
            info=text ;
@@ -566,7 +592,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        BASE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*        BASE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Body::cBase(char *cmd)
+  int  RSS_Module_Flyer::cBase(char *cmd)
 
 {
 #define  _COORD_MAX   3
@@ -578,7 +604,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            double   coord[_COORD_MAX] ;
               int   coord_cnt ;
            double   inverse ;
-  RSS_Object_Body  *object ;
+ RSS_Object_Flyer  *object ;
               int   xyz_flag ;          /* Флаг режима одной координаты */
               int   delta_flag ;        /* Флаг режима приращений */
               int   arrow_flag ;        /* Флаг стрелочного режима */
@@ -718,9 +744,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint("Body.Body", object->x_base, 
-                                                      object->y_base, 
-                                                      object->z_base ) ;
+     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
+                                                       object->y_base, 
+                                                       object->z_base ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -745,7 +771,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*       ANGLE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*       ANGLE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Body::cAngle(char *cmd)
+  int  RSS_Module_Flyer::cAngle(char *cmd)
 
 {
 #define  _COORD_MAX   3
@@ -757,11 +783,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            double   coord[_COORD_MAX] ;
               int   coord_cnt ;
            double   inverse ;
-  RSS_Object_Body  *object ;
+ RSS_Object_Flyer  *object ;
               int   xyz_flag ;          /* Флаг режима одной координаты */
               int   delta_flag ;        /* Флаг режима приращений */
               int   arrow_flag ;        /* Флаг стрелочного режима */
              char  *arrows ;
+         Matrix2d  Sum_Matrix ;
+         Matrix2d  Oper_Matrix ;  
+         Matrix2d  Velo_Matrix ;  
              char  *error ;
              char  *end ;
               int   i ;
@@ -906,12 +935,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      while(object->a_roll> 180.)  object->a_roll-=360. ;
      while(object->a_roll<-180.)  object->a_roll+=360. ;
 
+/*---------------------------------------------- Перерасчет скорости */
+
+       Velo_Matrix.LoadZero   (3, 1) ;
+       Velo_Matrix.SetCell    (2, 0, sqrt(object->x_velocity*object->x_velocity+
+                                          object->y_velocity*object->y_velocity+
+                                          object->z_velocity*object->z_velocity )) ;
+        Sum_Matrix.Load3d_azim(-object->a_azim) ;
+       Oper_Matrix.Load3d_elev(-object->a_elev) ;
+        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+       Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
+
+         object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Body.Body", object->a_azim, 
-                                                   object->a_elev, 
-                                                   object->a_roll ) ;
+     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
+                                                    object->a_elev, 
+                                                    object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -928,50 +972,102 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции VISISBLE                */
+/*		      Реализация инструкции VELOCITY                */
 /*								    */
-/*        VISISBLE  <Имя>                                           */
+/*       VELOCITY <Имя> <Скорость>                                  */
+/*       VELOCITY <Имя> <X-скорость> <Y-скорость> <Z-скорость>      */
 
-  int  RSS_Module_Body::cVisible(char *cmd)
+  int  RSS_Module_Flyer::cVelocity(char *cmd)
 
 {
-#define   _PARS_MAX   4
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
 
-                 char  *name ;
-      RSS_Object_Body  *object ;
-                 char  *end ;
-                  int   i ;
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+             char **xyz ;
+           double   coord[_COORD_MAX] ;
+              int   coord_cnt ;
+ RSS_Object_Flyer  *object ;
+             char  *error ;
+         Matrix2d  Sum_Matrix ;
+         Matrix2d  Oper_Matrix ;  
+         Matrix2d  Velo_Matrix ;  
+             char  *end ;
+              int   i ;
 
 /*---------------------------------------- Разборка командной строки */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
-                  name=cmd ;
-                   end=strchr(name, ' ') ;
-                if(end!=NULL)  *end=0 ;
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
 
 /*------------------------------------------- Контроль имени объекта */
 
-    if(name   ==NULL ||
-       name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя объекта. \n"
-                                      "Например: VISIBLE <Имя_объекта> ...") ;
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: VELOCITY <Имя_объекта> ...") ;
                                      return(-1) ;
-                         }
+                   }
 
        object=FindObject(name) ;                                    /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
-/*------------------------------------ Изменение свойстава видимости */
+/*------------------------------------------------- Разбор координат */
 
-     for(i=0 ; i<this->feature_modules_cnt ; i++)
-        if(!stricmp(object->Features[i]->Type, "Show")) {
-             object->Features[i]->vParameter("VISIBLE", "INVERT", NULL) ;
-                            break ;
-                                                        }
-/*------------------------------------------------------ Отображение */
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
 
-                      this->kernel->vShow(NULL) ;
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение скорости") ;
+                                       return(-1) ;
+                    }
+                                                  }
 
+                             coord_cnt=i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указана скорость или ее проекции" ;
+      if(coord_cnt==2)  error="Должно быть указаны 3 проекции скорости" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись скорости */
+/*- - - - - - - - - - - - - - - - - - - Абсолютное значение скорости */
+   if(coord_cnt==1) {
+
+                Velo_Matrix.LoadZero   (3, 1) ;
+                Velo_Matrix.SetCell    (2, 0, coord[0]) ;
+
+                 Sum_Matrix.Load3d_azim(-object->a_azim) ;
+                Oper_Matrix.Load3d_elev(-object->a_elev) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
+
+                       object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
+                       object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
+                       object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+                    }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Проекции скорости */
+   else             {
+                       object->x_velocity=coord[0] ;
+                       object->y_velocity=coord[1] ;
+                       object->z_velocity=coord[2] ;
+                    }
 /*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -979,9 +1075,152 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		   Поиск обьекта типа BODY по имени                 */
+/*		      Реализация инструкции TRACE                   */
+/*								    */
+/*       TRACE <Имя> [<Длительность>]                               */
+/*       TRACE/A <Имя> <Схема управления> [<Длительность>]          */
 
-  RSS_Object_Body *RSS_Module_Body::FindObject(char *name)
+  int  RSS_Module_Flyer::cTrace(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+           double   trace_time ;
+           double   time_0 ;     /* Стартовое время расчета */ 
+           double   time_1 ;     /* Текущее время */ 
+           double   time_c ;     /* Абсолютное время расчета */ 
+           double   time_s ;     /* Последнее время отрисовки */ 
+           double   time_w ;     /* Время ожидания */ 
+ RSS_Object_Flyer  *object ;
+              int   auto_flag ;  /* Режим автоматического управления */ 
+             char  *end ;
+              int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+                     trace_time=0. ;
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      auto_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'a')!=NULL ||
+                   strchr(cmd, 'A')!=NULL   )  auto_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+
+                     name=pars[0] ;
+
+      if(auto_flag) {
+                    }
+      else          {
+
+           if( pars[1]!=NULL &&
+              *pars[1]!=  0    ) {
+                                      trace_time=strtod(pars[1], &end) ;
+                                   if(trace_time<=0.) {
+                                         SEND_ERROR("Задано некорректное время трассировки") ;
+                                                           return(-1) ;
+                                                      }
+                                 }
+           else                  {
+                                       trace_time=60. ;
+                                         SEND_ERROR("Время трассировки - 60 секунд") ;
+                                 }
+                    }
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: ANGLE <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*---------------------------------------- Контроль схемы управления */
+
+/*------------------------------------------------------ Трассировка */
+
+              time_0=this->kernel->vGetTime() ;
+              time_c=0. ;
+              time_s=0. ;
+
+    do {                                                            /* CIRCLE.1 - Цикл трассировки */
+           if(this->kernel->stop)  break ;                          /* Если внешнее прерывание поиска */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Отработка времени */
+              time_c+=RSS_Kernel::calc_time_step ;
+              time_1=this->kernel->vGetTime() ;
+           if(time_1-time_0>trace_time)  break ;                    /* Если время трассировки закончилось */
+
+              time_w=time_c-(time_1-time_0) ;
+
+           if(time_w>=0)  Sleep(time_w*1000) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
+         object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c) ;
+         object->iSaveTracePoint() ;
+/*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
+         object->iShowTrace_() ;
+/*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
+   for(i=0 ; i<object->Features_cnt ; i++) {
+     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
+                                                       object->y_base, 
+                                                       object->z_base ) ;
+     object->Features[i]->vBodyAngles   ("Flyer.Body", object->a_azim, 
+                                                       object->a_elev, 
+                                                       object->a_roll ) ;
+                                            }
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
+          time_1=this->kernel->vGetTime() ;
+       if(time_1-time_s>=this->kernel->show_time_step) {
+
+                 time_s=time_1 ;
+
+              this->kernel->vShow(NULL) ;
+                                                       }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+       } while(1) ;                                                 /* END CIRCLE.1 - Цикл трассировки */
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		   Поиск обьекта типа FLYER по имени                */
+
+  RSS_Object_Flyer *RSS_Module_Flyer::FindObject(char *name)
 
 {
      char   text[1024] ;
@@ -1003,14 +1242,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        }
 /*-------------------------------------------- Контроль типа объекта */ 
 
-     if(strcmp(OBJECTS[i]->Type, "Body")) {
+     if(strcmp(OBJECTS[i]->Type, "Flyer")) {
 
-           SEND_ERROR("Объект не является объектом типа BODY") ;
+           SEND_ERROR("Объект не является объектом типа FLYER") ;
                             return(NULL) ;
-                                          }
+                                           }
 /*-------------------------------------------------------------------*/ 
 
-   return((RSS_Object_Body *)OBJECTS[i]) ;
+   return((RSS_Object_Flyer *)OBJECTS[i]) ;
   
 #undef   OBJECTS
 #undef   OBJECTS_CNT
@@ -1022,14 +1261,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  int  RSS_Module_Body::CreateObject(RSS_Model_data *data)
+  int  RSS_Module_Flyer::CreateObject(RSS_Model_data *data)
 
 {
-  RSS_Object_Body *object ;
-             char  models_list[4096] ;
-             char *end ;
-              int  i ;
-              int  j ;
+  RSS_Object_Flyer *object ;
+              char  models_list[4096] ;
+              char *end ;
+               int  i ;
+               int  j ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
@@ -1040,13 +1279,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*--------------------------------------------------- Проверка имени */
 
     if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция BODY: Не задано имя объекта") ;
+              SEND_ERROR("Секция FLYER: Не задано имя объекта") ;
                                 return(-1) ;
                          }
 
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция BODY: Объект с таким именем уже существует") ;
+              SEND_ERROR("Секция FLYER: Объект с таким именем уже существует") ;
                                 return(-1) ;
                                                     }
 /*-------------------------------------- Считывание описания обьекта */
@@ -1054,7 +1293,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(data->path[0]==0) {
 
     if(data->model[0]==0) {                                         /* Если модель НЕ задано */
-              SEND_ERROR("Секция BODY: Не задана модель объекта") ;
+              SEND_ERROR("Секция FLYER: Не задана модель объекта") ;
                                 return(-1) ;
                           }
 
@@ -1068,7 +1307,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        }
 
            if(*end==0) {
-              SEND_ERROR("Секция BODY: Неизвестная модель тела") ;
+              SEND_ERROR("Секция FLYER: Неизвестная модель тела") ;
                                 return(-1) ;
                        }
 
@@ -1089,14 +1328,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           (data->pars[i].text [0]!=0 &&
            data->pars[i].value[0]==0   )   ) {
 
-              SEND_ERROR("Секция BODY: Несоответствие числа параметров модели") ;
+              SEND_ERROR("Секция FLYER: Несоответствие числа параметров модели") ;
                                 return(-1) ;
                                              }
 /*------------------------------------------------- Создание обьекта */
 
-       object=new RSS_Object_Body ;
+       object=new RSS_Object_Flyer ;
     if(object==NULL) {
-              SEND_ERROR("Секция BODY: Недостаточно памяти для создания объекта") ;
+              SEND_ERROR("Секция FLYER: Недостаточно памяти для создания объекта") ;
                         return(-1) ;
                      }
 /*------------------------------------- Сохранения списка параметров */
@@ -1107,7 +1346,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
+                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
@@ -1121,7 +1360,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
+                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
@@ -1147,7 +1386,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           object->Features[j]->vBodyPars(NULL, PAR) ;
           object->Features[j]->vReadSave(data->sections[i].title, 
-                                         data->sections[i].decl, "Body.Body") ;
+                                         data->sections[i].decl, "Flyer.Body") ;
                                              }
 
                                          data->sections[i].title[0]= 0 ;
@@ -1158,7 +1397,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
     if(OBJECTS==NULL) {
-              SEND_ERROR("Секция BODY: Переполнение памяти") ;
+              SEND_ERROR("Секция FLYER: Переполнение памяти") ;
                                 return(-1) ;
                       }
 
@@ -1186,7 +1425,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "ТЕЛО"	           **/
+/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "ЛЕТУН"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -1195,21 +1434,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Object_Body::RSS_Object_Body(void)
+     RSS_Object_Flyer::RSS_Object_Flyer(void)
 
 {
-   strcpy(Type, "Body") ;
+   strcpy(Type, "Flyer") ;
+
+    Context        =new RSS_Transit_Flyer ;
+    Context->object=this ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-      x_base=0 ;
-      y_base=0 ;
-      z_base=0 ;
+      x_base    =0 ;
+      y_base    =0 ;
+      z_base    =0 ;
+      a_azim    =0 ;
+      a_elev    =0 ;
+      a_roll    =0 ;
+      x_velocity=0 ;
+      y_velocity=0 ;
+      z_velocity=0 ;
 
-      a_azim=0 ;
-      a_elev=0 ;
-      a_roll=0 ;
+      mTrace      =NULL ;
+      mTrace_cnt  =  0 ;  
+      mTrace_max  =  0 ;  
+      mTrace_color=  0 ;  
+      mTrace_dlist=  0 ;  
 }
 
 
@@ -1217,9 +1467,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Object_Body::~RSS_Object_Body(void)
+    RSS_Object_Flyer::~RSS_Object_Flyer(void)
 
 {
+      vFree() ;
+
+   delete Context ;
 }
 
 
@@ -1227,18 +1480,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Object_Body::vFree(void)
+  void   RSS_Object_Flyer::vFree(void)
 
 {
   int  i ;
 
 
-   for(i=0 ; i<this->Features_cnt ; i++) {
-               this->Features[i]->vBodyDelete(NULL) ;
-          free(this->Features[i]) ;
+  if(this->mTrace!=NULL) {
+                             free(this->mTrace) ;
+                                  this->mTrace    =NULL ;
+                                  this->mTrace_cnt=  0 ;  
+                                  this->mTrace_max=  0 ;  
+                         }
+
+  if(this->Features!=NULL) {
+
+    for(i=0 ; i<this->Features_cnt ; i++) {
+                this->Features[i]->vBodyDelete(NULL) ;
+           free(this->Features[i]) ;
                                          }
 
-          free(this->Features) ;
+           free(this->Features) ;
+
+                this->Features    =NULL ;
+                this->Features_cnt=  0 ;
+                           }
 }
 
 
@@ -1246,7 +1512,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Object_Body::vWriteSave(std::string *text)
+    void  RSS_Object_Flyer::vWriteSave(std::string *text)
 
 {
   char  field[1024] ;
@@ -1254,7 +1520,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN OBJECT BODY\n" ;
+     *text="#BEGIN OBJECT FLYER\n" ;
 
 /*----------------------------------------------------------- Данные */
 
@@ -1276,6 +1542,172 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      *text+="#END\n" ;
 
 /*-------------------------------------------------------------------*/
+}
+
+
+/********************************************************************/
+/*								    */
+/*                   Расчет изменения состояния                     */
+
+     int  RSS_Object_Flyer::vCalculate(double t1, double t2)
+{
+/*---------------------------------------------- Постоянная скорость */
+
+                   x_base+=x_velocity*(t2-t1) ;
+                   y_base+=y_velocity*(t2-t1) ;
+                   z_base+=z_velocity*(t2-t1) ;
+
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*                   Сохранение точки траектории                     */
+
+  int  RSS_Object_Flyer::iSaveTracePoint()
+
+{
+/*----------------------------------------------- Довыделение буфера */
+
+   if(mTrace_cnt==mTrace_max) {
+
+          mTrace_max+= 1000 ;
+          mTrace     =(RSS_Object_FlyerTrace *)
+                            realloc(mTrace, mTrace_max*sizeof(RSS_Object_FlyerTrace)) ;
+
+       if(mTrace==NULL) {
+                   SEND_ERROR("FLYER.iSaveTracePoint@"
+                              "Memory over for trajectory") ;
+                                  return(-1) ;
+                        }
+                              }
+/*------------------------------------------------- Сохранение точки */
+                  
+                  mTrace[mTrace_cnt].x_base    =this->x_base ;
+                  mTrace[mTrace_cnt].y_base    =this->y_base ;
+                  mTrace[mTrace_cnt].z_base    =this->z_base ;
+                  mTrace[mTrace_cnt].a_azim    =this->a_azim ;
+                  mTrace[mTrace_cnt].a_elev    =this->a_elev ;
+                  mTrace[mTrace_cnt].a_roll    =this->a_roll ;
+                  mTrace[mTrace_cnt].x_velocity=this->x_velocity ;
+                  mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
+                  mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
+                         mTrace_cnt++ ;
+
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*           Отображение траектории с передачей контекста           */
+
+  void  RSS_Object_Flyer::iShowTrace_(void)
+
+{
+    strcpy(Context->action, "SHOW_TRACE") ;
+
+  SendMessage(RSS_Kernel::kernel_wnd, 
+                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                         (LPARAM) this->Context       ) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*                     Отображение траектории                        */
+
+  void  RSS_Object_Flyer::iShowTrace(void)
+
+{
+   int  status ;
+   int  i ;
+
+/*-------------------------------- Резервирование дисплейного списка */
+
+     if(mTrace_dlist==0) {
+           mTrace_dlist=RSS_Kernel::display.GetList(2) ;
+                         }
+
+     if(mTrace_dlist==0)  return ;
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetFirstContext("Show") ;
+    while(status==0) {                                              /* CIRCLE.1 */
+
+/*---------------------------------- Настройка контекста отображения */
+
+             glNewList(mTrace_dlist, GL_COMPILE) ;                  /* Открытие группы */
+          glMatrixMode(GL_MODELVIEW) ;
+
+/*--------------------------------------------- Отрисовка траектории */
+
+             glColor4d(GetRValue(mTrace_color)/256., 
+                       GetGValue(mTrace_color)/256.,
+                       GetBValue(mTrace_color)/256., 1.) ;
+
+               glBegin(GL_LINE_STRIP) ;
+
+       for(i=0 ; i<mTrace_cnt ; i++)
+            glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
+
+                  glEnd();
+
+/*----------------------------- Восстановление контекста отображения */
+
+             glEndList() ;                                          /* Закрытие группы */
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetNextContext("Show") ;
+                     }                                              /* CONTINUE.1 */
+/*-------------------------------------------------------------------*/
+
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_Flyer::RSS_Transit_Flyer(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_Flyer::~RSS_Transit_Flyer(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_Flyer::vExecute(void)
+
+{
+   if(!stricmp(action, "SHOW_TRACE"))  ((RSS_Object_Flyer *)object)->iShowTrace() ;
+
+   return(0) ;
 }
 
 

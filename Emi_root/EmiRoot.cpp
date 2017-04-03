@@ -138,9 +138,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
                       hInst=hInstance ;
 
-      sprintf(ClassName, "EmiRoot_Frame_%d", _getpid()) ;
+      RSS_Kernel::show_time_step=0.1 ;
+      RSS_Kernel::calc_time_step=0.1 ;
 
 /*------------------------------- Регистрация класса первичного окна */
+
+      sprintf(ClassName, "EmiRoot_Frame_%d", _getpid()) ;
 
 	FrameWindow.lpszClassName= ClassName ;
 	FrameWindow.hInstance    = hInstance ;
@@ -446,7 +449,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-            SETs(IDC_COMMAND, "@Tests\\Objects.emi") ;
+            SETs(IDC_COMMAND, "@Tests\\Flyers.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -497,7 +500,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*- - - - - - - - - - - - -  Исполнение в контексте потока сообщений */
         if(wParam==_USER_CHANGE_CONTEXT) {
 
-                  ((RSS_Kernel *)lParam)->vChangeContext() ;
+                  ((RSS_Transit *)lParam)->vExecute() ;
 
                                             return(FALSE) ;
                                          }
@@ -1551,6 +1554,11 @@ typedef  struct {
                          " SRAND <Число> -  задание старт-точки генератора, Число>1 \n"
                          " SRAND AUTO    -  перевод старт-точки в автоматический режим \n",
                          &RSS_Module_Main::cSrand    },
+ { "time",      "time",  "# TIME - задание квантов времени процессов моделирования",
+                         " TIME <Число> -  задание единого кванта времени для рассчетов и отображения, в секундах\n"
+                         " TIME/C <Число> -  задание кванта времени рассчетов, в секундах\n"
+                         " TIME/S <Число> -  задание кванта времени отображения, в секундах\n",
+                         &RSS_Module_Main::cTime    },
  {  NULL }
                                                             } ;
 
@@ -1685,7 +1693,7 @@ typedef  struct {
     void  RSS_Module_Main::vShow(char *layer)
 
 {
-    SendMessage(hDialog, WM_USER, _USER_SHOW, (LPARAM)layer) ;
+     SendMessage(hDialog, WM_USER, _USER_SHOW, (LPARAM)layer) ;
 }
 
 
@@ -2146,7 +2154,7 @@ typedef  struct {
 
 {
 #define  _COORD_MAX   3
-#define   _PARS_MAX   4
+#define   _PARS_MAX  10 
 
              char  *pars[_PARS_MAX] ;
              char **xyz ;
@@ -2908,6 +2916,87 @@ typedef  struct {
                        SEND_ERROR("Некорректный формат команды") ;
                }
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции TIME                    */
+/*								    */
+/*        TIME   <Число>                                            */
+/*        TIME/C <Число>                                            */
+/*        TIME/S <Число>                                            */
+
+  int  RSS_Module_Main::cTime(char *cmd) 
+
+{
+#define   _PARS_MAX  10 
+
+             char  *pars[_PARS_MAX] ;
+              int   s_flag ;
+              int   c_flag ;
+           double   value ;
+             char  *end ;
+              int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                        c_flag=0 ;
+                        s_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'c')!=NULL ||
+                   strchr(cmd, 'C')!=NULL   )  c_flag=1 ;
+           else if(strchr(cmd, 's')!=NULL ||
+                   strchr(cmd, 'S')!=NULL   )  s_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+
+       if(c_flag==0 &&
+          s_flag==0   ) {  c_flag=1 ;
+                           s_flag=1 ;  }
+                
+/*----------------------------------------------- Установка значений */
+
+        value=strtod(pars[0], &end) ;
+
+    if(value<=0. ||
+        *end!=0    ) {
+                       SEND_ERROR("Некорректное значение шага времени") ;
+                          return(-1) ;
+                     }
+
+    if(c_flag)  this->kernel->calc_time_step=value ;
+    if(s_flag)  this->kernel->show_time_step=value ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
 
    return(0) ;
 }

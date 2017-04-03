@@ -185,8 +185,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(stricmp(OBJECTS[i]->Type, "Marker"))  continue ;
 
-                PlaceMarker((RSS_Object_Marker *)OBJECTS[i]) ;
-
+           ((RSS_Object_Marker *)OBJECTS[i])->iPlaceMarker() ;
                                     }                               /* ENDLOOP - Перебор маркеров */
 
           status=RSS_Kernel::display.SetNextContext("Show") ;
@@ -360,7 +359,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        entry=strstr(buff, "A_ELEV=") ; object->a_elev=atof(entry+strlen("A_ELEV=")) ;
        entry=strstr(buff, "A_ROLL=") ; object->a_roll=atof(entry+strlen("A_ROLL=")) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                     PlaceMarker_(object) ;
+                     object->iPlaceMarker_() ;
                                                }                    /* END.1 */
 /*-------------------------------------------- Освобождение ресурсов */
 
@@ -387,18 +386,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      *text+="#END\n" ;
 
 /*-------------------------------------------------------------------*/
-}
-
-
-/********************************************************************/
-/*								    */
-/*             Выполнить действие в контексте потока                */
-
-    void  RSS_Module_Marker::vChangeContext(void)
-
-{
-   if(!stricmp(mContextAction, "FORM" ))  FormMarker (mContextObject) ;
-   if(!stricmp(mContextAction, "PLACE"))  PlaceMarker(mContextObject) ;
 }
 
 
@@ -731,7 +718,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   }
 /*------------------------------------------------ Отображение сцены */
 
-                     PlaceMarker_(object) ;
+            object->iPlaceMarker_() ;
 
               this->kernel->vShow("REFRESH") ;
 
@@ -915,8 +902,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Отображение сцены */
 
-                       FormMarker_(object) ;
-                      PlaceMarker_(object) ;
+            object->iFormMarker_() ;
+            object->iPlaceMarker_() ;
 
               this->kernel->vShow("REFRESH") ;
 
@@ -1074,11 +1061,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*--------------------------------------------- Формирование маркера */
 
-                       FormMarker_(object) ;
+                      object->iFormMarker_() ;
 
 /*------------------ Формирование позиционирующего заголовка маркера */
 
-                      PlaceMarker_(object) ;
+                      object->iPlaceMarker_() ;
 
 /*---------------------------------- Введение объекта в общий список */
 
@@ -1107,189 +1094,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
 /********************************************************************/
-/*								    */
-/*           Задание формы маркера с передачей контекста            */
-
-  int  RSS_Module_Marker::FormMarker_(RSS_Object_Marker *marker)
-
-{
-    strcpy(mContextAction, "FORM") ;
-           mContextObject=marker ;
-
-  SendMessage(RSS_Kernel::kernel_wnd, 
-                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
-                         (LPARAM) this                ) ;
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Задание формы маркера                         */
-
-  int  RSS_Module_Marker::FormMarker(RSS_Object_Marker *marker)
-
-{
-  int  status ;
-
-#define   M   marker
-
-/*-------------------------------- Резервирование дисплейного списка */
-
-     if(M->dlist2_idx==0)
-           M->dlist2_idx=RSS_Kernel::display.GetList(1) ;
-
-     if(M->dlist2_idx==0)  return(-1) ;
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetFirstContext("Show") ;
-    while(status==0) {                                              /* CIRCLE.1 */
-
-/*--------------------------------------- Формирование метки маркера */
-
-             glNewList(M->dlist2_idx, GL_COMPILE) ;                 /* Открытие группы */
-          glMatrixMode(GL_MODELVIEW) ;
-//            glEnable(GL_BLEND) ;                                  /* Вкл.смешивание цветов */
-//         glDepthMask(0) ;                                         /* Откл.запись Z-буфера */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Крест */
-    if(!stricmp(M->model, "Cross"  )) {
-
- double  s ;
-                     s=0.5 ;
-
-                     glColor4d(GetRValue(M->color)/256., 
-                               GetGValue(M->color)/256.,
-                               GetBValue(M->color)/256., 1.) ;
-
-                       glBegin(GL_LINES) ;
-                    glVertex3d(-s,  0,  0) ;
-                    glVertex3d( s,  0,  0) ;
-                    glVertex3d( 0, -s,  0) ;
-                    glVertex3d( 0,  s,  0) ;
-                    glVertex3d( 0,  0, -s) ;
-                    glVertex3d( 0,  0,  s) ;
-	                 glEnd();
-                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - Пирамида */
-    if(!stricmp(M->model, "Pyramid")) {
-
- double  s ;
- double  h ;
-
-                     s=0.5 ;
-                     h=1.0 ;
-
-                     glColor4d(GetRValue(M->color)/256., 
-                               GetGValue(M->color)/256.,
-                               GetBValue(M->color)/256., 0.2) ;
-
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( s, -h, -s) ;
-                    glVertex3d(-s, -h, -s) ;
-                    glVertex3d( 0, -h,  s) ;
-	                 glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d( s, -h, -s) ;
-                    glVertex3d(-s, -h, -s) ;
-	                 glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d(-s, -h, -s) ;
-                    glVertex3d( 0, -h,  s) ;
-              	         glEnd();
-                       glBegin(GL_POLYGON) ;
-                    glVertex3d( 0,  0,  0) ;
-                    glVertex3d( 0, -h,  s) ;
-                    glVertex3d( s, -h, -s) ;
-	                 glEnd();
-                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-//         glDepthMask(1) ;                                         /* Вкл.запись Z-буфера */
-//           glDisable(GL_BLEND) ;                                  /* Откл.смешивание цветов */
-             glEndList() ;                                          /* Закрытие группы */
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetNextContext("Show") ;
-                     }                                              /* CONTINUE.1 */
-/*-------------------------------------------------------------------*/
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*           Позиционирование маркера с передачей контекста         */
-
-  int  RSS_Module_Marker::PlaceMarker_(RSS_Object_Marker *marker)
-
-{
-    strcpy(mContextAction, "PLACE") ;
-           mContextObject=marker ;
-
-  SendMessage(RSS_Kernel::kernel_wnd, 
-                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
-                         (LPARAM) this                ) ;
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Позиционирование маркера                      */
-
-  int  RSS_Module_Marker::PlaceMarker(RSS_Object_Marker *marker)
-
-{
-  double  zoom ;  
-     int  status ;
-
-#define   M   marker
-
-/*-------------------------------- Резервирование дисплейного списка */
-
-     if(M->dlist1_idx==0)
-           M->dlist1_idx=RSS_Kernel::display.GetList(0) ;
-
-     if(M->dlist1_idx==0)  return(-1) ;
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetFirstContext("Show") ;
-    while(status==0) {                                              /* CIRCLE.1 */
-
-/*------------------ Формирование позиционирующей последовательности */
-
-             glNewList(M->dlist1_idx, GL_COMPILE) ;                 /* Открытие группы */
-
-          glMatrixMode(GL_MODELVIEW) ;
-
-          glTranslated(M->x_base, M->y_base, M->z_base) ;
-
-                       zoom=RSS_Kernel::display.GetContextPar("Zoom") ;
-                       zoom=zoom/M->size ;
-              glScaled(zoom, zoom, zoom) ;
-
-            glCallList(M->dlist2_idx) ;                             /* Отрисовка маркера */
-
-             glEndList() ;                                          /* Закрытие группы */
-
-/*----------------------------------- Перебор контекстов отображения */
-
-          status=RSS_Kernel::display.SetNextContext("Show") ;
-                     }                                              /* CONTINUE.1 */
-/*-------------------------------------------------------------------*/
-
-  return(0) ;
-}
-
-
-/********************************************************************/
 /********************************************************************/
 /**							           **/
 /**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "МАРКЕР"	           **/
@@ -1305,6 +1109,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
    strcpy(Type, "Marker") ;
+
+    Context        =new RSS_Transit_Marker ;
+    Context->object=this ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
@@ -1426,3 +1233,222 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      return(0) ;
 }
+
+
+/********************************************************************/
+/*								    */
+/*           Задание формы маркера с передачей контекста            */
+
+  int  RSS_Object_Marker::iFormMarker_(void)
+
+{
+       strcpy(Context->action, "FORM") ;
+
+  SendMessage(RSS_Kernel::kernel_wnd, 
+                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                         (LPARAM) this->Context       ) ;
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Задание формы маркера                         */
+
+  int  RSS_Object_Marker::iFormMarker(void)
+
+{
+  int  status ;
+
+
+/*-------------------------------- Резервирование дисплейного списка */
+
+     if(dlist2_idx==0)  dlist2_idx=RSS_Kernel::display.GetList(1) ;
+
+     if(dlist2_idx==0)  return(-1) ;
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetFirstContext("Show") ;
+    while(status==0) {                                              /* CIRCLE.1 */
+
+/*--------------------------------------- Формирование метки маркера */
+
+             glNewList(dlist2_idx, GL_COMPILE) ;                    /* Открытие группы */
+          glMatrixMode(GL_MODELVIEW) ;
+//            glEnable(GL_BLEND) ;                                  /* Вкл.смешивание цветов */
+//         glDepthMask(0) ;                                         /* Откл.запись Z-буфера */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Крест */
+    if(!stricmp(model, "Cross"  )) {
+
+ double  s ;
+                     s=0.5 ;
+
+                     glColor4d(GetRValue(color)/256., 
+                               GetGValue(color)/256.,
+                               GetBValue(color)/256., 1.) ;
+
+                       glBegin(GL_LINES) ;
+                    glVertex3d(-s,  0,  0) ;
+                    glVertex3d( s,  0,  0) ;
+                    glVertex3d( 0, -s,  0) ;
+                    glVertex3d( 0,  s,  0) ;
+                    glVertex3d( 0,  0, -s) ;
+                    glVertex3d( 0,  0,  s) ;
+	                 glEnd();
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - Пирамида */
+    if(!stricmp(model, "Pyramid")) {
+
+ double  s ;
+ double  h ;
+
+                     s=0.5 ;
+                     h=1.0 ;
+
+                     glColor4d(GetRValue(color)/256., 
+                               GetGValue(color)/256.,
+                               GetBValue(color)/256., 0.2) ;
+
+                       glBegin(GL_POLYGON) ;
+                    glVertex3d( s, -h, -s) ;
+                    glVertex3d(-s, -h, -s) ;
+                    glVertex3d( 0, -h,  s) ;
+	                 glEnd();
+                       glBegin(GL_POLYGON) ;
+                    glVertex3d( 0,  0,  0) ;
+                    glVertex3d( s, -h, -s) ;
+                    glVertex3d(-s, -h, -s) ;
+	                 glEnd();
+                       glBegin(GL_POLYGON) ;
+                    glVertex3d( 0,  0,  0) ;
+                    glVertex3d(-s, -h, -s) ;
+                    glVertex3d( 0, -h,  s) ;
+              	         glEnd();
+                       glBegin(GL_POLYGON) ;
+                    glVertex3d( 0,  0,  0) ;
+                    glVertex3d( 0, -h,  s) ;
+                    glVertex3d( s, -h, -s) ;
+	                 glEnd();
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+//         glDepthMask(1) ;                                         /* Вкл.запись Z-буфера */
+//           glDisable(GL_BLEND) ;                                  /* Откл.смешивание цветов */
+             glEndList() ;                                          /* Закрытие группы */
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetNextContext("Show") ;
+                     }                                              /* CONTINUE.1 */
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*           Позиционирование маркера с передачей контекста         */
+
+  int  RSS_Object_Marker::iPlaceMarker_(void)
+
+{
+       strcpy(Context->action, "PLACE") ;
+
+  SendMessage(RSS_Kernel::kernel_wnd, 
+                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                         (LPARAM) this->Context       ) ;
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Позиционирование маркера                      */
+
+  int  RSS_Object_Marker::iPlaceMarker(void)
+
+{
+  double  zoom ;  
+     int  status ;
+
+
+/*-------------------------------- Резервирование дисплейного списка */
+
+     if(dlist1_idx==0)  dlist1_idx=RSS_Kernel::display.GetList(0) ;
+
+     if(dlist1_idx==0)  return(-1) ;
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetFirstContext("Show") ;
+    while(status==0) {                                              /* CIRCLE.1 */
+
+/*------------------ Формирование позиционирующей последовательности */
+
+             glNewList(dlist1_idx, GL_COMPILE) ;                    /* Открытие группы */
+
+          glMatrixMode(GL_MODELVIEW) ;
+
+          glTranslated(x_base, y_base, z_base) ;
+
+                       zoom=RSS_Kernel::display.GetContextPar("Zoom") ;
+                       zoom=zoom/size ;
+              glScaled(zoom, zoom, zoom) ;
+
+            glCallList(dlist2_idx) ;                                /* Отрисовка маркера */
+
+             glEndList() ;                                          /* Закрытие группы */
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetNextContext("Show") ;
+                     }                                              /* CONTINUE.1 */
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_Marker::RSS_Transit_Marker(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_Marker::~RSS_Transit_Marker(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_Marker::vExecute(void)
+
+{
+   if(!stricmp(action, "FORM" ))  ((RSS_Object_Marker *)object)->iFormMarker() ;
+   if(!stricmp(action, "PLACE"))  ((RSS_Object_Marker *)object)->iPlaceMarker() ;
+
+   return(0) ;
+}
+
+

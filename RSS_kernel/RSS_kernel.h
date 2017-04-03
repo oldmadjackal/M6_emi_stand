@@ -155,6 +155,9 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 
     static          int   srand_fixed ;             /* Флаг использования фиксированного генератора случайных чисел */
 
+    static       double   calc_time_step ;          /* Квант процессов моделирования по времени */ 
+    static       double   show_time_step ;          /* Частота отображения сцены по времени */ 
+
     static          int   debug_flag ;
     static         char   debug_list[1024] ;        /* Список отлаживаемых модулей */ 
    
@@ -216,6 +219,8 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
      virtual        void  vWriteData    (RSS_Context *,    /* Записать данные контекста модуля в строку */
                                          std::string * ) ;
      virtual        void  vReleaseData  (RSS_Context *) ;  /* Освободить ресурсы данных контекста модуля */
+
+     virtual      double  vGetTime      (void) ;           /* Системное время */
 
     public:
 

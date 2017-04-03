@@ -5,6 +5,7 @@
 #include <malloc.h>
 #include <time.h>
 #include <errno.h>
+#include <sys\timeb.h>
 
 #include <windows.h>
 
@@ -64,6 +65,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  RSS_KERNEL_API   RSS_Display   RSS_Kernel::display ;
 
  RSS_KERNEL_API           int   RSS_Kernel::srand_fixed ;
+
+ RSS_KERNEL_API        double   RSS_Kernel::calc_time_step ;
+ RSS_KERNEL_API        double   RSS_Kernel::show_time_step ;
 
  RSS_KERNEL_API           int   RSS_Kernel::debug_flag           =  0 ;
  RSS_KERNEL_API          char   RSS_Kernel::debug_list[1024] ;
@@ -587,6 +591,23 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 
    return(C[j]) ;
 }
+
+
+/********************************************************************/
+/*								    */
+/*                          Системное время                         */
+
+     double  RSS_Kernel::vGetTime(void)
+
+{
+   struct _timeb  time_ms ;
+
+
+        _ftime(&time_ms) ;
+
+  return(time_ms.time+time_ms.millitm/1000.) ;
+}
+
 
 /********************************************************************/
 /********************************************************************/
