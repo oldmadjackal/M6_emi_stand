@@ -967,17 +967,10 @@ typedef  struct {
 /*- - - - - - - - - - - - - - - - - Задание SHIFT-стрелочной команды */
    if(strstr(command, ">>")!=NULL) {
 
-    if(isdigit(command[2])    ||
-               command[2]=='.'  ){
-                                strncpy(arrow_SHT_step, command+2, sizeof(arrow_SHT_step)) ;
-                                   SETs(IDC_STEP_ARROW_ALT, arrow_SHT_step) ;
-                                 }
-    else                         {
-     if(!strcmp(command, ">>"))         arrow_SHT_cmd[0]=0 ;
-     else                       strncpy(arrow_SHT_cmd, command, sizeof(arrow_SHT_cmd)) ;
+         if(!strcmp(command, ">>"))          arrow_SHT_cmd[0]=0 ;
+         else                        strncpy(arrow_SHT_cmd, command, sizeof(arrow_SHT_cmd)) ;
 
-                                   SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
-                                 }
+                                        SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
 
                                          EmiRoot_system() ;    
                                             continue ;
@@ -985,19 +978,11 @@ typedef  struct {
 /*- - - - - - - - - - - - - - - - - - - - Задание стрелочной команды */
    if(strstr(command, ">")!=NULL) {
 
-    if(isdigit(command[1])    ||
-               command[1]=='.'  ){
-                                strncpy(arrow_step, command+1, sizeof(arrow_step)) ;
-                                   SETs(IDC_STEP_ARROW, arrow_step) ;
-                                   SETs(IDC_STEP_ARROW_ALT, arrow_SHT_step) ;
-                                 }
-    else                         {
      if(!strcmp(command, ">" ))         arrow_cmd[0]=0 ;
      else                       strncpy(arrow_cmd, command, sizeof(arrow_cmd)) ;
 
-                                   SETs(IDC_CMD_ARROW, arrow_cmd) ;
+                                   SETs(IDC_CMD_ARROW,     arrow_cmd) ;
                                    SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
-                                 }
 
                                            EmiRoot_system() ;    
                                               continue ;

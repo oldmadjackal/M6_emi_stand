@@ -136,6 +136,11 @@
    virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */
    virtual             void  vGetFeature     (RSS_Feature *) ;
 
+                        int  iAngleInCheck   (double,               /* Проверка попадания угла в диапазон */
+                                              double, double) ;
+                        int  iReplaceText    (char *, char *,       /* Замена текстового фрагмента в строке */
+                                                      char *, int) ;
+
 			     RSS_Object      () ;                   /* Конструктор */
 			    ~RSS_Object      () ;                   /* Деструктор */
 

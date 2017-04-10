@@ -136,10 +136,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " VELOCITY <Имя> <X-скорость> <Y-скорость> <Z-скорость>\n"
                     "   Задание проекций скорости объекта",
                     &RSS_Module_Flyer::cVelocity },
+ { "control",  "c", "#CONTROL - управление объектом",
+                    " CONTROL <Имя> <Угол крена> [<Перегрузка>]\n"
+                    "   Задание полного набора параметров управления\n"
+                    " CONTROL/G <Имя> <Перегрузка>\n"
+                    "   Задание полного набора параметров управления\n"
+                    " CONTROL> <Имя> [<Шаг крена> [<Шаг ускорения>]]\n"
+                    "   Управление стрелочками\n",
+                    &RSS_Module_Flyer::cControl },
+ { "program",  "p", "#PROGRAM - задание программы управления объектом",
+                    " PROGRAM <Имя> <Имя файла программы>\n"
+                    "   Задание программы управления объектом\n",
+                    &RSS_Module_Flyer::cProgram },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n"
-                    " TRACE/A <Имя> <Схема управления> [<Длительность>]\n"
+                    " TRACE/P <Имя> <Схема управления> [<Длительность>]\n"
                     "   Трассировка траектории объекта для схемы управления\n",
                     &RSS_Module_Flyer::cTrace },
  {  NULL }
@@ -163,6 +175,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     identification="Flyer_object" ;
 
         mInstrList=RSS_Module_Flyer_InstrList ;
+
+        a_step=15. ;
+        g_step= 1. ;
 }
 
 
@@ -545,14 +560,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "     X % 8.2lf\r\n" 
                     "     Y % 8.2lf\r\n" 
                     "     Z % 8.2lf\r\n"
+                    "G-ctrl % 8.2lf\r\n" 
                     "\r\n",
                         object->Name, object->Type, 
                         object->x_base, object->y_base, object->z_base,
                         object->a_azim, object->a_elev, object->a_roll,
-                   sqrt(object->x_velocity*object->x_velocity+
-                        object->y_velocity*object->y_velocity+
-                        object->z_velocity*object->z_velocity ),
-                        object->x_velocity, object->y_velocity, object->z_velocity
+                        object->v_abs,
+                        object->x_velocity, object->y_velocity, object->z_velocity,
+                        object->g_ctrl
                     ) ;
 
            info=text ;
@@ -938,9 +953,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перерасчет скорости */
 
        Velo_Matrix.LoadZero   (3, 1) ;
-       Velo_Matrix.SetCell    (2, 0, sqrt(object->x_velocity*object->x_velocity+
-                                          object->y_velocity*object->y_velocity+
-                                          object->z_velocity*object->z_velocity )) ;
+       Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
         Sum_Matrix.Load3d_azim(-object->a_azim) ;
        Oper_Matrix.Load3d_elev(-object->a_elev) ;
         Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
@@ -1045,9 +1058,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------------------- Пропись скорости */
 /*- - - - - - - - - - - - - - - - - - - Абсолютное значение скорости */
    if(coord_cnt==1) {
+                          object->v_abs=coord[0] ;
 
                 Velo_Matrix.LoadZero   (3, 1) ;
-                Velo_Matrix.SetCell    (2, 0, coord[0]) ;
+                Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
 
                  Sum_Matrix.Load3d_azim(-object->a_azim) ;
                 Oper_Matrix.Load3d_elev(-object->a_elev) ;
@@ -1063,6 +1077,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        object->x_velocity=coord[0] ;
                        object->y_velocity=coord[1] ;
                        object->z_velocity=coord[2] ;
+
+                       object->v_abs     =sqrt(object->x_velocity*object->x_velocity+
+                                               object->y_velocity*object->y_velocity+
+                                               object->z_velocity*object->z_velocity ) ;
                     }
 /*-------------------------------------------------------------------*/
 
@@ -1075,10 +1093,234 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции CONTROL                 */
+/*								    */
+/*       CONTROL   <Имя> <Угол крена> [<Перегрузка>]                */
+/*       CONTROL/G <Имя> <Перегрузка>                               */
+/*       CONTROL>  <Имя> <Код стрелочки>                            */
+/*       CONTROL>> <Имя> <Код стрелочки>                            */
+
+  int  RSS_Module_Flyer::cControl(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+             char **xyz ;
+           double   coord[_COORD_MAX] ;
+              int   coord_cnt ;
+           double   inverse ;
+ RSS_Object_Flyer  *object ;
+              int   xyz_flag ;          /* Флаг режима одной координаты */
+              int   g_flag ;            /* Флаг задания перегрузки */
+              int   s_flag ;            /* Флаг задания шагов изменения */
+              int   arrow_flag ;        /* Флаг стрелочного режима */
+             char  *arrows ;
+             char  *error ;
+             char  *end ;
+              int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                        xyz_flag=0 ;
+                          g_flag=0 ;
+                          s_flag=0 ;
+                      arrow_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'g')!=NULL ||
+                   strchr(cmd, 'G')!=NULL   )  g_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
+
+  else if(*cmd=='>') {
+                           arrow_flag=1 ;
+
+                          cmd=strchr(cmd, ' ') ;
+                       if(cmd==NULL)  return(0) ;
+                          cmd++ ;
+                     } 
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+                  inverse=   1. ; 
+
+/*------------------------------------- Обработка стрелочного режима */
+
+    if(arrow_flag) {                        
+                         arrows=pars[1] ;
+
+      if(strstr(arrows, "left" )!=NULL) {  xyz_flag='R' ;  inverse= 1. ;  }
+      if(strstr(arrows, "right")!=NULL) {  xyz_flag='R' ;  inverse=-1. ;  }  
+
+      if(strstr(arrows, "up"   )!=NULL) {  xyz_flag='G' ;  inverse=-1. ;  }
+      if(strstr(arrows, "down" )!=NULL) {  xyz_flag='G' ;  inverse= 1. ;  }
+           
+                          xyz=&pars[2] ;   
+                   }
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: CONTROL <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------------- Разбор координат */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение координаты") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указана координата или ее приращение" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*----------------------------------- Задание траекторной перегрузки */
+
+   if(g_flag) {
+                  object->g_ctrl=coord[0] ;
+
+                      return(0) ;
+              }
+/*------------------------------------------------ Пропись координат */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
+   if(arrow_flag) {
+
+          if(xyz_flag=='G')   object->g_ctrl+=inverse*this->g_step ;
+     else if(xyz_flag=='R')   object->a_roll+=inverse*this->a_step ;
+                  }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
+   else           {
+                               object->a_roll=coord[0] ;
+              if(coord_cnt>1)  object->g_ctrl=coord[1] ;
+                  }
+/*- - - - - - - - - - - - - - - - - - - - - -  Нормализация значений */
+     while(object->a_roll> 180.)  object->a_roll-=360. ;
+     while(object->a_roll<-180.)  object->a_roll+=360. ;
+
+/*---------------------------------------------- Перенос на Свойства */
+
+   for(i=0 ; i<object->Features_cnt ; i++)
+     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
+                                                    object->a_elev, 
+                                                    object->a_roll ) ;
+
+/*------------------------------------------------------ Отображение */
+
+                this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции PROGRAM                 */
+/*								    */
+/*      PROGRAM <Имя> <Файл программы>                              */
+
+  int  RSS_Module_Flyer::cProgram(char *cmd)
+
+{
+#define   _PARS_MAX   4
+ RSS_Object_Flyer *object ;
+             char *pars[_PARS_MAX] ;
+             char *name ;
+             char *end ;
+              int  status ;
+              int  i ;
+
+/*-------------------------------------- Дешифровка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя объекта.\n"
+                                      "Например: PROGRAM <Имя> ...") ;
+                                     return(-1) ;
+                         }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*--------------------------------------- Считывание данных из файла */
+
+  if(pars[1]==NULL) {
+                       SEND_ERROR("Не задано имя файла программы.\n"
+                                  "Например: PROGRAM <Имя> <файл программы>") ;
+                                     return(-1) ;
+                    }
+
+      status=iReadProgram(object, pars[1]) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
+
+   return(status) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
-/*       TRACE/A <Имя> <Схема управления> [<Длительность>]          */
+/*       TRACE/P <Имя> <Схема управления>                           */
 
   int  RSS_Module_Flyer::cTrace(char *cmd)
 
@@ -1089,13 +1331,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              char  *pars[_PARS_MAX] ;
              char  *name ;
            double   trace_time ;
-           double   time_0 ;     /* Стартовое время расчета */ 
-           double   time_1 ;     /* Текущее время */ 
-           double   time_c ;     /* Абсолютное время расчета */ 
-           double   time_s ;     /* Последнее время отрисовки */ 
-           double   time_w ;     /* Время ожидания */ 
+           double   time_0 ;        /* Стартовое время расчета */ 
+           double   time_1 ;        /* Текущее время */ 
+           double   time_c ;        /* Абсолютное время расчета */ 
+           double   time_s ;        /* Последнее время отрисовки */ 
+           double   time_w ;        /* Время ожидания */ 
  RSS_Object_Flyer  *object ;
-              int   auto_flag ;  /* Режим автоматического управления */ 
+              int   program_flag ;  /* Режим программного управления */ 
              char  *end ;
               int   i ;
 
@@ -1103,7 +1345,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                      trace_time=0. ;
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
-                      auto_flag=0 ;
+                   program_flag=0 ;
 
        if(*cmd=='/' ||
           *cmd=='+'   ) {
@@ -1117,8 +1359,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               }
                   *end=0 ;
 
-                if(strchr(cmd, 'a')!=NULL ||
-                   strchr(cmd, 'A')!=NULL   )  auto_flag=1 ;
+                if(strchr(cmd, 'p')!=NULL ||
+                   strchr(cmd, 'P')!=NULL   )  program_flag=1 ;
 
                            cmd=end+1 ;
                         }
@@ -1136,9 +1378,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                      name=pars[0] ;
 
-      if(auto_flag) {
-                    }
-      else          {
+      if(program_flag) {
+
+           if( pars[1]==NULL ||
+              *pars[1]==  0    ) {
+                                     SEND_ERROR("не задана программа управления") ;
+                                         return(-1) ;
+                                 }
+                       }
+      else             {
 
            if( pars[1]!=NULL &&
               *pars[1]!=  0    ) {
@@ -1152,7 +1400,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        trace_time=60. ;
                                          SEND_ERROR("Время трассировки - 60 секунд") ;
                                  }
-                    }
+                       }
 /*------------------------------------------- Контроль имени объекта */
 
     if(name==NULL) {                                                /* Если имя не задано... */
@@ -1164,19 +1412,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=FindObject(name) ;                                    /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
-/*---------------------------------------- Контроль схемы управления */
+/*------------------------------------ Контроль программы управления */
 
+                  object->program=NULL ;
+
+    if(program_flag) {
+
+        for(i=0 ; i<_PROGRAMS_MAX ; i++)
+          if(object->programs[i]!=NULL)
+           if(!stricmp(object->programs[i]->name, pars[1])) {
+                    object->program=object->programs[i] ;
+                             break ;
+                                                            } 
+
+      if(object->program==NULL) {
+            SEND_ERROR("Неизвестная программа - воспользуйтесь командой PROGRAM для загрузки файла программы") ;
+                                     return(-1) ;
+                                }
+
+                memset(&object->p_controls, 0, sizeof(object->p_controls)) ;
+                strcpy( object->p_controls.used, ";") ;
+                        object->p_frame=0 ;
+                     }
 /*------------------------------------------------------ Трассировка */
 
               time_0=this->kernel->vGetTime() ;
               time_c=0. ;
               time_s=0. ;
 
+         object->iSaveTracePoint("CLEAR") ;
+
     do {                                                            /* CIRCLE.1 - Цикл трассировки */
            if(this->kernel->stop)  break ;                          /* Если внешнее прерывание поиска */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Отработка времени */
               time_c+=RSS_Kernel::calc_time_step ;
               time_1=this->kernel->vGetTime() ;
+
+         if(object->program==NULL)
            if(time_1-time_0>trace_time)  break ;                    /* Если время трассировки закончилось */
 
               time_w=time_c-(time_1-time_0) ;
@@ -1184,7 +1456,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
          object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c) ;
-         object->iSaveTracePoint() ;
+         object->iSaveTracePoint("ADD") ;
 /*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
          object->iShowTrace_() ;
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
@@ -1422,6 +1694,393 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
+/*********************************************************************/
+/*								     */
+/*              Считывание файла описания программы                  */
+/*								     */
+/*  PROGRAM <Имя программы>                                          */
+/*  OBJECT <Допустимый тип объекта>                                  */
+/*								     */
+/*  Спецификация закона движения:				     */
+/*    <Спецификатор-1> <Спецификатор-2> ... <Спецификатор-N>         */
+/*      T=<значение>      - метка времени    			     */
+/*   координаты объекта:                                             */
+/*      X=<значение>                                                 */
+/*      Y=<значение>                                                 */
+/*      Z=<значение>                                                 */
+/*   ориентация объекта (азимут, возвышение, крен)                   */
+/*      A=<значение>                                                 */
+/*      E=<значение>                                                 */
+/*      R=<значение>                                                 */
+/*   скорость изменения ориентация объекта (азимут, возвышение, крен)*/
+/*     DA=<скорость>[:<до значения>]                                 */
+/*     DE=<скорость>[:<до значения>]                                 */
+/*     DR=<скорость>[:<до значения>]                                 */
+/*   перегрузка маневра                                              */
+/*      G=<значение>                                                 */
+/*   скорость изменения перегрузки маневра                           */
+/*     DG=<скорость>[:<до значения>]                                 */
+/*   скорость                                                        */
+/*      V=<значение>                                                 */
+/*   ускорение                                                       */
+/*     DV=<ускорение>[:<до значения>]                                */
+
+  int  RSS_Module_Flyer::iReadProgram(RSS_Object_Flyer *object, char *path)
+{
+                    FILE *file ;
+ RSS_Object_FlyerProgram *program ;
+  RSS_Object_FlyerPFrame  frame ;
+                    char  text[1024] ;
+                    char  error[1024] ;
+                    char *words[20] ;
+                    char *name ;
+                    char *data ;
+                  double  value ;
+                  double  target ;
+                     int  target_flag ;
+                    char *end ;
+                     int  row ;
+                     int  n ;
+                     int  i ;
+
+/*--------------------------------------------------- Открытие файла */
+
+       file=fopen(path, "rt") ;
+    if(file==NULL) {
+                          sprintf(error, "Ошибка %d открытия файла %s", errno, path) ;
+                       SEND_ERROR(error) ;
+                                       return(-1) ;
+                   }
+/*------------------------------------------------ Считывание данных */
+
+                      row=0 ;
+
+   while(1) {                                                       /* CIRCLE.1 - Построчно читаем файл */
+
+/*-------------------------------------- Считывание очередной строки */
+
+                      row++ ;
+
+                      memset(text, 0, sizeof(text)) ;
+                   end=fgets(text, sizeof(text)-1, file) ;          /* Считываем строку */
+                if(end==NULL)  break ;
+
+            if(text[0]==';')  continue ;                            /* Проходим комментарий */
+
+               end=strchr(text, '\n') ;                             /* Удаляем символ конца строки */
+            if(end!=NULL)  *end=0 ;
+               end=strchr(text, '\r') ;
+            if(end!=NULL)  *end=0 ;
+
+/*---------------------------------- Обработка спецификатора PROGRAM */
+
+#define  _KEY_WORD  "PROGRAM "
+      if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
+
+               end=text+strlen(_KEY_WORD) ;
+            if(*end==0) {
+                          sprintf(error, "Строка %d - оператор PROGRAM не содержит имя программы", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }  
+
+               program=NULL ;
+
+        do {
+
+         for(i=0 ; i<_PROGRAMS_MAX ; i++)
+           if(object->programs[i]!=NULL)
+            if(!stricmp(object->programs[i]->name, end)) {
+                                                            program=object->programs[i] ;
+                                                               break ;
+                                                         }
+
+            if(program!=NULL)  break ;
+
+         for(i=0 ; i<_PROGRAMS_MAX ; i++)
+            if(object->programs[i]==NULL) {
+                                             program    =new RSS_Object_FlyerProgram ;
+                                     object->programs[i]=program ;        
+                                             break ;
+                                          }
+           } while(0) ;  
+
+            if(program==NULL) {
+                          sprintf(error, "Строка %d - количество программ для объекта превышает допустимый предел - %d", row, _PROGRAMS_MAX) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                              }
+
+               strncpy(program->name, end, sizeof(program->name)-1) ;
+                       program->frames_cnt=0 ;
+
+                                       continue ;
+                                                       }
+#undef   _KEY_WORD
+
+/*----------------------------------- Обработка спецификатора OBJECT */
+
+#define  _KEY_WORD  "OBJECT "
+      if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
+
+               end=text+strlen(_KEY_WORD) ;
+            if(*end==0) {
+                          sprintf(error, "Строка %d - оператор OBJECT не содержит тип объекта", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }  
+
+            if(stricmp(end, "Flyer")) {
+                          sprintf(error, "Строка %d - программа не предназначена для объектов данного типа", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                                      }
+
+                                       continue ;
+                                                       }
+#undef   _KEY_WORD
+
+/*------------------------------------------- Разбор строки на слова */
+
+            if(program==NULL) {
+                                sprintf(error, "Строка %d - программа должна начинаться с оператора PROGRAM", row) ;
+                             SEND_ERROR(error) ;
+                                  return(-1) ;
+                              }
+        
+           memset(words, 0, sizeof(words)) ;
+
+                   i = 0 ;
+             words[i]=strtok(text, " \t") ;
+
+       while(words[i]!=NULL && i<30) {
+                   i++ ;
+             words[i]=strtok(NULL, " \t") ;
+                                    }
+/*---------------------------------------------- Формирование записи */
+
+          memset(&frame, 0, sizeof(frame)) ;
+
+          strcpy( frame.used, ";") ;
+
+       for(i=0 ; i<30 ; i++) {
+                                 if(words[i]==NULL)  break ;
+
+             end=strchr(words[i], '=') ;
+          if(end==NULL) {
+                             sprintf(error, "Строка %d - в спецификаторе %d отсутствует символ разделитель '='", row, i+1) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+            *end=0 ;
+
+              name=words[i] ;
+              data=end+1 ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Метка времени */
+          if(!stricmp(name, "T")) {
+
+               frame.t=strtod(data, &end) ;
+            if(*end!=0) {
+                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+                                  }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Координаты объекта */
+          else
+          if(!stricmp(name, "X") ||
+             !stricmp(name, "Y") ||
+             !stricmp(name, "Z")   ) {
+
+               value=strtod(data, &end) ;
+            if(*end!=0) {
+                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+
+            if(!stricmp(name, "X"))  frame.x=value ;
+            if(!stricmp(name, "Y"))  frame.y=value ;
+            if(!stricmp(name, "Z"))  frame.z=value ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+                                     }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Ориентация объекта */
+          else
+          if(!stricmp(name, "A") ||
+             !stricmp(name, "E") ||
+             !stricmp(name, "R")   ) {
+
+               value=strtod(data, &end) ;
+            if(*end!=0) {
+                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+
+            if(!stricmp(name, "A"))  frame.a=value ;
+            if(!stricmp(name, "E"))  frame.e=value ;
+            if(!stricmp(name, "R"))  frame.r=value ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+                                     }
+/*- - - - - - - - - - - - - - Скорость изменения ориентации объекта */
+          else
+          if(!stricmp(name, "DA") ||
+             !stricmp(name, "DE") ||
+             !stricmp(name, "DR")   ) {
+
+                             target_flag= 0 ;
+                              value     =strtod(data, &end) ;
+            if(*end==':') {
+                             target     =strtod(end+1, &end) ;
+                             target_flag= 1  ;
+                          }
+
+            if(*end!=0) {
+                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }
+
+            if(!stricmp(name, "DA"))  frame.d_a=value ;
+            if(!stricmp(name, "DE"))  frame.d_e=value ;
+            if(!stricmp(name, "DR"))  frame.d_r=value ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+
+            if(target_flag==0)  continue ; 
+
+                        name[0]='T' ;
+
+            if(!stricmp(name, "TA"))  frame.t_a=target ;
+            if(!stricmp(name, "TE"))  frame.t_e=target ;
+            if(!stricmp(name, "TR"))  frame.t_r=target ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+
+                                      }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Перегрузка маневра */
+          else
+          if(!stricmp(name, "G")) {
+
+               value=strtod(data, &end) ;
+            if(*end!=0) {
+                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+
+                                      frame.g=value ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+                                     }
+/*- - - - - - - - - - - - - -  Скорость изменения перегрузка маневра */
+          else
+          if(!stricmp(name, "DG")) {
+
+                             target_flag= 0 ;
+                              value     =strtod(data, &end) ;
+            if(*end==':') {
+                             target     =strtod(end+1, &end) ;
+                             target_flag= 1  ;
+                          }
+
+            if(*end!=0) {
+                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }
+
+                                      frame.d_g=value ;
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+
+            if(target_flag==0)  continue ;
+
+                                      frame.t_g=target ;
+                               strcat(frame.used, "TG;") ;
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Скорость */
+          else
+          if(!stricmp(name, "V")) {
+
+               value=strtod(data, &end) ;
+            if(*end!=0) {
+                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+                        }
+
+                                      frame.v=value ;
+
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+                                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Ускорение */
+          else
+          if(!stricmp(name, "DV")) {
+
+                             target_flag= 0 ;
+                              value     =strtod(data, &end) ;
+            if(*end==':') {
+                             target     =strtod(end+1, &end) ;
+                             target_flag= 1  ;
+                          }
+
+            if(*end!=0) {
+                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }
+
+                                      frame.d_v=value ;
+                               strcat(frame.used, name) ;
+                               strcat(frame.used, ";" ) ;
+
+            if(target_flag==0)  continue ;
+
+                                      frame.t_v=target ;
+                               strcat(frame.used, "TV;") ;
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - Неизвестный спецификатор */
+          else                    {
+
+                             sprintf(error, "Строка %d - неизвестный спецификатор %s", row, name) ;
+                          SEND_ERROR(error) ;
+                                return(-1) ;
+
+                                  } 
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                             }
+/*--------------------------------------- Сохранение кадра программы */
+
+       if(program->frames_cnt>=_PFRAMES_MAX) {
+               sprintf(error, "Строка %d - количество кадров программы превышает допустимый предел - %d", row, _PFRAMES_MAX) ;
+            SEND_ERROR(error) ;
+                  return(-1) ;
+                                             }
+
+       memcpy(&program->frames[program->frames_cnt], &frame, sizeof(frame)) ;
+                               program->frames_cnt++ ;
+
+/*-------------------------------------------------------------------*/
+            }                                                       /* CONTINUE.1 */
+/*--------------------------------------------------- Закрытие файла */
+
+                fclose(file) ;
+
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
 /********************************************************************/
 /********************************************************************/
 /**							           **/
@@ -1445,19 +2104,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-      x_base    =0 ;
-      y_base    =0 ;
-      z_base    =0 ;
-      a_azim    =0 ;
-      a_elev    =0 ;
-      a_roll    =0 ;
-      x_velocity=0 ;
-      y_velocity=0 ;
-      z_velocity=0 ;
+      x_base    = 0. ;
+      y_base    = 0. ;
+      z_base    = 0. ;
+      a_azim    = 0. ;
+      a_elev    = 0. ;
+      a_roll    = 0. ;
+      x_velocity= 0. ;
+      y_velocity= 0. ;
+      z_velocity= 0. ;
+      v_abs     = 0. ;
+      g_ctrl    = 0. ;
+
+      r_ctrl    = 0. ;
+      m_ctrl    =NULL ;
+
+    memset(programs, 0, sizeof(programs)) ;
 
       mTrace      =NULL ;
       mTrace_cnt  =  0 ;  
-      mTrace_max  =  0 ;  
+      mTrace_max  =  0 ; 
       mTrace_color=  0 ;  
       mTrace_dlist=  0 ;  
 }
@@ -1485,6 +2151,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
   int  i ;
 
+
+   for(i=0 ; i<_PROGRAMS_MAX ; i++)  
+     if(programs[i]!=NULL) {
+                              delete programs[i] ;
+                                     programs[i]=NULL ;
+                           }
 
   if(this->mTrace!=NULL) {
                              free(this->mTrace) ;
@@ -1551,13 +2223,375 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vCalculate(double t1, double t2)
 {
+  Matrix2d  Sum_Matrix ;
+  Matrix2d  Oper_Matrix ;
+  Matrix2d  Vect_Matrix ;  
+  Matrix2d  Gold_Matrix ;  
+  Matrix2d  Gnew_Matrix ;  
+    double  r ;             /* Радиус маневра */
+    double  a ;             /* Ометываемый угол маневра */
+    double  s1, s2 ;
+    double  x0, y0, z0 ;    /* Центр маневра */
+    double  x1, y1, z1 ;    /* Точка синуса ометываемого угла маневра */
+    double  n1_azim, n1_elev ;
+    double  n2_azim, n2_elev ;
+    double  x2, y2, z2 ;    /* Точка синуса ометываемого угла маневра */
+    double  k ;
+
+/*---------------------------------------------- Отработка программы */
+
+   if(program!=NULL)  iExecuteProgram(t1, t2) ;
+
 /*---------------------------------------------- Постоянная скорость */
 
-                   x_base+=x_velocity*(t2-t1) ;
-                   y_base+=y_velocity*(t2-t1) ;
-                   z_base+=z_velocity*(t2-t1) ;
+   if(this->g_ctrl==0) {
+                          x_base+=x_velocity*(t2-t1) ;
+                          y_base+=y_velocity*(t2-t1) ;
+                          z_base+=z_velocity*(t2-t1) ;
+                       }
+/*-------------------------------------------- Постоянная перегрузка */
 
+   else                {
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Параметры маневра */
+                           r      = v_abs*v_abs/g_ctrl ;
+                           a      =(360.*v_abs*(t2-t1))/(2.*_PI*r) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Матрица преобразования */
+                 Sum_Matrix.Load3d_azim(-a_azim) ;
+                Oper_Matrix.Load3d_elev(-a_elev) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                Oper_Matrix.Load3d_roll(-a_roll) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+
+    if(r_ctrl!=a_roll ||
+       m_ctrl==  NULL   ) {
+                  if(m_ctrl==NULL) m_ctrl=new Matrix2d ;
+ 
+                             m_ctrl->Copy(&Sum_Matrix) ;
+                             r_ctrl=a_roll ;
+                             a_ctrl=   0. ;
+                          }
+/*- - - - - - - - - - - - - - - - - - - - - -  Расчет конечной точки */
+                         x1=0 ;
+                         y1=r-r*cos(a*_GRD_TO_RAD) ;
+                         z1=  r*sin(a*_GRD_TO_RAD) ;
+
+                Vect_Matrix.LoadZero(3, 1) ;
+                Vect_Matrix.SetCell (0, 0, x1) ;
+                Vect_Matrix.SetCell (1, 0, y1) ;
+                Vect_Matrix.SetCell (2, 0, z1) ;
+
+                Vect_Matrix.LoadMul (&Sum_Matrix, &Vect_Matrix) ;
+
+                    x_base+=Vect_Matrix.GetCell(0, 0) ;
+                    y_base+=Vect_Matrix.GetCell(1, 0) ;
+                    z_base+=Vect_Matrix.GetCell(2, 0) ;
+/*- - - - - - - - - - - - - - - - - - - - - Расчет проекций скорости */
+                     a_ctrl+=a ;
+                         x1 =0. ;
+                         y1 =this->v_abs*sin(a_ctrl*_GRD_TO_RAD) ;
+                         z1 =this->v_abs*cos(a_ctrl*_GRD_TO_RAD) ;
+
+                Vect_Matrix.LoadZero(3, 1) ;
+                Vect_Matrix.SetCell (0, 0, x1) ;
+                Vect_Matrix.SetCell (1, 0, y1) ;
+                Vect_Matrix.SetCell (2, 0, z1) ;
+
+                Vect_Matrix.LoadMul (m_ctrl, &Vect_Matrix) ;
+
+                    x_velocity=Vect_Matrix.GetCell(0, 0) ;
+                    y_velocity=Vect_Matrix.GetCell(1, 0) ;
+                    z_velocity=Vect_Matrix.GetCell(2, 0) ;
+/*- - - - - - - - - - - - - - - - - - - - Изменение углов ориентации */
+                Gold_Matrix.LoadZero(3, 1) ;
+                Gold_Matrix.SetCell (1, 0, 1.) ;
+                Gold_Matrix.LoadMul (&Sum_Matrix, &Gold_Matrix) ;
+
+                  n1_azim=atan2(x_velocity, z_velocity)*_RAD_TO_GRD ;
+                  n1_elev=atan2(y_velocity, sqrt(x_velocity*x_velocity+z_velocity*z_velocity))*_RAD_TO_GRD ;
+                  n2_azim=180.+n1_azim ;
+                  n2_elev=180.-n1_elev ;
+
+                 Sum_Matrix.Load3d_azim(-n1_azim) ;
+                Oper_Matrix.Load3d_elev(-n1_elev) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                Oper_Matrix.Load3d_roll(-a_roll) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                
+                Gnew_Matrix.LoadZero(3, 1) ;
+                Gnew_Matrix.SetCell (1, 0, 1.) ;
+                Gnew_Matrix.LoadMul (&Sum_Matrix, &Gnew_Matrix) ;
+
+              x1=Gold_Matrix.GetCell(0, 0)-Gnew_Matrix.GetCell(0, 0) ;
+              y1=Gold_Matrix.GetCell(1, 0)-Gnew_Matrix.GetCell(1, 0) ;
+              z1=Gold_Matrix.GetCell(2, 0)-Gnew_Matrix.GetCell(2, 0) ;
+
+              s1=sqrt(x1*x1+y1*y1+z1*z1) ;
+           if(s1>0.) {  x1/=s1 ;  y1/=s1 ;  z1/=s1 ;  }
+
+                 Sum_Matrix.Transpose(m_ctrl) ;
+                Vect_Matrix.LoadZero (3, 1) ;
+                Vect_Matrix.SetCell  (0, 0, x1) ;
+                Vect_Matrix.SetCell  (1, 0, y1) ;
+                Vect_Matrix.SetCell  (2, 0, z1) ;
+                Vect_Matrix.LoadMul  (&Sum_Matrix, &Vect_Matrix) ;
+
+             x2=Vect_Matrix.GetCell  (0, 0) ;
+             y2=Vect_Matrix.GetCell  (1, 0) ;
+             z2=Vect_Matrix.GetCell  (2, 0) ;
+
+                 Sum_Matrix.Load3d_azim(-n2_azim) ;
+                Oper_Matrix.Load3d_elev(-n2_elev) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                Oper_Matrix.Load3d_roll(-a_roll) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                
+                Gnew_Matrix.LoadZero(3, 1) ;
+                Gnew_Matrix.SetCell (1, 0, 1.) ;
+                Gnew_Matrix.LoadMul (&Sum_Matrix, &Gnew_Matrix) ;
+
+              x2=Gold_Matrix.GetCell(0, 0)-Gnew_Matrix.GetCell(0, 0) ;
+              y2=Gold_Matrix.GetCell(1, 0)-Gnew_Matrix.GetCell(1, 0) ;
+              z2=Gold_Matrix.GetCell(2, 0)-Gnew_Matrix.GetCell(2, 0) ;
+
+              s2=sqrt(x2*x2+y2*y2+z2*z2) ;
+//           if(s2>0.) {  x2/=s2 ;  y2/=s2 ;  z2/=s2 ;  }
+
+                 Sum_Matrix.Transpose(m_ctrl) ;
+                Vect_Matrix.LoadZero (3, 1) ;
+                Vect_Matrix.SetCell  (0, 0, x2) ;
+                Vect_Matrix.SetCell  (1, 0, y2) ;
+                Vect_Matrix.SetCell  (2, 0, z2) ;
+                Vect_Matrix.LoadMul  (&Sum_Matrix, &Vect_Matrix) ;
+
+             x2=Vect_Matrix.GetCell  (0, 0) ;
+
+            if(     s1 > 1.     ) {
+                                      a_azim=n2_azim ;
+                                      a_elev=n2_elev ;
+                                  }
+            else
+            if(     s2 > 1.     ) {
+                                      a_azim=n1_azim ;
+                                      a_elev=n1_elev ;
+                                  }
+            else
+            if(fabs(x1)<fabs(x2)) {
+                                      a_azim=n1_azim ;
+                                      a_elev=n1_elev ;
+                                  }
+            else                  {
+                                      a_azim=n2_azim ;
+                                      a_elev=n2_elev ;
+                                  }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                       }
 /*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*               Отработка программного управления                  */
+
+     int  RSS_Object_Flyer::iExecuteProgram(double t1, double t2)
+{
+   Matrix2d  Sum_Matrix ;
+   Matrix2d  Oper_Matrix ;  
+   Matrix2d  Velo_Matrix ;  
+        int  v_flag ;    /* Флаг перерасчета проекций скорости */
+       char  used[1024] ;
+     double  a_new, e_new, r_new, g_new, v_new ;
+        int  status ;
+        int  i ;
+
+#define  FRAME program->frames[i]
+
+/*----------------------------------- Контроль завершения исполнения */
+
+       if(p_frame>=program->frames_cnt)  return(0) ;
+
+/*--------------------------------------- Обработка кадров программы */
+
+             v_flag=0 ;
+
+   for(i=p_frame ; i<program->frames_cnt ; i++) {
+/*- - - - - - - - - - - - - - - - - - - - -  Обработка метки времени */
+     if(program->frames[i].t>t2)  break ;
+/*- - - - - - - - - - - - - - - - - - - - - - -  Обработка координат */
+     if(strstr(FRAME.used, ";X;"))    this->x_base=FRAME.x ;
+     if(strstr(FRAME.used, ";Y;"))    this->y_base=FRAME.y ;
+     if(strstr(FRAME.used, ";Z;"))    this->z_base=FRAME.z ;
+
+     if(strstr(FRAME.used, ";A;")) {  this->a_azim=FRAME.a ;  v_flag=1 ;  }
+     if(strstr(FRAME.used, ";E;")) {  this->a_elev=FRAME.e ;  v_flag=1 ;  }
+     if(strstr(FRAME.used, ";R;"))    this->a_roll=FRAME.r ;
+/*- - - - - - - - - - - - - - - - - -  Обработка изменения координат */
+     if(strstr(FRAME.used, ";DA;")) {
+                        iReplaceText(this->p_controls.used, ";DA;", ";", 1) ;
+                        iReplaceText(this->p_controls.used, ";TA;", ";", 1) ;
+
+                                     this->p_controls.d_a=FRAME.d_a ;
+         if(FRAME.d_a!=0.)    strcat(this->p_controls.used, "DA;") ;
+                                    }
+     if(strstr(FRAME.used, ";DE;")) {
+                        iReplaceText(this->p_controls.used, ";DE;", ";", 1) ;
+                        iReplaceText(this->p_controls.used, ";TE;", ";", 1) ;
+
+                                     this->p_controls.d_e=FRAME.d_e ;
+         if(FRAME.d_e!=0.)    strcat(this->p_controls.used, "DE;") ;
+                                    }
+     if(strstr(FRAME.used, ";DR;")) {
+                        iReplaceText(this->p_controls.used, ";DR;", ";", 1) ;
+                        iReplaceText(this->p_controls.used, ";TR;", ";", 1) ;
+
+                                     this->p_controls.d_r=FRAME.d_r ;
+         if(FRAME.d_r!=0.)    strcat(this->p_controls.used, "DR;") ;
+                                    }
+
+     if(strstr(FRAME.used, ";TA;")) {
+                                       this->p_controls.t_a=FRAME.t_a ;
+                                strcat(this->p_controls.used, "TA;") ;
+                                    }
+     if(strstr(FRAME.used, ";TE;")) {
+                                       this->p_controls.t_e=FRAME.t_e ;
+                                strcat(this->p_controls.used, "TE;") ;
+                                    }
+     if(strstr(FRAME.used, ";TR;")) {
+                                       this->p_controls.t_r=FRAME.t_r ;
+                                strcat(this->p_controls.used, "TR;") ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - Обработка перегрузки маневра */
+     if(strstr(FRAME.used, ";G;"))    this->g_ctrl=FRAME.g ;
+
+     if(strstr(FRAME.used, ";DG;")) {
+                        iReplaceText(this->p_controls.used, ";DG;", ";", 1) ;
+                        iReplaceText(this->p_controls.used, ";TG;", ";", 1) ;
+
+                                     this->p_controls.d_g=FRAME.d_g ;
+         if(FRAME.d_g!=0.)    strcat(this->p_controls.used, "DG;") ;
+                                    }
+
+     if(strstr(FRAME.used, ";TG;")) {
+                                       this->p_controls.t_g=FRAME.t_g ;
+                                strcat(this->p_controls.used, "TG;") ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - - - - - - Обработка скорости */
+     if(strstr(FRAME.used, ";V;")) {  this->v_abs=FRAME.v ;  v_flag=1 ;  }
+
+     if(strstr(FRAME.used, ";DV;")) {
+                        iReplaceText(this->p_controls.used, ";DV;", ";", 1) ;
+                        iReplaceText(this->p_controls.used, ";TV;", ";", 1) ;
+
+                                     this->p_controls.d_v=FRAME.d_v ;
+           if(FRAME.d_v!=0.)  strcat(this->p_controls.used, "DV;") ;
+                                    }
+
+     if(strstr(FRAME.used, ";TV;")) {
+                                       this->p_controls.t_v=FRAME.t_v ;
+                                strcat(this->p_controls.used, "TV;") ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - - Обработка кадров программы */
+                 p_frame++ ;
+                                                }
+/*------------------------------------ Перерасчет изменяемых величин */
+
+         memset(used,   0,                   sizeof(used)  ) ;
+        strncpy(used, this->p_controls.used, sizeof(used)-1) ;
+
+     if(strstr(this->p_controls.used, ";DA;"))  a_new=this->a_azim+this->p_controls.d_a*(t2-t1) ;
+     if(strstr(this->p_controls.used, ";DE;"))  e_new=this->a_elev+this->p_controls.d_e*(t2-t1) ;
+     if(strstr(this->p_controls.used, ";DR;"))  r_new=this->a_roll+this->p_controls.d_r*(t2-t1) ;
+     if(strstr(this->p_controls.used, ";DG;"))  g_new=this->g_ctrl+this->p_controls.d_g*(t2-t1) ;
+     if(strstr(this->p_controls.used, ";DV;"))  v_new=this->v_abs +this->p_controls.d_v*(t2-t1) ;
+
+/*----------------------------- Контроль граничных условий изменений */
+
+     if(strstr(this->p_controls.used, ";TA;")) {
+
+       if(a_new>this->a_azim)  status=iAngleInCheck(this->p_controls.t_a, this->a_azim, a_new) ;
+       else                    status=iAngleInCheck(this->p_controls.t_a, a_new, this->a_azim) ;
+
+       if(!status) {
+                            a_new=this->p_controls.t_a ;
+                     iReplaceText(this->p_controls.used, ";DA;", ";", 1) ;
+                     iReplaceText(this->p_controls.used, ";TA;", ";", 1) ;
+                   }
+                                               }
+
+     if(strstr(this->p_controls.used, ";TE;")) {
+
+       if(e_new>this->a_elev)  status=iAngleInCheck(this->p_controls.t_e, this->a_elev, e_new) ;
+       else                    status=iAngleInCheck(this->p_controls.t_e, e_new, this->a_elev) ;
+
+       if(!status) {
+                            e_new=this->p_controls.t_e ;
+                     iReplaceText(this->p_controls.used, ";DE;", ";", 1) ;
+                     iReplaceText(this->p_controls.used, ";TE;", ";", 1) ;
+                   }
+                                               }
+
+     if(strstr(this->p_controls.used, ";TR;")) {
+
+       if(r_new>this->a_roll)  status=iAngleInCheck(this->p_controls.t_r, this->a_roll, r_new) ;
+       else                    status=iAngleInCheck(this->p_controls.t_r, r_new, this->a_roll) ;
+
+       if(!status) {
+                            e_new=this->p_controls.t_r ;
+                     iReplaceText(this->p_controls.used, ";DR;", ";", 1) ;
+                     iReplaceText(this->p_controls.used, ";TR;", ";", 1) ;
+                   }
+                                               }
+
+     if(strstr(this->p_controls.used, ";TG;")) {
+
+       if(g_new>this->g_ctrl)  status=iAngleInCheck(this->p_controls.t_g, this->g_ctrl, g_new) ;
+       else                    status=iAngleInCheck(this->p_controls.t_g, g_new, this->g_ctrl) ;
+
+       if(!status) {
+                            g_new=this->p_controls.t_g ;
+                     iReplaceText(this->p_controls.used, ";DG;", ";", 1) ;
+                     iReplaceText(this->p_controls.used, ";TG;", ";", 1) ;
+                   }
+                                               }
+
+     if(strstr(this->p_controls.used, ";TV;")) {
+
+       if(v_new>this->v_abs)  status=iAngleInCheck(this->p_controls.t_v, this->v_abs, v_new) ;
+       else                   status=iAngleInCheck(this->p_controls.t_v, v_new, this->v_abs) ;
+
+       if(!status) {
+                            v_new=this->p_controls.t_v ;
+                     iReplaceText(this->p_controls.used, ";DV;", ";", 1) ;
+                     iReplaceText(this->p_controls.used, ";TV;", ";", 1) ;
+                   }
+                                               }
+/*------------------------------------ Присвоение изменяемых величин */
+
+     if(strstr(used, ";DA;")) {  this->a_azim=a_new ;  v_flag=1 ;  }
+     if(strstr(used, ";DE;")) {  this->a_elev=e_new ;  v_flag=1 ;  }
+     if(strstr(used, ";DR;"))    this->a_roll=r_new ;
+     if(strstr(used, ";DG;"))    this->g_ctrl=g_new ;
+     if(strstr(used, ";DV;")) {  this->v_abs =v_new ;  v_flag=1 ;  }
+
+/*------------------------------------- Перерасчет проекций скорости */
+
+     if(v_flag) {
+                   Velo_Matrix.LoadZero   (3, 1) ;
+                   Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
+                    Sum_Matrix.Load3d_azim(-this->a_azim) ;
+                   Oper_Matrix.Load3d_elev(-this->a_elev) ;
+                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                   Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
+
+                     x_velocity=Velo_Matrix.GetCell(0, 0) ;
+                     y_velocity=Velo_Matrix.GetCell(1, 0) ;
+                     z_velocity=Velo_Matrix.GetCell(2, 0) ;
+                }
+/*-------------------------------------------------------------------*/
+
+#undef   FRAME
 
   return(0) ;
 }
@@ -1567,9 +2601,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                   Сохранение точки траектории                     */
 
-  int  RSS_Object_Flyer::iSaveTracePoint()
+  int  RSS_Object_Flyer::iSaveTracePoint(char *action)
 
 {
+/*------------------------------------------------- Сброс траектории */
+
+   if(!stricmp(action, "CLEAR")) {
+                                     mTrace_cnt=0 ;
+                                       return(0) ;
+                                 }
 /*----------------------------------------------- Довыделение буфера */
 
    if(mTrace_cnt==mTrace_max) {
@@ -1708,6 +2748,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(!stricmp(action, "SHOW_TRACE"))  ((RSS_Object_Flyer *)object)->iShowTrace() ;
 
    return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ПРОГРАММА УПРАВЛЕНИЯ"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ПРОГРАММА УПРАВЛЕНИЯ"      	     */
+
+     RSS_Object_FlyerProgram::RSS_Object_FlyerProgram(void)
+
+{
+    memset(name, 0, sizeof(name)) ;
+           frames_cnt=0 ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ПРОГРАММА УПРАВЛЕНИЯ"      	     */
+
+    RSS_Object_FlyerProgram::~RSS_Object_FlyerProgram(void)
+
+{
 }
 
 

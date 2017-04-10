@@ -1,0 +1,41 @@
+#step 0.
+
+#file tests\keys.keys
+
+zoom 800
+
+marker cr m1 cross red
+m1 base 400 0 0
+marker cr m2 cross red
+m2 base -400 0 0
+marker cr m3 cross green
+m3 base 0 0 0
+marker cr m4 cross green
+m4 base 0 200 0
+marker cr m5 cross blue
+m5 base 0 0 400
+
+body cr b1 плоскость 1000 1000
+sc color b1 green
+b1 angle/e 90
+b1 base -500 0 500 
+
+body cr b2 цилиндр-8 30 20
+sc color b2 rgb 128:128:0
+b2 base  100 0 50 
+
+body cr b3 цилиндр-8 30 20
+sc color b3 rgb 128:128:0
+b3 base  100 0 -50 
+
+flyer cr f1 летун-1 15 2 28 2 5
+f1 base 0 70 0
+f1 v 20
+
+eye 0 100 400
+eye>5
+
+lookat m3
+
+f1 program tests\test_2.pgm
+f1 trace/p test_2

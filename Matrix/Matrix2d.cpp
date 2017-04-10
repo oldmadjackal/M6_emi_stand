@@ -132,6 +132,31 @@
 
 /********************************************************************/
 /*								    */
+/*	                 Транспонирование матрицы                   */
+
+   int  Matrix2d::Transpose(Matrix2d *source)
+
+{
+  int  i ;
+  int  j ;
+
+
+   if(source->mBody==NULL)  return(0) ;
+   if(source       ==this)  return(0) ;
+
+        Free() ;
+      Create(source->mCols, source->mRows) ;
+
+     for(i=0 ; i<mRows ; i++)
+     for(j=0 ; j<mCols ; j++)  CELL(i, j)=source->GetCell(j, i) ;
+
+
+  return(0) ;   
+}
+
+
+/********************************************************************/
+/*								    */
 /*                      Загрузка из массива значений                */
 
    int  Matrix2d::LoadArray(double *array)

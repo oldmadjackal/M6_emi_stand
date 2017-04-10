@@ -275,3 +275,66 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    return(-1) ;
 }
+
+
+/*********************************************************************/
+/*                                                                   */
+/*               Проверка попадания угла в диапазон                  */
+
+  int  RSS_Object::iAngleInCheck(double  value, 
+                                 double  value_min, 
+                                 double  value_max )
+{
+  int  i ;
+
+
+  for(i=0 ; i<2 ; i++) {
+
+    if(value_min<=value_max) {
+	 if(value>=value_min &&
+	    value<=value_max   ) return(0) ;
+			     }
+    else                     {
+	 if(value<=value_min &&
+	    value>=value_max   ) return(0) ;
+			     }
+
+    if(value>0)  value-=360. ;
+    else         value+=360. ;
+
+                       }
+
+  return(1) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*              Замена текстового фрагмента в строке                */
+
+  int  RSS_Object::iReplaceText(char *buff, char *name, char *value, int  count)
+
+{
+   char *entry ;
+    int  shift ;
+    int  i ;
+
+
+     if(count==0)  count=10000 ;
+
+             entry=buff ;
+             shift=strlen(value)-strlen(name) ;
+
+     for(i=0 ; i<count ; i++) {
+
+             entry=strstr(entry, name) ;
+          if(entry==NULL)  break ;
+                         
+               memmove(entry+strlen(value), entry+strlen(name), 
+                                       strlen(entry+strlen(name))+1) ;
+                memcpy(entry, value, strlen(value)) ;
+
+                              }
+
+  return(i) ;
+}

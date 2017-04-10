@@ -21,6 +21,7 @@
                 int  Create     (int,  int) ;          /* Создание матрицы */
                void  Free       (void) ;               /* Освободить ресурсы */
                 int  Copy       (Matrix2d *) ;         /* Копирование матрицы */
+                int  Transpose  (Matrix2d *) ;         /* Транспонирование матрицы */
                 int  SetCell    (int, int, double) ;   /* Пропись ячейки */
              double  GetCell    (int, int) ;           /* Извлечение ячейки */
                 int  LoadArray  (double *) ;           /* Загрузка массива значений */
