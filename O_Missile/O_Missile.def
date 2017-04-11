@@ -1,0 +1,4 @@
+LIBRARY O_Missile
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

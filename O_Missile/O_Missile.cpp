@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "ЛЕТУН"  		    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "РАКЕТА"  		    */
 /*								    */
 /********************************************************************/
 
@@ -27,7 +27,7 @@
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 
-#include "O_Flyer.h"
+#include "O_Missile.h"
 
 #pragma warning(disable : 4996)
 
@@ -56,21 +56,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_Flyer  ProgramModule ;
+     static   RSS_Module_Missile  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- O_FLYER_API char *Identify(void)
+ O_MISSILE_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- O_FLYER_API RSS_Kernel *GetEntry(void)
+ O_MISSILE_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -88,21 +88,29 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_Flyer_instr  RSS_Module_Flyer_InstrList[]={
+  struct RSS_Module_Missile_instr  RSS_Module_Missile_InstrList[]={
 
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
-                    &RSS_Module_Flyer::cHelp   },
+                    &RSS_Module_Missile::cHelp   },
  { "create",  "cr", "#CREATE - создать объект",
                     " CREATE <Имя> [<Модель> [<Список параметров>]]\n"
                     "   Создает именованный обьект по параметризованной модели",
-                    &RSS_Module_Flyer::cCreate },
+                    &RSS_Module_Missile::cCreate },
  { "info",    "i",  "#INFO - выдать информацию по объекту",
                     " INFO <Имя> \n"
                     "   Выдать основную нформацию по объекту в главное окно\n"
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
-                    &RSS_Module_Flyer::cInfo },
+                    &RSS_Module_Missile::cInfo },
+ { "owner",   "o",  "#OWNER - назначить носитель ракеты",
+                    " OWNER <Имя> <Носитель>\n"
+                    "   Назначить объект - носитель ракеты",
+                    &RSS_Module_Missile::cOwner },
+ { "target",  "tg", "#TARGET - назначить цель ракеты",
+                    " TARGET <Имя> <Цель>\n"
+                    "   Назначить объект - цель ракеты",
+                    &RSS_Module_Missile::cTarget },
  { "base",    "b", "#BASE - задать базовую точку объекта",
                     " BASE <Имя> <x> <y> <z>\n"
                     "   Задает базовую точку объекта\n"
@@ -114,7 +122,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "       (аналогично для Y и Z)\n"
                     " BASE> <Имя>\n"
                     "   Задает клавиатурное управление базовой точкой объекта\n",
-                    &RSS_Module_Flyer::cBase },
+                    &RSS_Module_Missile::cBase },
  { "angle",   "a", "#ANGLE - задать углы ориентации объекта",
                     "           A (AZIMUTH)   - азимут\n"
                     "           E (ELEVATION) - возвышение\n"
@@ -129,13 +137,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "       (аналогично для E и R)\n"
                     " ANGLE> <Имя>\n"
                     "   Задает клавиатурное управление углами ориентации объекта\n",
-                    &RSS_Module_Flyer::cAngle },
+                    &RSS_Module_Missile::cAngle },
  { "velocity", "v", "#VELOCITY - задание скорости движения объекта",
                     " VELOCITY <Имя> <Скорость>\n"
                     "   Задание абсолютного значения скорости объекта"
                     " VELOCITY <Имя> <X-скорость> <Y-скорость> <Z-скорость>\n"
                     "   Задание проекций скорости объекта",
-                    &RSS_Module_Flyer::cVelocity },
+                    &RSS_Module_Missile::cVelocity },
  { "control",  "c", "#CONTROL - управление объектом",
                     " CONTROL <Имя> <Угол крена> [<Перегрузка>]\n"
                     "   Задание полного набора параметров управления\n"
@@ -143,17 +151,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "   Задание полного набора параметров управления\n"
                     " CONTROL> <Имя> [<Шаг крена> [<Шаг ускорения>]]\n"
                     "   Управление стрелочками\n",
-                    &RSS_Module_Flyer::cControl },
- { "program",  "p", "#PROGRAM - задание программы управления объектом",
-                    " PROGRAM <Имя> <Имя файла программы>\n"
-                    "   Задание программы управления объектом\n",
-                    &RSS_Module_Flyer::cProgram },
+                    &RSS_Module_Missile::cControl },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
-                    "   Трассировка траектории объекта в реальном времени\n"
-                    " TRACE/P <Имя> <Схема управления> [<Длительность>]\n"
-                    "   Трассировка траектории объекта для схемы управления\n",
-                    &RSS_Module_Flyer::cTrace },
+                    "   Трассировка траектории объекта в реальном времени\n",
+                    &RSS_Module_Missile::cTrace },
  {  NULL }
                                                             } ;
 
@@ -161,20 +163,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_Flyer_instr *RSS_Module_Flyer::mInstrList=NULL ;
+    struct RSS_Module_Missile_instr *RSS_Module_Missile::mInstrList=NULL ;
 
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_Flyer::RSS_Module_Flyer(void)
+     RSS_Module_Missile::RSS_Module_Missile(void)
 
 {
 	   keyword="EmiStand" ;
-    identification="Flyer_object" ;
+    identification="Missile_object" ;
 
-        mInstrList=RSS_Module_Flyer_InstrList ;
+        mInstrList=RSS_Module_Missile_InstrList ;
 
         a_step=15. ;
         g_step= 1. ;
@@ -185,7 +187,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_Flyer::~RSS_Module_Flyer(void)
+    RSS_Module_Missile::~RSS_Module_Missile(void)
 
 {
 }
@@ -195,7 +197,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_Flyer::vExecuteCmd(const char *cmd)
+  int  RSS_Module_Missile::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -205,8 +207,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "FLYER"
-#define  _SECTION_SHRT_NAME   "FLYER"
+#define  _SECTION_FULL_NAME   "MISSILE"
+#define  _SECTION_SHRT_NAME   "MISSILE"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -232,7 +234,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Flyer:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Missile:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -272,7 +274,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция FLYER: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция MISSILE: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -290,25 +292,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Считать данные из строки		    */
 
-    void  RSS_Module_Flyer::vReadSave(std::string *data)
+    void  RSS_Module_Missile::vReadSave(std::string *data)
 
 {
-             char *buff ;
-              int  buff_size ;
-   RSS_Model_data  create_data ;
- RSS_Object_Flyer *object ;
-             char  name[128] ;
-              int  status ;
-             char *entry ;
-             char *end ;
-              int  i ;
+               char *buff ;
+                int  buff_size ;
+     RSS_Model_data  create_data ;
+ RSS_Object_Missile *object ;
+               char  name[128] ;
+                int  status ;
+               char *entry ;
+               char *end ;
+                int  i ;
 
 /*----------------------------------------------- Контроль заголовка */
 
-   if(memicmp(data->c_str(), "#BEGIN MODULE FLYER\n", 
-                      strlen("#BEGIN MODULE FLYER\n")) &&
-      memicmp(data->c_str(), "#BEGIN OBJECT FLYER\n", 
-                      strlen("#BEGIN OBJECT FLYER\n"))   )  return ;
+   if(memicmp(data->c_str(), "#BEGIN MODULE MISSILE\n", 
+                      strlen("#BEGIN MODULE MISSILE\n")) &&
+      memicmp(data->c_str(), "#BEGIN OBJECT MISSILE\n", 
+                      strlen("#BEGIN OBJECT MISSILE\n"))   )  return ;
 
 /*------------------------------------------------ Извлечение данных */
 
@@ -319,8 +321,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Создание объекта */
 
-   if(!memicmp(buff, "#BEGIN OBJECT FLYER\n", 
-              strlen("#BEGIN OBJECT FLYER\n"))) {                   /* IF.1 */
+   if(!memicmp(buff, "#BEGIN OBJECT MISSILE\n", 
+              strlen("#BEGIN OBJECT MISSILE\n"))) {                 /* IF.1 */
 /*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
               memset(&create_data, 0, sizeof(create_data)) ;
 
@@ -351,7 +353,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 status=CreateObject(&create_data) ;
              if(status)  return ;
 
-        object=(RSS_Object_Flyer *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
+        object=(RSS_Object_Missile *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
        entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
@@ -382,14 +384,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Module_Flyer::vWriteSave(std::string *text)
+    void  RSS_Module_Missile::vWriteSave(std::string *text)
 
 {
   std::string  buff ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN MODULE FLYER\n" ;
+     *text="#BEGIN MODULE MISSILE\n" ;
 
 /*------------------------------------------------ Концовка описания */
 
@@ -403,12 +405,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_Flyer::cHelp(char *cmd)
+  int  RSS_Module_Missile::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Object_Flyer_Help_dialog) ;
+			   GetActiveWindow(), Object_Missile_Help_dialog) ;
 
    return(0) ;
 }
@@ -420,7 +422,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      CREATE <Имя> [<Модель> [<Список параметров>]]               */
 
-  int  RSS_Module_Flyer::cCreate(char *cmd)
+  int  RSS_Module_Missile::cCreate(char *cmd)
 
 {
  RSS_Model_data  data ;
@@ -484,7 +486,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                     (LPCDLGTEMPLATE)Resource("IDD_CREATE", RT_DIALOG),
 			             GetActiveWindow(), 
-                                     Object_Flyer_Create_dialog, 
+                                     Object_Missile_Create_dialog, 
                                     (LPARAM)&data               ) ;
    if(status)  return(status) ;
 
@@ -503,17 +505,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_Flyer::cInfo(char *cmd)
+  int  RSS_Module_Missile::cInfo(char *cmd)
 
 {
-             char  *name ;
- RSS_Object_Flyer  *object ;
-              int   all_flag ;   /* Флаг режима полной информации */
-             char  *end ;
-      std::string   info ;
-      std::string   f_info ;
-             char   text[4096] ;
-              int   i ;
+               char  *name ;
+ RSS_Object_Missile  *object ;
+                int   all_flag ;   /* Флаг режима полной информации */
+               char  *end ;
+        std::string   info ;
+        std::string   f_info ;
+               char   text[4096] ;
+                int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -544,7 +546,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
@@ -561,13 +563,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "     Y % 8.2lf\r\n" 
                     "     Z % 8.2lf\r\n"
                     "G-ctrl % 8.2lf\r\n" 
+                    "Owner  %s\r\n" 
+                    "Target %s\r\n" 
                     "\r\n",
                         object->Name, object->Type, 
                         object->x_base, object->y_base, object->z_base,
                         object->a_azim, object->a_elev, object->a_roll,
                         object->v_abs,
                         object->x_velocity, object->y_velocity, object->z_velocity,
-                        object->g_ctrl
+                        object->g_ctrl, object->owner, object->target
                     ) ;
 
            info=text ;
@@ -599,6 +603,142 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции OWNER                   */
+/*								    */
+/*       OWNER <Имя> <Носитель>                                     */
+
+  int  RSS_Module_Missile::cOwner(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char  *owner ;
+ RSS_Object_Missile  *missile ;
+         RSS_Object  *object ;
+               char  *end ;
+                int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                    owner=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: OWNER <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       missile=(RSS_Object_Missile *)FindObject(name, 1) ;          /* Ищем объект-цель по имени */
+    if(missile==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(owner==NULL) {                                               /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-носителя. \n"
+                                 "Например: OWNER <Имя_ракеты> <Имя_носителя>") ;
+                                     return(-1) ;
+                    }
+
+       object=FindObject(owner, 0) ;                                /* Ищем объект-носитель по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------------- Пропись носителя */
+
+          strcpy(missile->owner, owner) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции TARGET                  */
+/*								    */
+/*       TARGET <Имя> <Цель>                                        */
+
+  int  RSS_Module_Missile::cTarget(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char  *target ;
+ RSS_Object_Missile  *missile ;
+         RSS_Object  *object ;
+               char  *end ;
+                int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                   target=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: TARGET <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       missile=(RSS_Object_Missile *)FindObject(name, 1) ;          /* Ищем объект-цель по имени */
+    if(missile==NULL)  return(-1) ;
+
+/*---------------------------------------------- Контроль имени цели */
+
+    if(target==NULL) {                                              /* Если имя не задано... */
+                        SEND_ERROR("Не задано имя объекта-носителя. \n"
+                                   "Например: TARGET <Имя_ракеты> <Имя_цели>") ;
+                                     return(-1) ;
+                    }
+
+       object=FindObject(target, 0) ;                               /* Ищем объект-цели по имени */
+    if(object==NULL)  return(-1) ;
+
+/*----------------------------------------------------- Пропись цели */
+
+               strcpy(missile->target, target) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции BASE                    */
 /*								    */
 /*        BASE    <Имя> <X> <Y> <Z>                                 */
@@ -607,26 +747,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        BASE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*        BASE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Flyer::cBase(char *cmd)
+  int  RSS_Module_Missile::cBase(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX  10
 
-             char  *pars[_PARS_MAX] ;
-             char  *name ;
-             char **xyz ;
-           double   coord[_COORD_MAX] ;
-              int   coord_cnt ;
-           double   inverse ;
- RSS_Object_Flyer  *object ;
-              int   xyz_flag ;          /* Флаг режима одной координаты */
-              int   delta_flag ;        /* Флаг режима приращений */
-              int   arrow_flag ;        /* Флаг стрелочного режима */
-             char  *arrows ;
-             char  *error ;
-             char  *end ;
-              int   i ;
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char **xyz ;
+             double   coord[_COORD_MAX] ;
+                int   coord_cnt ;
+             double   inverse ;
+ RSS_Object_Missile  *object ;
+                int   xyz_flag ;          /* Флаг режима одной координаты */
+                int   delta_flag ;        /* Флаг режима приращений */
+                int   arrow_flag ;        /* Флаг стрелочного режима */
+               char  *arrows ;
+               char  *error ;
+               char  *end ;
+                int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -707,7 +847,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -759,9 +899,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
-                                                       object->y_base, 
-                                                       object->z_base ) ;
+     object->Features[i]->vBodyBasePoint("Missile.Body", object->x_base, 
+                                                         object->y_base, 
+                                                         object->z_base ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -786,29 +926,29 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*       ANGLE>   <Имя> <Код стрелочки> <Шаг>                       */
 /*       ANGLE>>  <Имя> <Код стрелочки> <Шаг>                       */
 
-  int  RSS_Module_Flyer::cAngle(char *cmd)
+  int  RSS_Module_Missile::cAngle(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX  10
 
-             char  *pars[_PARS_MAX] ;
-             char  *name ;
-             char **xyz ;
-           double   coord[_COORD_MAX] ;
-              int   coord_cnt ;
-           double   inverse ;
- RSS_Object_Flyer  *object ;
-              int   xyz_flag ;          /* Флаг режима одной координаты */
-              int   delta_flag ;        /* Флаг режима приращений */
-              int   arrow_flag ;        /* Флаг стрелочного режима */
-             char  *arrows ;
-         Matrix2d  Sum_Matrix ;
-         Matrix2d  Oper_Matrix ;  
-         Matrix2d  Velo_Matrix ;  
-             char  *error ;
-             char  *end ;
-              int   i ;
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char **xyz ;
+             double   coord[_COORD_MAX] ;
+                int   coord_cnt ;
+             double   inverse ;
+ RSS_Object_Missile  *object ;
+                int   xyz_flag ;          /* Флаг режима одной координаты */
+                int   delta_flag ;        /* Флаг режима приращений */
+                int   arrow_flag ;        /* Флаг стрелочного режима */
+               char  *arrows ;
+           Matrix2d  Sum_Matrix ;
+           Matrix2d  Oper_Matrix ;  
+           Matrix2d  Velo_Matrix ;  
+               char  *error ;
+               char  *end ;
+                int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -891,7 +1031,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -966,9 +1106,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
-                                                    object->a_elev, 
-                                                    object->a_roll ) ;
+     object->Features[i]->vBodyAngles("Missile.Body", object->a_azim, 
+                                                      object->a_elev, 
+                                                      object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -990,24 +1130,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*       VELOCITY <Имя> <Скорость>                                  */
 /*       VELOCITY <Имя> <X-скорость> <Y-скорость> <Z-скорость>      */
 
-  int  RSS_Module_Flyer::cVelocity(char *cmd)
+  int  RSS_Module_Missile::cVelocity(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX  10
 
-             char  *pars[_PARS_MAX] ;
-             char  *name ;
-             char **xyz ;
-           double   coord[_COORD_MAX] ;
-              int   coord_cnt ;
- RSS_Object_Flyer  *object ;
-             char  *error ;
-         Matrix2d  Sum_Matrix ;
-         Matrix2d  Oper_Matrix ;  
-         Matrix2d  Velo_Matrix ;  
-             char  *end ;
-              int   i ;
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char **xyz ;
+             double   coord[_COORD_MAX] ;
+                int   coord_cnt ;
+ RSS_Object_Missile  *object ;
+               char  *error ;
+           Matrix2d  Sum_Matrix ;
+           Matrix2d  Oper_Matrix ;  
+           Matrix2d  Velo_Matrix ;  
+               char  *end ;
+                int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
@@ -1032,7 +1172,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1100,27 +1240,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*       CONTROL>  <Имя> <Код стрелочки>                            */
 /*       CONTROL>> <Имя> <Код стрелочки>                            */
 
-  int  RSS_Module_Flyer::cControl(char *cmd)
+  int  RSS_Module_Missile::cControl(char *cmd)
 
 {
 #define  _COORD_MAX   3
 #define   _PARS_MAX  10
 
-             char  *pars[_PARS_MAX] ;
-             char  *name ;
-             char **xyz ;
-           double   coord[_COORD_MAX] ;
-              int   coord_cnt ;
-           double   inverse ;
- RSS_Object_Flyer  *object ;
-              int   xyz_flag ;          /* Флаг режима одной координаты */
-              int   g_flag ;            /* Флаг задания перегрузки */
-              int   s_flag ;            /* Флаг задания шагов изменения */
-              int   arrow_flag ;        /* Флаг стрелочного режима */
-             char  *arrows ;
-             char  *error ;
-             char  *end ;
-              int   i ;
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char **xyz ;
+             double   coord[_COORD_MAX] ;
+                int   coord_cnt ;
+             double   inverse ;
+ RSS_Object_Missile  *object ;
+                int   xyz_flag ;          /* Флаг режима одной координаты */
+                int   g_flag ;            /* Флаг задания перегрузки */
+                int   s_flag ;            /* Флаг задания шагов изменения */
+                int   arrow_flag ;        /* Флаг стрелочного режима */
+               char  *arrows ;
+               char  *error ;
+               char  *end ;
+                int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -1189,7 +1329,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1237,9 +1377,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
-                                                    object->a_elev, 
-                                                    object->a_roll ) ;
+     object->Features[i]->vBodyAngles("Missile.Body", object->a_azim, 
+                                                      object->a_elev, 
+                                                      object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -1256,114 +1396,33 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции PROGRAM                 */
-/*								    */
-/*      PROGRAM <Имя> <Файл программы>                              */
-
-  int  RSS_Module_Flyer::cProgram(char *cmd)
-
-{
-#define   _PARS_MAX   4
- RSS_Object_Flyer *object ;
-             char *pars[_PARS_MAX] ;
-             char *name ;
-             char *end ;
-              int  status ;
-              int  i ;
-
-/*-------------------------------------- Дешифровка командной строки */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-                     name= pars[0] ;
-
-/*------------------------------------------- Контроль имени объекта */
-
-    if(name   ==NULL ||
-       name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя объекта.\n"
-                                      "Например: PROGRAM <Имя> ...") ;
-                                     return(-1) ;
-                         }
-
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
-
-/*--------------------------------------- Считывание данных из файла */
-
-  if(pars[1]==NULL) {
-                       SEND_ERROR("Не задано имя файла программы.\n"
-                                  "Например: PROGRAM <Имя> <файл программы>") ;
-                                     return(-1) ;
-                    }
-
-      status=iReadProgram(object, pars[1]) ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   _PARS_MAX
-
-   return(status) ;
-}
-
-
-/********************************************************************/
-/*								    */
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
-/*       TRACE/P <Имя> <Схема управления>                           */
 
-  int  RSS_Module_Flyer::cTrace(char *cmd)
+  int  RSS_Module_Missile::cTrace(char *cmd)
 
 {
-#define  _COORD_MAX   3
 #define   _PARS_MAX  10
 
-             char  *pars[_PARS_MAX] ;
-             char  *name ;
-           double   trace_time ;
-           double   time_0 ;        /* Стартовое время расчета */ 
-           double   time_1 ;        /* Текущее время */ 
-           double   time_c ;        /* Абсолютное время расчета */ 
-           double   time_s ;        /* Последнее время отрисовки */ 
-           double   time_w ;        /* Время ожидания */ 
- RSS_Object_Flyer  *object ;
-              int   program_flag ;  /* Режим программного управления */ 
-             char  *end ;
-              int   i ;
+               char *pars[_PARS_MAX] ;
+               char *name ;
+             double  trace_time ;
+             double  time_0 ;        /* Стартовое время расчета */ 
+             double  time_1 ;        /* Текущее время */ 
+             double  time_c ;        /* Абсолютное время расчета */ 
+             double  time_s ;        /* Последнее время отрисовки */ 
+             double  time_w ;        /* Время ожидания */ 
+ RSS_Object_Missile *object ;
+           Matrix2d  Sum_Matrix ;
+           Matrix2d  Oper_Matrix ;  
+           Matrix2d  Velo_Matrix ;  
+               char *end ;
+                int  i ;
 
 /*---------------------------------------- Разборка командной строки */
 
                      trace_time=0. ;
-/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
-                   program_flag=0 ;
-
-       if(*cmd=='/' ||
-          *cmd=='+'   ) {
- 
-                if(*cmd=='/')  cmd++ ;
-
-                   end=strchr(cmd, ' ') ;
-                if(end==NULL) {
-                       SEND_ERROR("Некорректный формат команды") ;
-                                       return(-1) ;
-                              }
-                  *end=0 ;
-
-                if(strchr(cmd, 'p')!=NULL ||
-                   strchr(cmd, 'P')!=NULL   )  program_flag=1 ;
-
-                           cmd=end+1 ;
-                        }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
@@ -1378,16 +1437,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                      name=pars[0] ;
 
-      if(program_flag) {
-
-           if( pars[1]==NULL ||
-              *pars[1]==  0    ) {
-                                     SEND_ERROR("не задана программа управления") ;
-                                         return(-1) ;
-                                 }
-                       }
-      else             {
-
            if( pars[1]!=NULL &&
               *pars[1]!=  0    ) {
                                       trace_time=strtod(pars[1], &end) ;
@@ -1400,62 +1449,52 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        trace_time=60. ;
                                          SEND_ERROR("Время трассировки - 60 секунд") ;
                                  }
-                       }
 /*------------------------------------------- Контроль имени объекта */
 
     if(name==NULL) {                                                /* Если имя не задано... */
                       SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: ANGLE <Имя_объекта> ...") ;
+                                 "Например: TRACE <Имя_объекта> ...") ;
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
-/*------------------------------------ Контроль программы управления */
+/*----------------------------------------- Контроль носителя и цели */
 
-                  object->program=NULL ;
+       object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
+    if(object->o_owner==NULL)  return(-1) ;
 
-    if(program_flag) {
+  if(object->target[0]!=0) {
+       object->o_target=FindObject(object->target, 0) ;             /* Ищем цель по имени */
+    if(object->o_target==NULL)  return(-1) ;
+                           }
+/*------------------------------ Привязка стартовой точки к носителю */
 
-        for(i=0 ; i<_PROGRAMS_MAX ; i++)
-          if(object->programs[i]!=NULL)
-           if(!stricmp(object->programs[i]->name, pars[1])) {
-                    object->program=object->programs[i] ;
-                             break ;
-                                                            } 
+       object->x_base=object->o_owner->x_base ;
+       object->y_base=object->o_owner->y_base ;
+       object->z_base=object->o_owner->z_base ;
 
-      if(object->program==NULL) {
-            SEND_ERROR("Неизвестная программа - воспользуйтесь командой PROGRAM для загрузки файла программы") ;
-                                     return(-1) ;
-                                }
+       object->a_azim=object->o_owner->a_azim ;
+       object->a_elev=object->o_owner->a_elev ;
+       object->a_roll=object->o_owner->a_roll ;
 
-                memset(&object->p_controls, 0, sizeof(object->p_controls)) ;
-                strcpy( object->p_controls.used, ";") ;
-                        object->p_frame=0 ;
-                        object->p_start=0. ;
-                     }
-/*----------------------------------- Изменение программы управления */
+       Velo_Matrix.LoadZero   (3, 1) ;
+       Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
+        Sum_Matrix.Load3d_azim(-object->a_azim) ;
+       Oper_Matrix.Load3d_elev(-object->a_elev) ;
+        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+       Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
 
-    if(object->trace_on) {
+         object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
-     if(!program_flag) {
-            SEND_ERROR("Объект уже в режиме трассировки") ;
-                                     return(-1) ;
-                       }
-
-                  object->p_start=object->trace_time ;
-
-                                 return(0) ;
-                         }
 /*------------------------------------------------------ Трассировка */
 
               time_0=this->kernel->vGetTime() ;
               time_c=0. ;
               time_s=0. ;
-
-         object->trace_on  =1 ;
-         object->trace_time=0. ;
 
          object->iSaveTracePoint("CLEAR") ;
 
@@ -1465,7 +1504,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               time_c+=RSS_Kernel::calc_time_step ;
               time_1=this->kernel->vGetTime() ;
 
-         if(object->program==NULL)
            if(time_1-time_0>trace_time)  break ;                    /* Если время трассировки закончилось */
 
               time_w=time_c-(time_1-time_0) ;
@@ -1478,12 +1516,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object->iShowTrace_() ;
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
    for(i=0 ; i<object->Features_cnt ; i++) {
-     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
-                                                       object->y_base, 
-                                                       object->z_base ) ;
-     object->Features[i]->vBodyAngles   ("Flyer.Body", object->a_azim, 
-                                                       object->a_elev, 
-                                                       object->a_roll ) ;
+     object->Features[i]->vBodyBasePoint("Missile.Body", object->x_base, 
+                                                         object->y_base, 
+                                                         object->z_base ) ;
+     object->Features[i]->vBodyAngles   ("Missile.Body", object->a_azim, 
+                                                         object->a_elev, 
+                                                         object->a_roll ) ;
                                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
@@ -1496,12 +1534,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
        } while(1) ;                                                 /* END CIRCLE.1 - Цикл трассировки */
 
-         object->trace_on=0 ;
-
 /*-------------------------------------------------------------------*/
 
-#undef  _COORD_MAX   
-#undef   _PARS_MAX    
+#undef   _PARS_MAX
 
    return(0) ;
 }
@@ -1509,9 +1544,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		   Поиск обьекта типа FLYER по имени                */
+/*		   Поиск обьекта типа MISSILE по имени              */
 
-  RSS_Object_Flyer *RSS_Module_Flyer::FindObject(char *name)
+  RSS_Object *RSS_Module_Missile::FindObject(char *name, int  check_type)
 
 {
      char   text[1024] ;
@@ -1533,14 +1568,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        }
 /*-------------------------------------------- Контроль типа объекта */ 
 
-     if(strcmp(OBJECTS[i]->Type, "Flyer")) {
+    if(check_type)
+     if(strcmp(OBJECTS[i]->Type, "Missile")) {
 
-           SEND_ERROR("Объект не является объектом типа FLYER") ;
+           SEND_ERROR("Объект не является объектом типа MISSILE") ;
                             return(NULL) ;
-                                           }
+                                             }
 /*-------------------------------------------------------------------*/ 
 
-   return((RSS_Object_Flyer *)OBJECTS[i]) ;
+   return(OBJECTS[i]) ;
   
 #undef   OBJECTS
 #undef   OBJECTS_CNT
@@ -1552,14 +1588,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  int  RSS_Module_Flyer::CreateObject(RSS_Model_data *data)
+  int  RSS_Module_Missile::CreateObject(RSS_Model_data *data)
 
 {
-  RSS_Object_Flyer *object ;
-              char  models_list[4096] ;
-              char *end ;
-               int  i ;
-               int  j ;
+  RSS_Object_Missile *object ;
+                char  models_list[4096] ;
+                char *end ;
+                 int  i ;
+                 int  j ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
@@ -1570,13 +1606,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*--------------------------------------------------- Проверка имени */
 
     if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция FLYER: Не задано имя объекта") ;
+              SEND_ERROR("Секция MISSILE: Не задано имя объекта") ;
                                 return(-1) ;
                          }
 
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция FLYER: Объект с таким именем уже существует") ;
+              SEND_ERROR("Секция MISSILE: Объект с таким именем уже существует") ;
                                 return(-1) ;
                                                     }
 /*-------------------------------------- Считывание описания обьекта */
@@ -1584,7 +1620,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(data->path[0]==0) {
 
     if(data->model[0]==0) {                                         /* Если модель НЕ задано */
-              SEND_ERROR("Секция FLYER: Не задана модель объекта") ;
+              SEND_ERROR("Секция MISSILE: Не задана модель объекта") ;
                                 return(-1) ;
                           }
 
@@ -1598,7 +1634,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        }
 
            if(*end==0) {
-              SEND_ERROR("Секция FLYER: Неизвестная модель тела") ;
+              SEND_ERROR("Секция MISSILE: Неизвестная модель тела") ;
                                 return(-1) ;
                        }
 
@@ -1619,14 +1655,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           (data->pars[i].text [0]!=0 &&
            data->pars[i].value[0]==0   )   ) {
 
-              SEND_ERROR("Секция FLYER: Несоответствие числа параметров модели") ;
+              SEND_ERROR("Секция MISSILE: Несоответствие числа параметров модели") ;
                                 return(-1) ;
                                              }
 /*------------------------------------------------- Создание обьекта */
 
-       object=new RSS_Object_Flyer ;
+       object=new RSS_Object_Missile ;
     if(object==NULL) {
-              SEND_ERROR("Секция FLYER: Недостаточно памяти для создания объекта") ;
+              SEND_ERROR("Секция MISSILE: Недостаточно памяти для создания объекта") ;
                         return(-1) ;
                      }
 /*------------------------------------- Сохранения списка параметров */
@@ -1637,7 +1673,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+                         SEND_ERROR("Секция MISSILE: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
@@ -1651,7 +1687,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+                         SEND_ERROR("Секция MISSILE: Переполнение памяти") ;
                                             return(-1) ;
                       }
 
@@ -1677,7 +1713,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           object->Features[j]->vBodyPars(NULL, PAR) ;
           object->Features[j]->vReadSave(data->sections[i].title, 
-                                         data->sections[i].decl, "Flyer.Body") ;
+                                         data->sections[i].decl, "Missile.Body") ;
                                              }
 
                                          data->sections[i].title[0]= 0 ;
@@ -1688,7 +1724,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
     if(OBJECTS==NULL) {
-              SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+              SEND_ERROR("Секция MISSILE: Переполнение памяти") ;
                                 return(-1) ;
                       }
 
@@ -1713,396 +1749,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
-/*********************************************************************/
-/*								     */
-/*              Считывание файла описания программы                  */
-/*								     */
-/*  PROGRAM <Имя программы>                                          */
-/*  OBJECT <Допустимый тип объекта>                                  */
-/*								     */
-/*  Спецификация закона движения:				     */
-/*    <Спецификатор-1> <Спецификатор-2> ... <Спецификатор-N>         */
-/*      T=<значение>      - метка времени    			     */
-/*   координаты объекта:                                             */
-/*      X=<значение>                                                 */
-/*      Y=<значение>                                                 */
-/*      Z=<значение>                                                 */
-/*   ориентация объекта (азимут, возвышение, крен)                   */
-/*      A=<значение>                                                 */
-/*      E=<значение>                                                 */
-/*      R=<значение>                                                 */
-/*   скорость изменения ориентация объекта (азимут, возвышение, крен)*/
-/*     DA=<скорость>[:<до значения>]                                 */
-/*     DE=<скорость>[:<до значения>]                                 */
-/*     DR=<скорость>[:<до значения>]                                 */
-/*   перегрузка маневра                                              */
-/*      G=<значение>                                                 */
-/*   скорость изменения перегрузки маневра                           */
-/*     DG=<скорость>[:<до значения>]                                 */
-/*   скорость                                                        */
-/*      V=<значение>                                                 */
-/*   ускорение                                                       */
-/*     DV=<ускорение>[:<до значения>]                                */
-
-  int  RSS_Module_Flyer::iReadProgram(RSS_Object_Flyer *object, char *path)
-{
-                    FILE *file ;
- RSS_Object_FlyerProgram *program ;
-  RSS_Object_FlyerPFrame  frame ;
-                    char  text[1024] ;
-                    char  error[1024] ;
-                    char *words[20] ;
-                    char *name ;
-                    char *data ;
-                  double  value ;
-                  double  target ;
-                     int  target_flag ;
-                    char *end ;
-                     int  row ;
-                     int  i ;
-
-/*--------------------------------------------------- Открытие файла */
-
-       file=fopen(path, "rt") ;
-    if(file==NULL) {
-                          sprintf(error, "Ошибка %d открытия файла %s", errno, path) ;
-                       SEND_ERROR(error) ;
-                                       return(-1) ;
-                   }
-/*------------------------------------------------ Считывание данных */
-
-                      row=0 ;
-
-   while(1) {                                                       /* CIRCLE.1 - Построчно читаем файл */
-
-/*-------------------------------------- Считывание очередной строки */
-
-                      row++ ;
-
-                      memset(text, 0, sizeof(text)) ;
-                   end=fgets(text, sizeof(text)-1, file) ;          /* Считываем строку */
-                if(end==NULL)  break ;
-
-            if(text[0]==';')  continue ;                            /* Проходим комментарий */
-
-               end=strchr(text, '\n') ;                             /* Удаляем символ конца строки */
-            if(end!=NULL)  *end=0 ;
-               end=strchr(text, '\r') ;
-            if(end!=NULL)  *end=0 ;
-
-/*---------------------------------- Обработка спецификатора PROGRAM */
-
-#define  _KEY_WORD  "PROGRAM "
-      if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
-
-               end=text+strlen(_KEY_WORD) ;
-            if(*end==0) {
-                          sprintf(error, "Строка %d - оператор PROGRAM не содержит имя программы", row) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                        }  
-
-               program=NULL ;
-
-        do {
-
-         for(i=0 ; i<_PROGRAMS_MAX ; i++)
-           if(object->programs[i]!=NULL)
-            if(!stricmp(object->programs[i]->name, end)) {
-                                                            program=object->programs[i] ;
-                                                               break ;
-                                                         }
-
-            if(program!=NULL)  break ;
-
-         for(i=0 ; i<_PROGRAMS_MAX ; i++)
-            if(object->programs[i]==NULL) {
-                                             program    =new RSS_Object_FlyerProgram ;
-                                     object->programs[i]=program ;        
-                                             break ;
-                                          }
-           } while(0) ;  
-
-            if(program==NULL) {
-                          sprintf(error, "Строка %d - количество программ для объекта превышает допустимый предел - %d", row, _PROGRAMS_MAX) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                              }
-
-               strncpy(program->name, end, sizeof(program->name)-1) ;
-                       program->frames_cnt=0 ;
-
-                                       continue ;
-                                                       }
-#undef   _KEY_WORD
-
-/*----------------------------------- Обработка спецификатора OBJECT */
-
-#define  _KEY_WORD  "OBJECT "
-      if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
-
-               end=text+strlen(_KEY_WORD) ;
-            if(*end==0) {
-                          sprintf(error, "Строка %d - оператор OBJECT не содержит тип объекта", row) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                        }  
-
-            if(stricmp(end, "Flyer")) {
-                          sprintf(error, "Строка %d - программа не предназначена для объектов данного типа", row) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                                      }
-
-                                       continue ;
-                                                       }
-#undef   _KEY_WORD
-
-/*------------------------------------------- Разбор строки на слова */
-
-            if(program==NULL) {
-                                sprintf(error, "Строка %d - программа должна начинаться с оператора PROGRAM", row) ;
-                             SEND_ERROR(error) ;
-                                  return(-1) ;
-                              }
-        
-           memset(words, 0, sizeof(words)) ;
-
-                   i = 0 ;
-             words[i]=strtok(text, " \t") ;
-
-       while(words[i]!=NULL && i<30) {
-                   i++ ;
-             words[i]=strtok(NULL, " \t") ;
-                                    }
-/*---------------------------------------------- Формирование записи */
-
-          memset(&frame, 0, sizeof(frame)) ;
-
-          strcpy( frame.used, ";") ;
-
-       for(i=0 ; i<30 ; i++) {
-                                 if(words[i]==NULL)  break ;
-
-             end=strchr(words[i], '=') ;
-          if(end==NULL) {
-                             sprintf(error, "Строка %d - в спецификаторе %d отсутствует символ разделитель '='", row, i+1) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-            *end=0 ;
-
-              name=words[i] ;
-              data=end+1 ;
-/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Метка времени */
-          if(!stricmp(name, "T")) {
-
-               frame.t=strtod(data, &end) ;
-            if(*end!=0) {
-                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-                                  }
-/*- - - - - - - - - - - - - - - - - - - - - - -  Координаты объекта */
-          else
-          if(!stricmp(name, "X") ||
-             !stricmp(name, "Y") ||
-             !stricmp(name, "Z")   ) {
-
-               value=strtod(data, &end) ;
-            if(*end!=0) {
-                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-
-            if(!stricmp(name, "X"))  frame.x=value ;
-            if(!stricmp(name, "Y"))  frame.y=value ;
-            if(!stricmp(name, "Z"))  frame.z=value ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-                                     }
-/*- - - - - - - - - - - - - - - - - - - - - - -  Ориентация объекта */
-          else
-          if(!stricmp(name, "A") ||
-             !stricmp(name, "E") ||
-             !stricmp(name, "R")   ) {
-
-               value=strtod(data, &end) ;
-            if(*end!=0) {
-                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-
-            if(!stricmp(name, "A"))  frame.a=value ;
-            if(!stricmp(name, "E"))  frame.e=value ;
-            if(!stricmp(name, "R"))  frame.r=value ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-                                     }
-/*- - - - - - - - - - - - - - Скорость изменения ориентации объекта */
-          else
-          if(!stricmp(name, "DA") ||
-             !stricmp(name, "DE") ||
-             !stricmp(name, "DR")   ) {
-
-                             target_flag= 0 ;
-                              value     =strtod(data, &end) ;
-            if(*end==':') {
-                             target     =strtod(end+1, &end) ;
-                             target_flag= 1  ;
-                          }
-
-            if(*end!=0) {
-                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                        }
-
-            if(!stricmp(name, "DA"))  frame.d_a=value ;
-            if(!stricmp(name, "DE"))  frame.d_e=value ;
-            if(!stricmp(name, "DR"))  frame.d_r=value ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-
-            if(target_flag==0)  continue ; 
-
-                        name[0]='T' ;
-
-            if(!stricmp(name, "TA"))  frame.t_a=target ;
-            if(!stricmp(name, "TE"))  frame.t_e=target ;
-            if(!stricmp(name, "TR"))  frame.t_r=target ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-
-                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - -  Перегрузка маневра */
-          else
-          if(!stricmp(name, "G")) {
-
-               value=strtod(data, &end) ;
-            if(*end!=0) {
-                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-
-                                      frame.g=value ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-                                     }
-/*- - - - - - - - - - - - - -  Скорость изменения перегрузка маневра */
-          else
-          if(!stricmp(name, "DG")) {
-
-                             target_flag= 0 ;
-                              value     =strtod(data, &end) ;
-            if(*end==':') {
-                             target     =strtod(end+1, &end) ;
-                             target_flag= 1  ;
-                          }
-
-            if(*end!=0) {
-                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                        }
-
-                                      frame.d_g=value ;
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-
-            if(target_flag==0)  continue ;
-
-                                      frame.t_g=target ;
-                               strcat(frame.used, "TG;") ;
-                                   }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Скорость */
-          else
-          if(!stricmp(name, "V")) {
-
-               value=strtod(data, &end) ;
-            if(*end!=0) {
-                             sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-                        }
-
-                                      frame.v=value ;
-
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-                                     }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Ускорение */
-          else
-          if(!stricmp(name, "DV")) {
-
-                             target_flag= 0 ;
-                              value     =strtod(data, &end) ;
-            if(*end==':') {
-                             target     =strtod(end+1, &end) ;
-                             target_flag= 1  ;
-                          }
-
-            if(*end!=0) {
-                          sprintf(error, "Строка %d - в спецификаторе %s задано некорректное значение", row, name) ;
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                        }
-
-                                      frame.d_v=value ;
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
-
-            if(target_flag==0)  continue ;
-
-                                      frame.t_v=target ;
-                               strcat(frame.used, "TV;") ;
-                                   }
-/*- - - - - - - - - - - - - - - - - - - - - Неизвестный спецификатор */
-          else                    {
-
-                             sprintf(error, "Строка %d - неизвестный спецификатор %s", row, name) ;
-                          SEND_ERROR(error) ;
-                                return(-1) ;
-
-                                  } 
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                             }
-/*--------------------------------------- Сохранение кадра программы */
-
-       if(program->frames_cnt>=_PFRAMES_MAX) {
-               sprintf(error, "Строка %d - количество кадров программы превышает допустимый предел - %d", row, _PFRAMES_MAX) ;
-            SEND_ERROR(error) ;
-                  return(-1) ;
-                                             }
-
-       memcpy(&program->frames[program->frames_cnt], &frame, sizeof(frame)) ;
-                               program->frames_cnt++ ;
-
-/*-------------------------------------------------------------------*/
-            }                                                       /* CONTINUE.1 */
-/*--------------------------------------------------- Закрытие файла */
-
-                fclose(file) ;
-
-/*-------------------------------------------------------------------*/
-
-   return(0) ;
-}
-
-
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "ЛЕТУН"	           **/
+/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "РАКЕТА"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -2111,40 +1761,38 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Object_Flyer::RSS_Object_Flyer(void)
+     RSS_Object_Missile::RSS_Object_Missile(void)
 
 {
-   strcpy(Type, "Flyer") ;
+   strcpy(Type, "Missile") ;
 
-    Context        =new RSS_Transit_Flyer ;
+    Context        =new RSS_Transit_Missile ;
     Context->object=this ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-      x_base    = 0. ;
-      y_base    = 0. ;
-      z_base    = 0. ;
-      a_azim    = 0. ;
-      a_elev    = 0. ;
-      a_roll    = 0. ;
-      x_velocity= 0. ;
-      y_velocity= 0. ;
-      z_velocity= 0. ;
-      v_abs     = 0. ;
-      g_ctrl    = 0. ;
+      x_base    =   0. ;
+      y_base    =   0. ;
+      z_base    =   0. ;
+      a_azim    =   0. ;
+      a_elev    =   0. ;
+      a_roll    =   0. ;
+      x_velocity=   0. ;
+      y_velocity=   0. ;
+      z_velocity=   0. ;
+      v_abs     =   0. ;
+      g_ctrl    = 100. ;
 
-      r_ctrl    = 0. ;
-      m_ctrl    =NULL ;
+  memset(owner,  0, sizeof(owner )) ;
+  memset(target, 0, sizeof(target)) ;
+       o_owner =NULL ;   
+       o_target=NULL ;   
 
-    memset(programs, 0, sizeof(programs)) ;
-
-      trace_on    =  0 ;
-      trace_time  =  0 ;
       mTrace      =NULL ;
       mTrace_cnt  =  0 ;  
       mTrace_max  =  0 ; 
-      mTrace_color=  0 ;  
+      mTrace_color=RGB(0, 0, 127) ;
       mTrace_dlist=  0 ;  
 }
 
@@ -2153,7 +1801,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Object_Flyer::~RSS_Object_Flyer(void)
+    RSS_Object_Missile::~RSS_Object_Missile(void)
 
 {
       vFree() ;
@@ -2166,17 +1814,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Object_Flyer::vFree(void)
+  void   RSS_Object_Missile::vFree(void)
 
 {
   int  i ;
 
-
-   for(i=0 ; i<_PROGRAMS_MAX ; i++)  
-     if(programs[i]!=NULL) {
-                              delete programs[i] ;
-                                     programs[i]=NULL ;
-                           }
 
   if(this->mTrace!=NULL) {
                              free(this->mTrace) ;
@@ -2204,7 +1846,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Object_Flyer::vWriteSave(std::string *text)
+    void  RSS_Object_Missile::vWriteSave(std::string *text)
 
 {
   char  field[1024] ;
@@ -2212,7 +1854,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN OBJECT FLYER\n" ;
+     *text="#BEGIN OBJECT MISSILE\n" ;
 
 /*----------------------------------------------------------- Данные */
 
@@ -2241,384 +1883,102 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object_Flyer::vCalculate(double t1, double t2)
+     int  RSS_Object_Missile::vCalculate(double t1, double t2)
 {
-  Matrix2d  Sum_Matrix ;
-  Matrix2d  Oper_Matrix ;
-  Matrix2d  Vect_Matrix ;  
-  Matrix2d  Gold_Matrix ;  
-  Matrix2d  Gnew_Matrix ;  
+    double  dx, dy, dz ;         /* Вектор на цель */
+    double  s ;                  /* Расстояние до цели */
     double  r ;                  /* Радиус маневра */
+    double  h ;
+    double  ds ;
     double  a ;                  /* Ометываемый угол маневра */
-    double  s1, s2 ;
-    double  x0, y0, z0 ;         /* Центр маневра */
-    double  x1, y1, z1 ;         /* Точка синуса ометываемого угла маневра */
-    double  n1_azim, n1_elev ;
-    double  n2_azim, n2_elev ;
-    double  x2, y2, z2 ;         /* Точка синуса ометываемого угла маневра */
-    double  k ;
+    double  b ;
+    double  dv_max ;             /* Максимальная возможная длина вектора изменение скорости */
+    double  dv_x, dv_y, dv_z ;   /* Требуемое изменение скорости */
+    double  dv_s ;               /* Длина вектора требуемого изменения скорости */
+    double  pv_x, pv_y, pv_z ;   /* Предыдущий вектор скорости  */
 
-/*---------------------------------------------- Отработка программы */
+/*------------------------------------------------------- Подготовка */
 
-                          trace_time=t2 ;
+            pv_x=x_velocity ;
+            pv_y=y_velocity ;
+            pv_z=z_velocity ;
 
-   if(program!=NULL)  iExecuteProgram(t1, t2) ;
+/*---------------------------------------------------- Без наведения */
 
-/*---------------------------------------------- Постоянная скорость */
+   if(this->o_target==NULL) {
+                               x_base+=x_velocity*(t2-t1) ;
+                               y_base+=y_velocity*(t2-t1) ;
+                               z_base+=z_velocity*(t2-t1) ;
+                               g_over = 0 ;
+                            }
+/*----------------------------------------------------- С наведением */
 
-   if(this->g_ctrl==0) {
-                          x_base+=x_velocity*(t2-t1) ;
-                          y_base+=y_velocity*(t2-t1) ;
-                          z_base+=z_velocity*(t2-t1) ;
-                       }
-/*-------------------------------------------- Постоянная перегрузка */
+   else                     {
+/*- - - - - - - - - - - - - - Параметры относительного движения цели */
+                       dx=o_target->x_base-x_base ;                 /* Вектор на цель */
+                       dy=o_target->y_base-y_base ;
+                       dz=o_target->z_base-z_base ;
+                        s=sqrt(dx*dx+dy*dy+dz*dz) ;
+/*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
+                        r= v_abs*v_abs/g_ctrl ;                     /* Максимальный вектор изменения */
+                        a= v_abs*(t2-t1)/(2.*r) ;
+                   dv_max= 2.*v_abs*sin(0.5*a) ;
+/*- - - - - - - - - - - Расчет требуемого изменения вектора скорости */
+                       dx=dx*v_abs/s ;                              /* Нормируем вектор на цель по скорости */
+                       dy=dy*v_abs/s ;
+                       dz=dz*v_abs/s ;
 
-   else                {
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Параметры маневра */
-                           r      = v_abs*v_abs/g_ctrl ;
-                           a      =(360.*v_abs*(t2-t1))/(2.*_PI*r) ;
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Матрица преобразования */
-                 Sum_Matrix.Load3d_azim(-a_azim) ;
-                Oper_Matrix.Load3d_elev(-a_elev) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                Oper_Matrix.Load3d_roll(-a_roll) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                     dv_x=dx-x_velocity ;                           /* Требуемый вектор изменения скорости */
+                     dv_y=dy-y_velocity ;
+                     dv_z=dz-z_velocity ;
+                     dv_s=sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
+/*- - - - - - - - - -  Проверка ухода из поля видимости 180 градусов */
+     if(dv_s>1.4*v_abs) {
+                               x_base+=x_velocity*(t2-t1) ;
+                               y_base+=y_velocity*(t2-t1) ;
+                               z_base+=z_velocity*(t2-t1) ;
+                               g_over = 0 ;
 
-    if(r_ctrl!=a_roll ||
-       m_ctrl==  NULL   ) {
-                  if(m_ctrl==NULL) m_ctrl=new Matrix2d ;
- 
-                             m_ctrl->Copy(&Sum_Matrix) ;
-                             r_ctrl=a_roll ;
-                             a_ctrl=   0. ;
-                          }
-/*- - - - - - - - - - - - - - - - - - - - - -  Расчет конечной точки */
-                         x1=0 ;
-                         y1=r-r*cos(a*_GRD_TO_RAD) ;
-                         z1=  r*sin(a*_GRD_TO_RAD) ;
+                                   return(0) ;
+                        }
+/*- - - - - - - - - - - - - - - - - - Расчет нового вектора скорости */
+     if(dv_s>dv_max) {                                              /* Если требуемое изменение не может быть обеспечено по перегрузке... */
+                            b=asin(0.5*dv_s/v_abs) ;
+                            h=sqrt(v_abs*v_abs-0.25*dv_s*dv_s) ;
 
-                Vect_Matrix.LoadZero(3, 1) ;
-                Vect_Matrix.SetCell (0, 0, x1) ;
-                Vect_Matrix.SetCell (1, 0, y1) ;
-                Vect_Matrix.SetCell (2, 0, z1) ;
+                           ds=h*tan(a-b)+0.5*dv_s ;
 
-                Vect_Matrix.LoadMul (&Sum_Matrix, &Vect_Matrix) ;
+                         x_velocity+=dv_x*ds/dv_s ;
+                         y_velocity+=dv_y*ds/dv_s ;
+                         z_velocity+=dv_z*ds/dv_s ;
+                               dv_s =sqrt(x_velocity*x_velocity+
+                                          y_velocity*y_velocity+
+                                          z_velocity*z_velocity ) ;
+                         x_velocity*=v_abs/dv_s ;
+                         y_velocity*=v_abs/dv_s ;
+                         z_velocity*=v_abs/dv_s ;
+                             g_over = 1 ;
+                     }
+     else            {
+                         x_velocity =dx ;
+                         y_velocity =dy ;
+                         z_velocity =dz ;
+                             g_over = 0 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - -  Изменение базовой точки */
+             x_base+=0.5*(x_velocity+pv_x)*(t2-t1) ;
+             y_base+=0.5*(y_velocity+pv_y)*(t2-t1) ;
+             z_base+=0.5*(z_velocity+pv_z)*(t2-t1) ;
 
-                    x_base+=Vect_Matrix.GetCell(0, 0) ;
-                    y_base+=Vect_Matrix.GetCell(1, 0) ;
-                    z_base+=Vect_Matrix.GetCell(2, 0) ;
-/*- - - - - - - - - - - - - - - - - - - - - Расчет проекций скорости */
-                     a_ctrl+=a ;
-                         x1 =0. ;
-                         y1 =this->v_abs*sin(a_ctrl*_GRD_TO_RAD) ;
-                         z1 =this->v_abs*cos(a_ctrl*_GRD_TO_RAD) ;
-
-                Vect_Matrix.LoadZero(3, 1) ;
-                Vect_Matrix.SetCell (0, 0, x1) ;
-                Vect_Matrix.SetCell (1, 0, y1) ;
-                Vect_Matrix.SetCell (2, 0, z1) ;
-
-                Vect_Matrix.LoadMul (m_ctrl, &Vect_Matrix) ;
-
-                    x_velocity=Vect_Matrix.GetCell(0, 0) ;
-                    y_velocity=Vect_Matrix.GetCell(1, 0) ;
-                    z_velocity=Vect_Matrix.GetCell(2, 0) ;
+                  s=sqrt((x_velocity-pv_x)*(x_velocity-pv_x)+
+                         (y_velocity-pv_y)*(y_velocity-pv_y)+
+                         (z_velocity-pv_z)*(z_velocity-pv_z) ) ;
 /*- - - - - - - - - - - - - - - - - - - - Изменение углов ориентации */
-                Gold_Matrix.LoadZero(3, 1) ;
-                Gold_Matrix.SetCell (1, 0, 1.) ;
-                Gold_Matrix.LoadMul (&Sum_Matrix, &Gold_Matrix) ;
-
-                  n1_azim=atan2(x_velocity, z_velocity)*_RAD_TO_GRD ;
-                  n1_elev=atan2(y_velocity, sqrt(x_velocity*x_velocity+z_velocity*z_velocity))*_RAD_TO_GRD ;
-                  n2_azim=180.+n1_azim ;
-                  n2_elev=180.-n1_elev ;
-
-                 Sum_Matrix.Load3d_azim(-n1_azim) ;
-                Oper_Matrix.Load3d_elev(-n1_elev) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                Oper_Matrix.Load3d_roll(-a_roll) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                
-                Gnew_Matrix.LoadZero(3, 1) ;
-                Gnew_Matrix.SetCell (1, 0, 1.) ;
-                Gnew_Matrix.LoadMul (&Sum_Matrix, &Gnew_Matrix) ;
-
-              x1=Gold_Matrix.GetCell(0, 0)-Gnew_Matrix.GetCell(0, 0) ;
-              y1=Gold_Matrix.GetCell(1, 0)-Gnew_Matrix.GetCell(1, 0) ;
-              z1=Gold_Matrix.GetCell(2, 0)-Gnew_Matrix.GetCell(2, 0) ;
-
-              s1=sqrt(x1*x1+y1*y1+z1*z1) ;
-           if(s1>0.) {  x1/=s1 ;  y1/=s1 ;  z1/=s1 ;  }
-
-                 Sum_Matrix.Transpose(m_ctrl) ;
-                Vect_Matrix.LoadZero (3, 1) ;
-                Vect_Matrix.SetCell  (0, 0, x1) ;
-                Vect_Matrix.SetCell  (1, 0, y1) ;
-                Vect_Matrix.SetCell  (2, 0, z1) ;
-                Vect_Matrix.LoadMul  (&Sum_Matrix, &Vect_Matrix) ;
-
-             x2=Vect_Matrix.GetCell  (0, 0) ;
-             y2=Vect_Matrix.GetCell  (1, 0) ;
-             z2=Vect_Matrix.GetCell  (2, 0) ;
-
-                 Sum_Matrix.Load3d_azim(-n2_azim) ;
-                Oper_Matrix.Load3d_elev(-n2_elev) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                Oper_Matrix.Load3d_roll(-a_roll) ;
-                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                
-                Gnew_Matrix.LoadZero(3, 1) ;
-                Gnew_Matrix.SetCell (1, 0, 1.) ;
-                Gnew_Matrix.LoadMul (&Sum_Matrix, &Gnew_Matrix) ;
-
-              x2=Gold_Matrix.GetCell(0, 0)-Gnew_Matrix.GetCell(0, 0) ;
-              y2=Gold_Matrix.GetCell(1, 0)-Gnew_Matrix.GetCell(1, 0) ;
-              z2=Gold_Matrix.GetCell(2, 0)-Gnew_Matrix.GetCell(2, 0) ;
-
-              s2=sqrt(x2*x2+y2*y2+z2*z2) ;
-//           if(s2>0.) {  x2/=s2 ;  y2/=s2 ;  z2/=s2 ;  }
-
-                 Sum_Matrix.Transpose(m_ctrl) ;
-                Vect_Matrix.LoadZero (3, 1) ;
-                Vect_Matrix.SetCell  (0, 0, x2) ;
-                Vect_Matrix.SetCell  (1, 0, y2) ;
-                Vect_Matrix.SetCell  (2, 0, z2) ;
-                Vect_Matrix.LoadMul  (&Sum_Matrix, &Vect_Matrix) ;
-
-             x2=Vect_Matrix.GetCell  (0, 0) ;
-
-            if(     s1 > 1.     ) {
-                                      a_azim=n2_azim ;
-                                      a_elev=n2_elev ;
-                                  }
-            else
-            if(     s2 > 1.     ) {
-                                      a_azim=n1_azim ;
-                                      a_elev=n1_elev ;
-                                  }
-            else
-            if(fabs(x1)<fabs(x2)) {
-                                      a_azim=n1_azim ;
-                                      a_elev=n1_elev ;
-                                  }
-            else                  {
-                                      a_azim=n2_azim ;
-                                      a_elev=n2_elev ;
-                                  }
+                  a_azim=atan2(x_velocity, z_velocity)*_RAD_TO_GRD ;
+                  a_elev=atan2(y_velocity, sqrt(x_velocity*x_velocity+z_velocity*z_velocity))*_RAD_TO_GRD ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                       }
+                            }
 /*-------------------------------------------------------------------*/
-
-  return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*               Отработка программного управления                  */
-
-     int  RSS_Object_Flyer::iExecuteProgram(double t1, double t2)
-{
-   Matrix2d  Sum_Matrix ;
-   Matrix2d  Oper_Matrix ;  
-   Matrix2d  Velo_Matrix ;  
-        int  v_flag ;    /* Флаг перерасчета проекций скорости */
-       char  used[1024] ;
-     double  a_new, e_new, r_new, g_new, v_new ;
-        int  status ;
-        int  i ;
-
-#define  FRAME program->frames[i]
-
-/*----------------------------------- Контроль завершения исполнения */
-
-       if(p_frame>=program->frames_cnt)  return(0) ;
-
-/*----------------------- Пересчет абсолютного времени в программное */
-
-                 t1-=p_start ;
-                 t2-=p_start ;
-
-/*--------------------------------------- Обработка кадров программы */
-
-             v_flag=0 ;
-
-   for(i=p_frame ; i<program->frames_cnt ; i++) {
-/*- - - - - - - - - - - - - - - - - - - - -  Обработка метки времени */
-     if(program->frames[i].t>t2)  break ;
-/*- - - - - - - - - - - - - - - - - - - - - - -  Обработка координат */
-     if(strstr(FRAME.used, ";X;"))    this->x_base=FRAME.x ;
-     if(strstr(FRAME.used, ";Y;"))    this->y_base=FRAME.y ;
-     if(strstr(FRAME.used, ";Z;"))    this->z_base=FRAME.z ;
-
-     if(strstr(FRAME.used, ";A;")) {  this->a_azim=FRAME.a ;  v_flag=1 ;  }
-     if(strstr(FRAME.used, ";E;")) {  this->a_elev=FRAME.e ;  v_flag=1 ;  }
-     if(strstr(FRAME.used, ";R;"))    this->a_roll=FRAME.r ;
-/*- - - - - - - - - - - - - - - - - -  Обработка изменения координат */
-     if(strstr(FRAME.used, ";DA;")) {
-                        iReplaceText(this->p_controls.used, ";DA;", ";", 1) ;
-                        iReplaceText(this->p_controls.used, ";TA;", ";", 1) ;
-
-                                     this->p_controls.d_a=FRAME.d_a ;
-         if(FRAME.d_a!=0.)    strcat(this->p_controls.used, "DA;") ;
-                                    }
-     if(strstr(FRAME.used, ";DE;")) {
-                        iReplaceText(this->p_controls.used, ";DE;", ";", 1) ;
-                        iReplaceText(this->p_controls.used, ";TE;", ";", 1) ;
-
-                                     this->p_controls.d_e=FRAME.d_e ;
-         if(FRAME.d_e!=0.)    strcat(this->p_controls.used, "DE;") ;
-                                    }
-     if(strstr(FRAME.used, ";DR;")) {
-                        iReplaceText(this->p_controls.used, ";DR;", ";", 1) ;
-                        iReplaceText(this->p_controls.used, ";TR;", ";", 1) ;
-
-                                     this->p_controls.d_r=FRAME.d_r ;
-         if(FRAME.d_r!=0.)    strcat(this->p_controls.used, "DR;") ;
-                                    }
-
-     if(strstr(FRAME.used, ";TA;")) {
-                                       this->p_controls.t_a=FRAME.t_a ;
-                                strcat(this->p_controls.used, "TA;") ;
-                                    }
-     if(strstr(FRAME.used, ";TE;")) {
-                                       this->p_controls.t_e=FRAME.t_e ;
-                                strcat(this->p_controls.used, "TE;") ;
-                                    }
-     if(strstr(FRAME.used, ";TR;")) {
-                                       this->p_controls.t_r=FRAME.t_r ;
-                                strcat(this->p_controls.used, "TR;") ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - Обработка перегрузки маневра */
-     if(strstr(FRAME.used, ";G;"))    this->g_ctrl=FRAME.g ;
-
-     if(strstr(FRAME.used, ";DG;")) {
-                        iReplaceText(this->p_controls.used, ";DG;", ";", 1) ;
-                        iReplaceText(this->p_controls.used, ";TG;", ";", 1) ;
-
-                                     this->p_controls.d_g=FRAME.d_g ;
-         if(FRAME.d_g!=0.)    strcat(this->p_controls.used, "DG;") ;
-                                    }
-
-     if(strstr(FRAME.used, ";TG;")) {
-                                       this->p_controls.t_g=FRAME.t_g ;
-                                strcat(this->p_controls.used, "TG;") ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - - - - - - Обработка скорости */
-     if(strstr(FRAME.used, ";V;")) {  this->v_abs=FRAME.v ;  v_flag=1 ;  }
-
-     if(strstr(FRAME.used, ";DV;")) {
-                        iReplaceText(this->p_controls.used, ";DV;", ";", 1) ;
-                        iReplaceText(this->p_controls.used, ";TV;", ";", 1) ;
-
-                                     this->p_controls.d_v=FRAME.d_v ;
-           if(FRAME.d_v!=0.)  strcat(this->p_controls.used, "DV;") ;
-                                    }
-
-     if(strstr(FRAME.used, ";TV;")) {
-                                       this->p_controls.t_v=FRAME.t_v ;
-                                strcat(this->p_controls.used, "TV;") ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - - Обработка кадров программы */
-                 p_frame++ ;
-                                                }
-/*------------------------------------ Перерасчет изменяемых величин */
-
-         memset(used,   0,                   sizeof(used)  ) ;
-        strncpy(used, this->p_controls.used, sizeof(used)-1) ;
-
-     if(strstr(this->p_controls.used, ";DA;"))  a_new=this->a_azim+this->p_controls.d_a*(t2-t1) ;
-     if(strstr(this->p_controls.used, ";DE;"))  e_new=this->a_elev+this->p_controls.d_e*(t2-t1) ;
-     if(strstr(this->p_controls.used, ";DR;"))  r_new=this->a_roll+this->p_controls.d_r*(t2-t1) ;
-     if(strstr(this->p_controls.used, ";DG;"))  g_new=this->g_ctrl+this->p_controls.d_g*(t2-t1) ;
-     if(strstr(this->p_controls.used, ";DV;"))  v_new=this->v_abs +this->p_controls.d_v*(t2-t1) ;
-
-/*----------------------------- Контроль граничных условий изменений */
-
-     if(strstr(this->p_controls.used, ";TA;")) {
-
-       if(a_new>this->a_azim)  status=iAngleInCheck(this->p_controls.t_a, this->a_azim, a_new) ;
-       else                    status=iAngleInCheck(this->p_controls.t_a, a_new, this->a_azim) ;
-
-       if(!status) {
-                            a_new=this->p_controls.t_a ;
-                     iReplaceText(this->p_controls.used, ";DA;", ";", 1) ;
-                     iReplaceText(this->p_controls.used, ";TA;", ";", 1) ;
-                   }
-                                               }
-
-     if(strstr(this->p_controls.used, ";TE;")) {
-
-       if(e_new>this->a_elev)  status=iAngleInCheck(this->p_controls.t_e, this->a_elev, e_new) ;
-       else                    status=iAngleInCheck(this->p_controls.t_e, e_new, this->a_elev) ;
-
-       if(!status) {
-                            e_new=this->p_controls.t_e ;
-                     iReplaceText(this->p_controls.used, ";DE;", ";", 1) ;
-                     iReplaceText(this->p_controls.used, ";TE;", ";", 1) ;
-                   }
-                                               }
-
-     if(strstr(this->p_controls.used, ";TR;")) {
-
-       if(r_new>this->a_roll)  status=iAngleInCheck(this->p_controls.t_r, this->a_roll, r_new) ;
-       else                    status=iAngleInCheck(this->p_controls.t_r, r_new, this->a_roll) ;
-
-       if(!status) {
-                            e_new=this->p_controls.t_r ;
-                     iReplaceText(this->p_controls.used, ";DR;", ";", 1) ;
-                     iReplaceText(this->p_controls.used, ";TR;", ";", 1) ;
-                   }
-                                               }
-
-     if(strstr(this->p_controls.used, ";TG;")) {
-
-       if(g_new>this->g_ctrl)  status=iAngleInCheck(this->p_controls.t_g, this->g_ctrl, g_new) ;
-       else                    status=iAngleInCheck(this->p_controls.t_g, g_new, this->g_ctrl) ;
-
-       if(!status) {
-                            g_new=this->p_controls.t_g ;
-                     iReplaceText(this->p_controls.used, ";DG;", ";", 1) ;
-                     iReplaceText(this->p_controls.used, ";TG;", ";", 1) ;
-                   }
-                                               }
-
-     if(strstr(this->p_controls.used, ";TV;")) {
-
-       if(v_new>this->v_abs)  status=iAngleInCheck(this->p_controls.t_v, this->v_abs, v_new) ;
-       else                   status=iAngleInCheck(this->p_controls.t_v, v_new, this->v_abs) ;
-
-       if(!status) {
-                            v_new=this->p_controls.t_v ;
-                     iReplaceText(this->p_controls.used, ";DV;", ";", 1) ;
-                     iReplaceText(this->p_controls.used, ";TV;", ";", 1) ;
-                   }
-                                               }
-/*------------------------------------ Присвоение изменяемых величин */
-
-     if(strstr(used, ";DA;")) {  this->a_azim=a_new ;  v_flag=1 ;  }
-     if(strstr(used, ";DE;")) {  this->a_elev=e_new ;  v_flag=1 ;  }
-     if(strstr(used, ";DR;"))    this->a_roll=r_new ;
-     if(strstr(used, ";DG;"))    this->g_ctrl=g_new ;
-     if(strstr(used, ";DV;")) {  this->v_abs =v_new ;  v_flag=1 ;  }
-
-/*------------------------------------- Перерасчет проекций скорости */
-
-     if(v_flag) {
-                   Velo_Matrix.LoadZero   (3, 1) ;
-                   Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
-                    Sum_Matrix.Load3d_azim(-this->a_azim) ;
-                   Oper_Matrix.Load3d_elev(-this->a_elev) ;
-                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                   Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
-
-                     x_velocity=Velo_Matrix.GetCell(0, 0) ;
-                     y_velocity=Velo_Matrix.GetCell(1, 0) ;
-                     z_velocity=Velo_Matrix.GetCell(2, 0) ;
-                }
-/*-------------------------------------------------------------------*/
-
-#undef   FRAME
 
   return(0) ;
 }
@@ -2628,7 +1988,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                   Сохранение точки траектории                     */
 
-  int  RSS_Object_Flyer::iSaveTracePoint(char *action)
+  int  RSS_Object_Missile::iSaveTracePoint(char *action)
 
 {
 /*------------------------------------------------- Сброс траектории */
@@ -2642,11 +2002,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(mTrace_cnt==mTrace_max) {
 
           mTrace_max+= 1000 ;
-          mTrace     =(RSS_Object_FlyerTrace *)
-                            realloc(mTrace, mTrace_max*sizeof(RSS_Object_FlyerTrace)) ;
+          mTrace     =(RSS_Object_MissileTrace *)
+                            realloc(mTrace, mTrace_max*sizeof(RSS_Object_MissileTrace)) ;
 
        if(mTrace==NULL) {
-                   SEND_ERROR("FLYER.iSaveTracePoint@"
+                   SEND_ERROR("MISSILE.iSaveTracePoint@"
                               "Memory over for trajectory") ;
                                   return(-1) ;
                         }
@@ -2662,6 +2022,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   mTrace[mTrace_cnt].x_velocity=this->x_velocity ;
                   mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
                   mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
+
+      if(g_over)  mTrace[mTrace_cnt].color     =RGB(127, 0,   0) ;
+      else        mTrace[mTrace_cnt].color     =RGB(  0, 0, 127) ;
+
                          mTrace_cnt++ ;
 
 /*-------------------------------------------------------------------*/
@@ -2674,7 +2038,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*           Отображение траектории с передачей контекста           */
 
-  void  RSS_Object_Flyer::iShowTrace_(void)
+  void  RSS_Object_Missile::iShowTrace_(void)
 
 {
     strcpy(Context->action, "SHOW_TRACE") ;
@@ -2689,11 +2053,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                     Отображение траектории                        */
 
-  void  RSS_Object_Flyer::iShowTrace(void)
+  void  RSS_Object_Missile::iShowTrace(void)
 
 {
-   int  status ;
-   int  i ;
+       int  status ;
+       int  i ;
 
 /*-------------------------------- Резервирование дисплейного списка */
 
@@ -2715,16 +2079,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*--------------------------------------------- Отрисовка траектории */
 
-             glColor4d(GetRValue(mTrace_color)/256., 
-                       GetGValue(mTrace_color)/256.,
-                       GetBValue(mTrace_color)/256., 1.) ;
+                                        i=0 ;
+
+             glColor4d(GetRValue(mTrace[i].color)/256., 
+                       GetGValue(mTrace[i].color)/256.,
+                       GetBValue(mTrace[i].color)/256., 1.) ;
 
                glBegin(GL_LINE_STRIP) ;
 
-       for(i=0 ; i<mTrace_cnt ; i++)
             glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
 
-                  glEnd();
+       for(i=1 ; i<mTrace_cnt ; i++) {
+
+         if(mTrace[i].color!=mTrace[i-1].color) {
+
+            glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
+                 glEnd();
+             glColor4d(GetRValue(mTrace[i].color)/256., 
+                       GetGValue(mTrace[i].color)/256.,
+                       GetBValue(mTrace[i].color)/256., 1.) ;
+
+               glBegin(GL_LINE_STRIP) ;
+                                                }
+
+            glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
+
+                                     }
+
+                 glEnd();
 
 /*----------------------------- Восстановление контекста отображения */
 
@@ -2749,7 +2131,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
 
-     RSS_Transit_Flyer::RSS_Transit_Flyer(void)
+     RSS_Transit_Missile::RSS_Transit_Missile(void)
 
 {
 }
@@ -2759,7 +2141,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
 
-    RSS_Transit_Flyer::~RSS_Transit_Flyer(void)
+    RSS_Transit_Missile::~RSS_Transit_Missile(void)
 
 {
 }
@@ -2769,40 +2151,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*	              Исполнение действия                           */
 
-    int  RSS_Transit_Flyer::vExecute(void)
+    int  RSS_Transit_Missile::vExecute(void)
 
 {
-   if(!stricmp(action, "SHOW_TRACE"))  ((RSS_Object_Flyer *)object)->iShowTrace() ;
+   if(!stricmp(action, "SHOW_TRACE"))  ((RSS_Object_Missile *)object)->iShowTrace() ;
 
    return(0) ;
 }
-
-
-/*********************************************************************/
-/*								     */
-/*	      Компоненты класса "ПРОГРАММА УПРАВЛЕНИЯ"	             */
-/*								     */
-/*********************************************************************/
-
-/*********************************************************************/
-/*								     */
-/*	       Конструктор класса "ПРОГРАММА УПРАВЛЕНИЯ"      	     */
-
-     RSS_Object_FlyerProgram::RSS_Object_FlyerProgram(void)
-
-{
-    memset(name, 0, sizeof(name)) ;
-           frames_cnt=0 ;
-}
-
-
-/*********************************************************************/
-/*								     */
-/*	        Деструктор класса "ПРОГРАММА УПРАВЛЕНИЯ"      	     */
-
-    RSS_Object_FlyerProgram::~RSS_Object_FlyerProgram(void)
-
-{
-}
-
-

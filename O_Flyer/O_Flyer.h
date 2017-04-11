@@ -81,13 +81,18 @@
    RSS_Object_FlyerProgram *programs[_PROGRAMS_MAX] ;         /* Список программ управления */
    RSS_Object_FlyerProgram *program ;                         /* Рабочая программа управления */
                        int  p_frame ;
+                    double  p_start ;                         /* Время запуска программы */
 
     RSS_Object_FlyerPFrame  p_controls ;                      /* Действующие программные параметры */
+
+                       int  trace_on ;                        /* Признак включенной трассировки */
+                    double  trace_time ;                      /* Контрольное время трассировки */
 
    private:
                     double  r_ctrl ;                          /* Параметры плоскости поворота */
             class Matrix2d *m_ctrl ;
                     double  a_ctrl ;
+
 
      RSS_Object_FlyerTrace *mTrace ;                          /* Траектория */
                        int  mTrace_cnt ;  
@@ -119,7 +124,7 @@
 
                   double  g_step ;                          /* Шаг изменения траекторной перегрузки */
                   double  a_step ;                          /* Шаг изменения углов */
-				     
+
     public:
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
