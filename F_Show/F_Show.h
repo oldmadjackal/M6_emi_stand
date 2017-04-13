@@ -23,6 +23,7 @@
       struct RSS_Module_Show_instr *mInstrList ;          /* Список команд */
 				     
     public:
+     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
      virtual RSS_Feature *vCreateFeature(RSS_Object *) ;    /* Создать свойство */
      virtual        void  vShow         (char *) ;          /* Отобразить связанные данные */

@@ -39,6 +39,7 @@
       struct RSS_Module_Body_instr *mInstrList ;          /* Список команд */
 				     
     public:
+     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */

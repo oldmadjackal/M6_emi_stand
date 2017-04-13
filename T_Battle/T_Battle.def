@@ -1,0 +1,4 @@
+LIBRARY T_Battle
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

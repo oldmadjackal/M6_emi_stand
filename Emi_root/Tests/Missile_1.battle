@@ -1,0 +1,4 @@
+ T=0  start f1
+ T=0  start f2
+DT=5  start r1 10
+ T=20 exit

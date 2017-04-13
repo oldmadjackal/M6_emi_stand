@@ -11,7 +11,6 @@
 #define O_FLYER_API __declspec(dllimport)
 #endif
 
-
 /*---------------------------------------------- Параметры генерации */
 
 /*------------------------ Описание класса контекста объекта "Летун" */
@@ -103,7 +102,9 @@
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+               virtual  int  vCalculateStart(void) ;            /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double) ;  /* Расчет изменения состояния */
+               virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
                         int  iExecuteProgram(double, double) ;  /* Отработка программного управления */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
@@ -126,6 +127,7 @@
                   double  a_step ;                          /* Шаг изменения углов */
 
     public:
+     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */

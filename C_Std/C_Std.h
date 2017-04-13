@@ -27,17 +27,19 @@
   class C_STD_API RSS_Calc_Std : public RSS_Kernel {
 
     public:
-     virtual         int  vCalculate  (char *, char *,         /* Вычислить выражение */                                       
-                                       struct RSS_Parameter *,
-                                       struct RSS_Parameter *,
-                                       double *,
-                                       void **, char *) ;
+     virtual         int  vCalculate   (char *, char *,         /* Вычислить выражение */                                       
+                                        struct RSS_Parameter *,
+                                        struct RSS_Parameter *,
+                                        double *,
+                                        void **, char *) ;
 
     public:
-     virtual        void  vStart      (void) ;                 /* Стартовая разводка */
 
-                    void  iDebug      (char *, char *, int) ;  /* Отладочная печать в файл */ 
-                    void  iDebug      (char *, char *) ;
+     virtual         int  vGetParameter(char *, char *) ;       /* Получить параметр */
+     virtual        void  vStart       (void) ;                 /* Стартовая разводка */
+
+                    void  iDebug       (char *, char *, int) ;  /* Отладочная печать в файл */ 
+                    void  iDebug       (char *, char *) ;
 
 	                  RSS_Calc_Std() ;                     /* Конструктор */
 	                 ~RSS_Calc_Std() ;                     /* Деструктор */

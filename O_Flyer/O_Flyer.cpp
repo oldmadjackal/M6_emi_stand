@@ -193,6 +193,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		        Получить параметр       		    */
+
+     int  RSS_Module_Flyer::vGetParameter(char *name, char *value)
+
+{
+/*-------------------------------------------------- Описание модуля */
+
+    if(!stricmp(name, "$$MODULE_NAME")) {
+
+         sprintf(value, "%-20.20s -  Простой летательный аппарат", identification) ;
+                                        }
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		        Выполнить команду       		    */
 
   int  RSS_Module_Flyer::vExecuteCmd(const char *cmd)
@@ -1472,19 +1491,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c) ;
-         object->iSaveTracePoint("ADD") ;
-/*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
-         object->iShowTrace_() ;
-/*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
-   for(i=0 ; i<object->Features_cnt ; i++) {
-     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
-                                                       object->y_base, 
-                                                       object->z_base ) ;
-     object->Features[i]->vBodyAngles   ("Flyer.Body", object->a_azim, 
-                                                       object->a_elev, 
-                                                       object->a_roll ) ;
-                                            }
+         object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c) ;
+         object->vCalculateShow() ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
        if(time_1-time_s>=this->kernel->show_time_step) {
@@ -1751,7 +1759,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   RSS_Object_FlyerPFrame  frame ;
                     char  text[1024] ;
                     char  error[1024] ;
-                    char *words[20] ;
+                    char *words[30] ;
                     char *name ;
                     char *data ;
                   double  value ;
@@ -2239,6 +2247,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*             Подготовка расчета изменения состояния               */
+
+     int  RSS_Object_Flyer::vCalculateStart(void)
+{
+    this->program=NULL ;
+
+    this->iSaveTracePoint("CLEAR") ;
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                   Расчет изменения состояния                     */
 
      int  RSS_Object_Flyer::vCalculate(double t1, double t2)
@@ -2408,6 +2430,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                        }
 /*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*      Отображение результата расчета изменения состояния          */
+
+     int  RSS_Object_Flyer::vCalculateShow(void)
+{
+   int i ;
+
+
+         this->iSaveTracePoint("ADD") ;                             /* Сохранение точки траектории */  
+
+         this->iShowTrace_() ;                                      /* Отображение траектории */
+
+   for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
+     this->Features[i]->vBodyBasePoint("Flyer.Body", this->x_base, 
+                                                     this->y_base, 
+                                                     this->z_base ) ;
+     this->Features[i]->vBodyAngles   ("Flyer.Body", this->a_azim, 
+                                                     this->a_elev, 
+                                                     this->a_roll ) ;
+                                            }
 
   return(0) ;
 }

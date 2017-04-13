@@ -66,6 +66,7 @@
                               double  mSize ;                /* Коэф.размера маркера */   
 
     public:
+     virtual         int  vGetParameter  (char *, char *) ;  /* Получить параметр */
      virtual        void  vShow          (char *) ;          /* Отобразить связанные данные */
      virtual         int  vExecuteCmd    (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave      (std::string *) ;   /* Чтение данных из строки */

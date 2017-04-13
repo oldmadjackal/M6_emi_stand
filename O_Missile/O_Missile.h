@@ -60,6 +60,8 @@
                       char  target[128] ;                     /* Объект-цель */
                 RSS_Object *o_target ;
 
+                RSS_Kernel *kernel ;                          /* Ссылка на модуль ядра */
+
    private:
 
      RSS_Object_MissileTrace *mTrace ;                        /* Траектория */
@@ -71,7 +73,10 @@
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+               virtual  int  vCalculateStart(void) ;            /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double) ;  /* Расчет изменения состояния */
+               virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
+               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
                        void  iShowTrace     (void) ;            /* Отображение траектории */
@@ -91,8 +96,9 @@
 
                   double  g_step ;                          /* Шаг изменения траекторной перегрузки */
                   double  a_step ;                          /* Шаг изменения углов */
-				     
+
     public:
+     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
      virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */

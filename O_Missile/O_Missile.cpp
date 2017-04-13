@@ -195,6 +195,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		        Получить параметр       		    */
+
+     int  RSS_Module_Missile::vGetParameter(char *name, char *value)
+
+{
+/*-------------------------------------------------- Описание модуля */
+
+    if(!stricmp(name, "$$MODULE_NAME")) {
+
+         sprintf(value, "%-20.20s -  Простая ракета с пассивным самонаведением", identification) ;
+                                        }
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		        Выполнить команду       		    */
 
   int  RSS_Module_Missile::vExecuteCmd(const char *cmd)
@@ -1881,6 +1900,97 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Специальные действия                      */
+
+     int  RSS_Object_Missile::vSpecial(char *oper, void *data)
+{
+/*-------------------------------------------- Ссылка на модуль ядра */
+
+    if(!stricmp(oper, "KERNEL")) {
+                             this->kernel=(RSS_Kernel *)data ;
+                                      return(NULL) ;
+                                 }
+/*-------------------------------------------------------------------*/
+
+  return(-1) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*             Подготовка расчета изменения состояния               */
+
+     int  RSS_Object_Missile::vCalculateStart(void)
+{
+    Matrix2d  Sum_Matrix ;
+    Matrix2d  Oper_Matrix ;  
+    Matrix2d  Velo_Matrix ;  
+         int  i ; 
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*-------------------------------------- Привязка к объекту-носителю */
+
+      this->o_owner=NULL ;
+
+  if(this->owner[0]!=0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->owner)) {
+                       this->o_owner=OBJECTS[i] ;
+                                 break ;
+                                                     }
+                        }
+
+  if(this->o_owner!=NULL) {
+
+      this->x_base=this->o_owner->x_base ;
+      this->y_base=this->o_owner->y_base ;
+      this->z_base=this->o_owner->z_base ;
+
+      this->a_azim=this->o_owner->a_azim ;
+      this->a_elev=this->o_owner->a_elev ;
+      this->a_roll=this->o_owner->a_roll ;
+                          }
+/*------------------------------------------ Привязка к объекту-цели */
+
+      this->o_target=NULL ;
+
+  if(this->target[0]!=0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->target)) {
+                       this->o_target=OBJECTS[i] ;
+                                 break ;
+                                                      }
+                         }
+/*-------------------------------------------- Перерасчет параметров */
+
+       Velo_Matrix.LoadZero   (3, 1) ;
+       Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
+        Sum_Matrix.Load3d_azim(-this->a_azim) ;
+       Oper_Matrix.Load3d_elev(-this->a_elev) ;
+        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+       Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
+
+         this->x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         this->y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         this->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+
+/*------------------------------------------------ Очистка контекста */
+
+    this->iSaveTracePoint("CLEAR") ;
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                   Расчет изменения состояния                     */
 
      int  RSS_Object_Missile::vCalculate(double t1, double t2)
@@ -1979,6 +2089,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                             }
 /*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*      Отображение результата расчета изменения состояния          */
+
+     int  RSS_Object_Missile::vCalculateShow(void)
+{
+   int i ;
+
+
+         this->iSaveTracePoint("ADD") ;                             /* Сохранение точки траектории */  
+
+         this->iShowTrace_() ;                                      /* Отображение траектории */
+
+   for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
+     this->Features[i]->vBodyBasePoint("Missile.Body", this->x_base, 
+                                                       this->y_base, 
+                                                       this->z_base ) ;
+     this->Features[i]->vBodyAngles   ("Missile.Body", this->a_azim, 
+                                                       this->a_elev, 
+                                                       this->a_roll ) ;
+                                            }
 
   return(0) ;
 }
