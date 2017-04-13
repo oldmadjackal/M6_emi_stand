@@ -26,6 +26,7 @@
                   double  dt ;
                     char  action[32] ;       /* Операция */
                     char  object[32] ;       /* Объект */
+                    char  event[32] ;        /* Событие */
                   double  t_par ;            /* Временной параметр */
                     char  command[256] ;
                 } RSS_Module_Battle_frame ;

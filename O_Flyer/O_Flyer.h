@@ -52,6 +52,12 @@
                            ~RSS_Object_FlyerProgram() ;        /* Деструктор */
                                } ;
 
+/*-------------------------------------- Описание событий управления */
+
+ struct RSS_Object_FlyerEvent {
+                                 char  name[64] ;
+                                 char  program[64] ;
+                              } ;
 /*---------------------------------- Описание класса объекта "Летун" */
 
  struct RSS_Object_FlyerTrace {
@@ -75,6 +81,9 @@
 
                     double  v_abs ;                           /* Нормальная скорость */
                     double  g_ctrl ;                          /* Нормальная траекторная перегрузка */
+
+#define   _EVENTS_MAX  10
+     RSS_Object_FlyerEvent  events[_EVENTS_MAX] ;             /* Список событий */
 
 #define   _PROGRAMS_MAX  10
    RSS_Object_FlyerProgram *programs[_PROGRAMS_MAX] ;         /* Список программ управления */
@@ -105,6 +114,7 @@
                virtual  int  vCalculateStart(void) ;            /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double) ;  /* Расчет изменения состояния */
                virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
+               virtual  int  vEvent         (char *, double) ;  /* Обработка событий */
                         int  iExecuteProgram(double, double) ;  /* Отработка программного управления */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
@@ -141,6 +151,7 @@
                      int  cVelocity     (char *) ;                     /* Инструкция VELOCITY */
                      int  cControl      (char *) ;                     /* Инструкция CONTROL */
                      int  cProgram      (char *) ;                     /* Инструкция PROGRAM */
+                     int  cEvent        (char *) ;                     /* Инструкция EVENT */
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
 
         RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */

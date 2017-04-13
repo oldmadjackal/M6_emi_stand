@@ -148,6 +148,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " PROGRAM <Имя> <Имя файла программы>\n"
                     "   Задание программы управления объектом\n",
                     &RSS_Module_Flyer::cProgram },
+ { "event",    "e", "#EVENT - привязка события к программе управления объектом ",
+                    " EVENT <Имя> <Имя события> <Имя программы>\n"
+                    "   Привязка события к программе управления объектом\n",
+                    &RSS_Module_Flyer::cEvent },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n"
@@ -1336,10 +1340,113 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции EVENT                   */
+/*								    */
+/*       EVENT <Имя> <Событие> <Программа>                          */
+
+  int  RSS_Module_Flyer::cEvent(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+             char  *pars[_PARS_MAX] ;
+             char  *name ;
+             char  *event_name ;
+             char  *program ;
+ RSS_Object_Flyer  *object ;
+             char  *end ;
+              int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+
+
+           if( pars[0]==NULL ||
+              *pars[0]==  0    ) {
+                                     SEND_ERROR("Не задан объект управления") ;
+                                         return(-1) ;
+                                 }
+
+           if( pars[1]==NULL ||
+              *pars[1]==  0    ) {
+                                     SEND_ERROR("Не задано событие") ;
+                                         return(-1) ;
+                                 }
+
+           if( pars[2]==NULL ||
+              *pars[2]==  0    ) {
+                                     SEND_ERROR("Не задана программа управления") ;
+                                         return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+               event_name=pars[1] ;
+                  program=pars[2] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: ANGLE <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------ Контроль программы управления */
+
+        for(i=0 ; i<_PROGRAMS_MAX ; i++)
+          if(object->programs[i]!=NULL)
+           if(!stricmp(object->programs[i]->name, program))   break ;
+
+      if(i>=_PROGRAMS_MAX) {
+            SEND_ERROR("Неизвестная программа - воспользуйтесь командой PROGRAM для загрузки файла программы") ;
+                                     return(-1) ;
+                           }
+/*---------------------------------------------- Регистрация события */
+
+        for(i=0 ; i<_EVENTS_MAX ; i++)                              /* Проверяем, нет ли уже такого события */
+          if(!stricmp(object->events[i].name, event_name))  break ; 
+
+   if(i>=_EVENTS_MAX) {                                             /* Если такого события нет - */
+        for(i=0 ; i<_EVENTS_MAX ; i++)                              /*  - ищем пустой слот       */
+          if(object->events[i].name[0]==0)  break ; 
+                      } 
+
+   if(i>=_EVENTS_MAX) {
+                           SEND_ERROR("Переполнение списка событий") ;
+                                     return(-1) ;
+                      }
+
+        strncpy(object->events[i].name,    event_name, sizeof(object->events[i].name   )-1) ;
+        strncpy(object->events[i].program, program,    sizeof(object->events[i].program)-1) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
-/*       TRACE/P <Имя> <Схема управления>                           */
+/*       TRACE/P <Имя> <Программа>                                  */
 
   int  RSS_Module_Flyer::cTrace(char *cmd)
 
@@ -2145,6 +2252,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       r_ctrl    = 0. ;
       m_ctrl    =NULL ;
 
+    memset(events,   0, sizeof(events)) ;
     memset(programs, 0, sizeof(programs)) ;
 
       trace_on    =  0 ;
@@ -2456,6 +2564,44 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                      this->a_elev, 
                                                      this->a_roll ) ;
                                             }
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*                        Обработка событий                         */
+
+     int  RSS_Object_Flyer::vEvent(char *event_name, double  t)
+{
+  int n ;
+  int i ;
+
+/*-------------------------------------------- Идентификация события */
+
+        for(n=0 ; n<_EVENTS_MAX ; n++)                              /* Проверяем, нет ли такого события */
+          if(!stricmp(events[n].name, event_name))  break ; 
+
+          if(n>=_EVENTS_MAX)   return(-1) ;
+
+/*------------------------------------------ Идентификация программы */
+
+        for(i=0 ; i<_PROGRAMS_MAX ; i++)
+          if(programs[i]!=NULL)
+           if(!stricmp(programs[i]->name, events[n].program))   break ;
+
+          if(i>=_PROGRAMS_MAX)  return(-1) ;
+
+/*----------------------------------------------- Загрузка программы */
+
+               program=programs[i] ;
+       memset(&p_controls, 0, sizeof(p_controls)) ;
+       strcpy( p_controls.used, ";") ;
+               p_frame=0 ;
+               p_start=t ;
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }

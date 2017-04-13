@@ -469,8 +469,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*  Структура файла сценария:                                       */
 /*								    */
-/*    {T|DT}=<метка времени> ADD <Имя объекта> [<Время слежения>]   */
 /*    {T|DT}=<метка времени> EXIT                                   */
+/*    {T|DT}=<метка времени> START <Имя объекта> [<Время слежения>] */
+/*    {T|DT}=<метка времени> EVENT <Имя объекта> <Событие>          */
 
   int  RSS_Module_Battle::cProgram(char *cmd, RSS_IFace *iface)
 
@@ -643,6 +644,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                          strcpy(this->mScenario[n].object,  words[2]) ;
                          strcpy(this->mScenario[n].command, desc) ;
                                                 n++ ;           
+                                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - Операция EVENT */
+         else
+         if(!stricmp(words[1], "EVENT")) {
+
+              if(words[2]==NULL) {
+                                    sprintf(text, "Не задано имя объекта (строка %d)", row) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;
+                                 }
+
+              if(words[3]==NULL) {
+                                    sprintf(text, "Не задано событие (строка %d)", row) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;
+                                 }
+
+            for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+              if(!stricmp(OBJECTS[i]->Name, words[2]))  break ;
+
+              if(i==OBJECTS_CNT) {                                       /* Если имя не найдено... */
+                           sprintf(text, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
+                        SEND_ERROR(text) ;
+                            return(-1) ;
+                                 }
+
+                     strcpy(desc, words[2]) ;
+                     strcat(desc, " ") ;
+                     strcat(desc, words[3]) ;
+
+                     strcpy(this->mScenario[n].action,  words[1]) ;
+                     strcpy(this->mScenario[n].object,  words[2]) ;
+                     strcpy(this->mScenario[n].event,   words[3]) ;
+                     strcpy(this->mScenario[n].command, desc) ;
+                                            n++ ;           
                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Операция EXIT */
          else
@@ -909,6 +945,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                mObjects[mObjects_cnt].cut_time=t+frame->t_par ;
        else    mObjects[mObjects_cnt].cut_time= 0. ;
                         mObjects_cnt++ ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                         }
+/*--------------------------------------------------- Операция START */
+    else
+    if(!stricmp(frame->action, "EVENT")) {
+/*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
+         for(i=0 ; i<OBJECTS_CNT ; i++)                             /* Ищем объект по имени */
+           if(!stricmp(OBJECTS[i]->Name, frame->object))  break ;
+
+           if(i==OBJECTS_CNT) {                                     /* Если имя не найдено... */
+                                   sprintf(text, "Объекта '%s' НЕ существует", frame->object) ;
+                                SEND_ERROR(text) ;
+                                    return(_EXIT_FRAME) ;
+                              }
+
+                      object=OBJECTS[i] ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - Сигнал о событии */
+                   object->vEvent(frame->event, t) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*--------------------------------------------- Неизвестная операция */

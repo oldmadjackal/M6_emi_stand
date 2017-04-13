@@ -133,6 +133,7 @@
    virtual              int  vCalculateStart (void) ;               /* Подготовка расчета изменения состояния */
    virtual              int  vCalculate      (double, double) ;     /* Расчет изменения состояния */
    virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */
+   virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
 
    virtual              int  vCheckFeatures  (void *) ;             /* Проверить корректность свойств */
    virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */

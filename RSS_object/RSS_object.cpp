@@ -277,6 +277,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Обработка событий                         */
+
+     int  RSS_Object::vEvent(char *event_name, double  t)
+{
+  return(-1) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                Получить список параметров управления             */
 
    int  RSS_Object::vListControlPars(RSS_ControlPar *list)

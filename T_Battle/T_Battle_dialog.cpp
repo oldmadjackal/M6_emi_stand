@@ -191,7 +191,8 @@
 
         for(i=0 ; i<Module->mScenario_cnt ; i++) {
 
-                  sprintf(text, _FRAME_FORMAT, Module->mScenario[i].t, 0.,
+                  sprintf(text, _FRAME_FORMAT, Module->mScenario[i].t,
+                                               Module->mScenario[i].dt,
                                                Module->mScenario[i].action,
                                                Module->mScenario[i].command ) ;
                LB_ADD_ROW(IDC_SCENARIO, text) ;
