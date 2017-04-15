@@ -1370,20 +1370,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   *end=0 ;
                                                  }
 
-
-
            if( pars[0]==NULL ||
               *pars[0]==  0    ) {
                                      SEND_ERROR("Не задан объект управления") ;
                                          return(-1) ;
                                  }
-
            if( pars[1]==NULL ||
               *pars[1]==  0    ) {
                                      SEND_ERROR("Не задано событие") ;
                                          return(-1) ;
                                  }
-
            if( pars[2]==NULL ||
               *pars[2]==  0    ) {
                                      SEND_ERROR("Не задана программа управления") ;
@@ -1598,7 +1594,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c) ;
+         object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
          object->vCalculateShow() ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
@@ -1834,10 +1830,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*  PROGRAM <Имя программы>                                          */
 /*  OBJECT <Допустимый тип объекта>                                  */
+/*  WAIT <Спецификатор:X,Y,Z,A,E,R,G,V>                              */
 /*								     */
 /*  Спецификация закона движения:				     */
 /*    <Спецификатор-1> <Спецификатор-2> ... <Спецификатор-N>         */
 /*      T=<значение>      - метка времени    			     */
+/*     DT=<приращение>    - изменение времени от предыдущего         */
 /*   координаты объекта:                                             */
 /*      X=<значение>                                                 */
 /*      Y=<значение>                                                 */
@@ -1858,6 +1856,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*      V=<значение>                                                 */
 /*   ускорение                                                       */
 /*     DV=<ускорение>[:<до значения>]                                */
+/*								     */
+/*  В качестве значения указывается либо число, либо имя объекта     */
 
   int  RSS_Module_Flyer::iReadProgram(RSS_Object_Flyer *object, char *path)
 {
@@ -1973,6 +1973,36 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                        }
 #undef   _KEY_WORD
 
+/*----------------------------------- Обработка спецификатора BATTLE */
+
+#define  _KEY_WORD  "BATTLE "
+      if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
+/*- - - - - - - - - - - - - - - - - - - - - - - - Формирование кадра */
+               end=text+strlen(_KEY_WORD) ;
+            if(*end==0) {
+                          sprintf(error, "Строка %d - оператор BATTLE не содержит передаваемую команду", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                        }  
+
+            memset(&frame, 0, sizeof(frame)) ;
+                    frame.battle_flag=1 ;
+           strncpy( frame.used, end, sizeof(frame.used)-1) ;
+/*- - - - - - - - - - - - - - - - - - - - Сохранение кадра программы */
+         if(program->frames_cnt>=_PFRAMES_MAX) {
+               sprintf(error, "Строка %d - количество кадров программы превышает допустимый предел - %d", row, _PFRAMES_MAX) ;
+            SEND_ERROR(error) ;
+                  return(-1) ;
+                                               }
+
+            memcpy(&program->frames[program->frames_cnt], &frame, sizeof(frame)) ;
+                                    program->frames_cnt++ ;
+
+                                         continue ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                                       }
+#undef   _KEY_WORD
+
 /*------------------------------------------- Разбор строки на слова */
 
             if(program==NULL) {
@@ -1989,7 +2019,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        while(words[i]!=NULL && i<30) {
                    i++ ;
              words[i]=strtok(NULL, " \t") ;
-                                    }
+                                     }
 /*---------------------------------------------- Формирование записи */
 
           memset(&frame, 0, sizeof(frame)) ;
@@ -1999,6 +2029,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        for(i=0 ; i<30 ; i++) {
                                  if(words[i]==NULL)  break ;
 
+        if(stricmp(words[i], "WAIT")) {
+
              end=strchr(words[i], '=') ;
           if(end==NULL) {
                              sprintf(error, "Строка %d - в спецификаторе %d отсутствует символ разделитель '='", row, i+1) ;
@@ -2006,11 +2038,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                 return(-1) ;
                         }
             *end=0 ;
+                                      }
 
               name=words[i] ;
               data=end+1 ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Метка времени */
-          if(!stricmp(name, "T")) {
+          if(!stricmp(name, "WAIT")) {
+                                         frame.wait_flag=1 ;
+                                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Метка времени */
+          else
+          if(!stricmp(name, "T" )||
+             !stricmp(name, "DT")  ) {
+
+            if(!stricmp(name, "DT"))  frame.dt_flag=1 ;
 
                frame.t=strtod(data, &end) ;
             if(*end!=0) {
@@ -2018,8 +2059,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                           SEND_ERROR(error) ;
                                 return(-1) ;
                         }
-                                  }
-/*- - - - - - - - - - - - - - - - - - - - - - -  Координаты объекта */
+                                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - - Координаты объекта */
           else
           if(!stricmp(name, "X") ||
              !stricmp(name, "Y") ||
@@ -2036,10 +2077,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             if(!stricmp(name, "Y"))  frame.y=value ;
             if(!stricmp(name, "Z"))  frame.z=value ;
 
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
+                                 strcat(frame.used, name) ;
+                                 strcat(frame.used, ";" ) ;
                                      }
-/*- - - - - - - - - - - - - - - - - - - - - - -  Ориентация объекта */
+/*- - - - - - - - - - - - - - - - - - - - - - - - Ориентация объекта */
           else
           if(!stricmp(name, "A") ||
              !stricmp(name, "E") ||
@@ -2056,14 +2097,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             if(!stricmp(name, "E"))  frame.e=value ;
             if(!stricmp(name, "R"))  frame.r=value ;
 
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
+                                 strcat(frame.used, name) ;
+                                 strcat(frame.used, ";" ) ;
                                      }
-/*- - - - - - - - - - - - - - Скорость изменения ориентации объекта */
+/*- - - - - - - - - - - - - -  Скорость изменения ориентации объекта */
           else
           if(!stricmp(name, "DA") ||
              !stricmp(name, "DE") ||
              !stricmp(name, "DR")   ) {
+
+            if(frame.wait_flag) {
+                          sprintf(error, "Строка %d - в операторе WAIT D-спецификаторы недопустимы", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                                }
 
                              target_flag= 0 ;
                               value     =strtod(data, &end) ;
@@ -2110,12 +2157,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                       frame.g=value ;
 
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
+                                 strcat(frame.used, name) ;
+                                 strcat(frame.used, ";" ) ;
                                      }
 /*- - - - - - - - - - - - - -  Скорость изменения перегрузка маневра */
           else
           if(!stricmp(name, "DG")) {
+
+            if(frame.wait_flag) {
+                          sprintf(error, "Строка %d - в операторе WAIT D-спецификаторы недопустимы", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                                }
 
                              target_flag= 0 ;
                               value     =strtod(data, &end) ;
@@ -2152,12 +2205,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                       frame.v=value ;
 
-                               strcat(frame.used, name) ;
-                               strcat(frame.used, ";" ) ;
+                                 strcat(frame.used, name) ;
+                                 strcat(frame.used, ";" ) ;
                                      }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Ускорение */
           else
           if(!stricmp(name, "DV")) {
+
+            if(frame.wait_flag) {
+                          sprintf(error, "Строка %d - в операторе WAIT D-спецификаторы недопустимы", row) ;
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                                }
 
                              target_flag= 0 ;
                               value     =strtod(data, &end) ;
@@ -2252,8 +2311,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       r_ctrl    = 0. ;
       m_ctrl    =NULL ;
 
-    memset(events,   0, sizeof(events)) ;
-    memset(programs, 0, sizeof(programs)) ;
+    memset(events,    0, sizeof(events)) ;
+    memset(programs,  0, sizeof(programs)) ;
+    memset(battle_cb, 0, sizeof(battle_cb)) ;
 
       trace_on    =  0 ;
       trace_time  =  0 ;
@@ -2355,6 +2415,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Специальные действия                      */
+
+     int  RSS_Object_Flyer::vSpecial(char *oper, void *data)
+{
+/*-------------------------------------------- Ссылка на модуль ядра */
+
+    if(!stricmp(oper, "KERNEL")) {
+
+                             this->kernel=(RSS_Kernel *)data ;
+                                      return(0) ;
+                                 }
+/*-------------------------------------------------------------------*/
+
+  return(-1) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*             Подготовка расчета изменения состояния               */
 
      int  RSS_Object_Flyer::vCalculateStart(void)
@@ -2371,7 +2450,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object_Flyer::vCalculate(double t1, double t2)
+     int  RSS_Object_Flyer::vCalculate(double t1, double t2, char *callback, int  callback_size)
 {
   Matrix2d  Sum_Matrix ;
   Matrix2d  Oper_Matrix ;
@@ -2394,6 +2473,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(program!=NULL)  iExecuteProgram(t1, t2) ;
 
+   if( callback !=NULL &&
+      *battle_cb!=  0    ) {
+                      strncpy(callback, battle_cb, callback_size) ;
+                                       *battle_cb=0 ;
+                           }
 /*---------------------------------------------- Постоянная скорость */
 
    if(this->g_ctrl==0) {
@@ -2610,17 +2694,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /*								    */
 /*               Отработка программного управления                  */
+/*								    */
+/*  ВНИМАНИЕ! Параметры контекста управления должны храниться в     */
+/*            экземпляре класса, а не как static                    */
 
      int  RSS_Object_Flyer::iExecuteProgram(double t1, double t2)
 {
-   Matrix2d  Sum_Matrix ;
-   Matrix2d  Oper_Matrix ;  
-   Matrix2d  Velo_Matrix ;  
-        int  v_flag ;    /* Флаг перерасчета проекций скорости */
-       char  used[1024] ;
-     double  a_new, e_new, r_new, g_new, v_new ;
-        int  status ;
-        int  i ;
+       Matrix2d  Sum_Matrix ;
+       Matrix2d  Oper_Matrix ;  
+       Matrix2d  Velo_Matrix ;  
+            int  v_flag ;    /* Флаг перерасчета проекций скорости */
+           char  used[1024] ;
+         double  a_new, e_new, r_new, g_new, v_new ;
+         double  value ;
+            int  status ;
+            int  i ;
 
 #define  FRAME program->frames[i]
 
@@ -2638,8 +2726,30 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              v_flag=0 ;
 
    for(i=p_frame ; i<program->frames_cnt ; i++) {
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Оператор BATTLE */
+     if(program->frames[i].battle_flag) {
+
+             strcat(this->battle_cb, program->frames[i].used) ;
+             strcat(this->battle_cb, ";") ;
+                        p_frame++ ;
+                         continue ;
+                                        }
 /*- - - - - - - - - - - - - - - - - - - - -  Обработка метки времени */
-     if(program->frames[i].t>t2)  break ;
+     if(program->frames[i].wait_flag==0) {
+
+      if(program->frames[i].dt_flag==0) {
+             if(program->frames[i].t      >t2)  break ;
+                                        }
+      else                              {
+             if(program->frames[i].t+t_prv>t2)  break ;
+                                        }
+                                         }
+
+                     t_prv= t2 ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Оператор WAIT */
+     if(program->frames[i].wait_flag) {
+                                         break ;
+                                      }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Обработка координат */
      if(strstr(FRAME.used, ";X;"))    this->x_base=FRAME.x ;
      if(strstr(FRAME.used, ";Y;"))    this->y_base=FRAME.y ;
@@ -2798,7 +2908,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------- Перерасчет проекций скорости */
 
-     if(v_flag) {
+  if(v_flag) {
                    Velo_Matrix.LoadZero   (3, 1) ;
                    Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
                     Sum_Matrix.Load3d_azim(-this->a_azim) ;
@@ -2809,7 +2919,64 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      x_velocity=Velo_Matrix.GetCell(0, 0) ;
                      y_velocity=Velo_Matrix.GetCell(1, 0) ;
                      z_velocity=Velo_Matrix.GetCell(2, 0) ;
-                }
+             }
+/*-------------------------------------- Анализ прекращения ожидания */
+
+#define  WAIT  program->frames[p_frame]
+
+  if(WAIT.wait_flag) {
+
+     if(strstr(WAIT.used, ";A;")) {
+                                       a_new =this->a_azim ;
+                                       value =WAIT.a ;
+
+                       while(a_new<0.) a_new+=360. ;
+                       while(a_prv<0.) a_prv+=360. ;
+                       while(value<0.) value+=360. ;
+
+       if(fabs(a_new-a_prv) > 180.)  
+        if(a_new>a_prv)  a_prv+=360. ;
+        else             a_new+=360. ;
+
+       if(a_new>a_prv)  status=iAngleInCheck(value, a_prv, a_new) ;
+       else             status=iAngleInCheck(value, a_new, a_prv) ;
+
+       if(!status)   p_frame++ ;
+                                  }
+
+     if(strstr(WAIT.used, ";E;")) {
+                                       e_new =this->a_elev ;
+                                       value =WAIT.e ;
+
+                       while(e_new<0.) e_new+=360. ;
+                       while(e_prv<0.) e_prv+=360. ;
+                       while(value<0.) value+=360. ;
+
+       if(fabs(e_new-e_prv) > 180.)  
+        if(e_new>e_prv)  e_prv+=360. ;
+        else             e_new+=360. ;
+
+       if(e_new>e_prv)  status=iAngleInCheck(value, e_prv, e_new) ;
+       else             status=iAngleInCheck(value, e_new, e_prv) ;
+
+       if(!status)   p_frame++ ;
+                                  }
+
+                     }
+
+#undef  WAIT
+
+/*-------------------------------------- Фиксируе выходное состояние */
+
+                     x_prv=this->x_base ;
+                     y_prv=this->y_base ;
+                     z_prv=this->z_base ;
+                     a_prv=this->a_azim ;
+                     e_prv=this->a_elev ;
+                     r_prv=this->a_roll ;
+                     v_prv=this->v_abs ;
+                     g_prv=this->g_ctrl ;
+
 /*-------------------------------------------------------------------*/
 
 #undef   FRAME

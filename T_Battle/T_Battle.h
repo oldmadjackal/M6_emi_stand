@@ -95,8 +95,6 @@
                      int  cRun          (char *, RSS_IFace *) ;   /* Инструкция RUN */
 
                      int  iFrameExecute (FRAME *, double) ;       /* Реализация инструкций сервисной задачи */
-              RSS_Kernel *iGetCalculator(void) ;                  /* Определение нужного вычислителя */
-                    void  iGetBinary    (char *, int, int) ;      /* Вывод числа в бинарном виде */
 
     public:
 	                  RSS_Module_Battle() ;               /* Конструктор */

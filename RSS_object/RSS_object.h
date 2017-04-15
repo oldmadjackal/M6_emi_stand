@@ -131,7 +131,8 @@
    virtual              int  vSpecial        (char *, void *) ;     /* Специальные действия */
 
    virtual              int  vCalculateStart (void) ;               /* Подготовка расчета изменения состояния */
-   virtual              int  vCalculate      (double, double) ;     /* Расчет изменения состояния */
+   virtual              int  vCalculate      (double, double,       /* Расчет изменения состояния */
+                                                      char *, int) ;
    virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */
    virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
 

@@ -1529,7 +1529,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c) ;
+         object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
          object->iSaveTracePoint("ADD") ;
 /*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
          object->iShowTrace_() ;
@@ -1907,8 +1907,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Ссылка на модуль ядра */
 
     if(!stricmp(oper, "KERNEL")) {
+
                              this->kernel=(RSS_Kernel *)data ;
-                                      return(NULL) ;
+                                      return(0) ;
                                  }
 /*-------------------------------------------------------------------*/
 
@@ -1993,7 +1994,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object_Missile::vCalculate(double t1, double t2)
+     int  RSS_Object_Missile::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
     double  dx, dy, dz ;         /* Вектор на цель */
     double  s ;                  /* Расстояние до цели */

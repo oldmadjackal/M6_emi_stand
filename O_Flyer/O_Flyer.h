@@ -29,14 +29,19 @@
 /*------------------------------------ Описание программы управления */
 
  struct RSS_Object_FlyerPFrame {
+                                      int  wait_flag ;
+                                      int  battle_flag ;
                                      char  used[128] ;
                                    double  t ;
-                                   double  x, y, z ;
-                                   double  a, d_a, t_a ;
-                                   double  e, d_e, t_e ;
-                                   double  r, d_r, t_r ;
-                                   double  g, d_g, t_g ;
-                                   double  v, d_v, t_v ;
+                                      int  dt_flag ;
+                                   double  x, w_x ;
+                                   double  y, w_y ;
+                                   double  z, w_z ;
+                                   double  a, w_a, d_a, t_a ;
+                                   double  e, w_e, d_e, t_e ;
+                                   double  r, w_r, d_r, t_r ;
+                                   double  g, w_g, d_g, t_g ;
+                                   double  v, w_v, d_v, t_v ;
                                } ;
 
 #define  _PFRAMES_MAX   100
@@ -92,15 +97,21 @@
                     double  p_start ;                         /* Время запуска программы */
 
     RSS_Object_FlyerPFrame  p_controls ;                      /* Действующие программные параметры */
+                    double  x_prv, y_prv, z_prv,              /* Контекст программного процессора */
+                            a_prv, e_prv, r_prv,
+                            g_prv, v_prv ;
+                    double  t_prv ;
 
                        int  trace_on ;                        /* Признак включенной трассировки */
                     double  trace_time ;                      /* Контрольное время трассировки */
+
+                RSS_Kernel *kernel ;                          /* Ссылка на модуль ядра */
+                      char  battle_cb[8000] ;                 /* Буфер для команд обратной связи */
 
    private:
                     double  r_ctrl ;                          /* Параметры плоскости поворота */
             class Matrix2d *m_ctrl ;
                     double  a_ctrl ;
-
 
      RSS_Object_FlyerTrace *mTrace ;                          /* Траектория */
                        int  mTrace_cnt ;  
@@ -112,9 +123,11 @@
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
                virtual  int  vCalculateStart(void) ;            /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double) ;  /* Расчет изменения состояния */
+               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
+                                                     char *, int) ;
                virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
                virtual  int  vEvent         (char *, double) ;  /* Обработка событий */
+               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iExecuteProgram(double, double) ;  /* Отработка программного управления */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */

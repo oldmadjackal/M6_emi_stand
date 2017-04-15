@@ -259,7 +259,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object::vCalculate(double t1, double t2)
+     int  RSS_Object::vCalculate(double t1, double t2, char *callback, int callback_size)
 {
   return(0) ;
 }

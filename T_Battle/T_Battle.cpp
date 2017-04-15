@@ -730,6 +730,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      double  time_w ;              /* Время ожидания */ 
        char *end ;
        char  text[1024] ;
+       char  callback[8000] ;
+      FRAME  frame ;
         int  n_frame ;
         int  exit_flag ;
         int  status ;
@@ -842,12 +844,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
       for(i=0 ; i<mObjects_cnt ; i++) 
         if(mObjects[i].active) {
+/*- - - - - - - - - - - - - - - - - - - - Обсчет и отрисовка объекта */
+                    memset(callback, 0, sizeof(callback)) ;
 
-            mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c) ;
+            mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c,
+                                                                   callback, sizeof(callback)-1) ;
             mObjects[i].object->vCalculateShow() ;
 
          if(mObjects[i].cut_time!=    0. &&
             mObjects[i].cut_time<=time_c   )  mObjects[i].active=0 ;
+/*- - - - - - - - - - - - - - - - -  Обработка команд обратной связи */
+         if(callback[0]!=0) {
+
+             for(cmd=callback ; *cmd!=0 ; cmd=end+1) {
+
+                end=strchr(cmd, ';') ;
+               *end= 0 ;
+
+                      memset(&frame, 0, sizeof(frame)) ;
+
+                if(!memicmp(cmd, "START ", strlen("START "))) {
+                     strcpy(frame.action, "START") ;
+                     strcpy(frame.object, cmd+strlen("START ")) ;
+                                                              }
+
+                    iFrameExecute(&frame, time_c) ;
+                                                     }
+                            }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                }
 /*-------------------------------------------------- Отрисовка сцены */
 
@@ -981,48 +1005,4 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        t_last=t ;
 
    return(_NEXT_FRAME) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*            Определение нужного вычислителя                       */
-
-  RSS_Kernel *RSS_Module_Battle::iGetCalculator(void)
-
-{
-  int  status ;
-  int  i ;
-
-#define  CALC_CNT   RSS_Kernel::calculate_modules_cnt
-#define  CALC       RSS_Kernel::calculate_modules
-
-         for(i=0 ; i<CALC_CNT ; i++) {
-
-             status=CALC[i]->vCalculate("STD_EXPRESSION", NULL, NULL, NULL, 
-                                                          NULL, NULL, NULL ) ;
-         if(status==0)  return(CALC[i]) ;
-                                     }
-
-#undef   CALC_CNT
-#undef   CALC
-
-   return(NULL) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*                   Вывод числа в бинарном виде                    */
-
-  void  RSS_Module_Battle::iGetBinary(char *text, int  digits, int  value)
-
-{
-   int  i ;
-     
-       memset(text, 0, digits+1) ;
-
-  for(i=0 ; i<digits ; i++) 
-    if((1<<i) & value)  text[digits-i-1]='1' ;
-    else                text[digits-i-1]='0' ;
 }
