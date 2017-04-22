@@ -205,7 +205,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		Проверка непротиворечивости свойств                 */
 
-     int  RSS_Object::vCheckFeatures(void *data)
+     int  RSS_Object::vCheckFeatures(void *data, RSS_Objects_List *checked)
 
 {
   int  status ;
@@ -213,7 +213,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
    for(i=0 ; i<this->Features_cnt ; i++) {
-           status=this->Features[i]->vCheck(data) ;
+           status=this->Features[i]->vCheck(data, checked) ;
         if(status)  break ;
                                          }
    return(status) ;
@@ -368,3 +368,69 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   return(i) ;
 }
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "СПИСОК ОБЪЕКТОВ"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "СПИСОК ОБЪЕКТОВ"      	     */
+
+     RSS_Objects_List::RSS_Objects_List(void)
+
+{
+     List    =NULL ;
+     List_cnt=  0 ;
+     List_max=  0 ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "СПИСОК ОБЪЕКТОВ"      	     */
+
+    RSS_Objects_List::~RSS_Objects_List(void)
+
+{
+    if(List!=NULL)  free(List) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		              Очистка списка		            */
+
+    void  RSS_Objects_List::Clear(void)
+
+{
+    List_cnt=0 ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Добавление записи в список	            */
+
+    int  RSS_Objects_List::Add(class RSS_Object *object, char *relation)
+
+{
+   if(List_cnt>=List_max) {
+                             List_max+=10 ;
+                             List     =(RSS_Objects_List_Elem *)
+                                         realloc(List, List_max*sizeof(*List)) ;
+                          }
+
+   if(List==NULL)  return(-1) ;
+
+
+           List[List_cnt].object=object ;
+   strncpy(List[List_cnt].relation, relation, sizeof(List[0].relation)-1) ;
+                List_cnt++ ;
+
+  return(0) ;
+}
+

@@ -80,6 +80,29 @@
 
                                    } ; 
 
+/*-------------------------------- Описание класса "Список объектов" */
+
+  struct RSS_Objects_List_Elem {
+                                 class RSS_Object *object ;
+                                             char  relation[128] ;
+                               }  ;
+
+  class RSS_OBJECT_API RSS_Objects_List {
+
+       public:
+                RSS_Objects_List_Elem *List ;
+                                  int   List_cnt ;
+                                  int   List_max ;
+
+       public:
+
+                        int  Add  (class RSS_Object *, char *) ;    /* Добавление в список */
+                       void  Clear(void) ;                          /* Очистка списка */
+
+			     RSS_Objects_List() ;                   /* Конструктор */
+			    ~RSS_Objects_List() ;                   /* Деструктор */
+
+                                  } ;
 /*----------------------------------------- Описание класса "Объект" */
 
   class RSS_OBJECT_API RSS_Object {
@@ -106,6 +129,8 @@
 
                 RSS_Feature **Features ;       /* Список свойств */
                         int   Features_cnt ;
+
+     class RSS_Objects_List   Units ;          /* Список объектов-составных частей */
 
                 RSS_Transit  *Context ;        /* Интерфейс передачи контекстов */
 
@@ -136,7 +161,8 @@
    virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */
    virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
 
-   virtual              int  vCheckFeatures  (void *) ;             /* Проверить корректность свойств */
+   virtual              int  vCheckFeatures  (void *,               /* Проверить корректность свойств */
+                                              RSS_Objects_List *) ;
    virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */
    virtual             void  vGetFeature     (RSS_Feature *) ;
 

@@ -1,0 +1,4 @@
+LIBRARY F_Hit
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

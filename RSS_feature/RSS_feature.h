@@ -28,8 +28,8 @@
 
                virtual  int  vParameter    (char *, char *, char *) ; /* Работа с параметрами */  
 
-               virtual  int  vCheck        (void *) ;                 /* Проверка непротиворечивости свойства */  
-               
+               virtual  int  vCheck        (void *,                   /* Проверка непротиворечивости свойства */  
+                                            class RSS_Objects_List *) ;
                virtual void  vBodyAdd      (char *) ;                 /* Добавить тело */
                virtual void  vBodyDelete   (char *) ;                 /* Удалить тело */
                virtual void  vBodyBasePoint(char *,                   /* Задание базовой точки тела */

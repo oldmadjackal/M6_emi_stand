@@ -1,0 +1,6 @@
+PROGRAM right_90
+OBJECT flyer
+T=0 DV=10:70
+T=2 R=-90 G=20
+T=5 R=0 G=0
+T=60

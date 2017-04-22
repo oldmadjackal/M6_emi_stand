@@ -782,9 +782,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint("Flyer.Body", object->x_base, 
-                                                       object->y_base, 
-                                                       object->z_base ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
+                                               object->y_base, 
+                                               object->z_base ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -989,9 +989,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
-                                                    object->a_elev, 
-                                                    object->a_roll ) ;
+     object->Features[i]->vBodyAngles(NULL, object->a_azim, 
+                                            object->a_elev, 
+                                            object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -1260,9 +1260,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Flyer.Body", object->a_azim, 
-                                                    object->a_elev, 
-                                                    object->a_roll ) ;
+     object->Features[i]->vBodyAngles(NULL, object->a_azim, 
+                                            object->a_elev, 
+                                            object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -2438,9 +2438,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vCalculateStart(void)
 {
-    this->program=NULL ;
+  int  i ;
 
-    this->iSaveTracePoint("CLEAR") ;
+        this->program=NULL ;
+
+        this->iSaveTracePoint("CLEAR") ;
+
+    for(i=0 ; i<Units.List_cnt ; i++)                               /* Инициализация подчиненных объектов */
+                  Units.List[i].object->vCalculateStart() ;
 
   return(0) ;
 }
@@ -2466,6 +2471,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     double  n2_azim, n2_elev ;
     double  x2, y2, z2 ;         /* Точка синуса ометываемого угла маневра */
     double  k ;
+       int  i ;
+
+/*----------------------------------- Отработка подчиненных объектов */
+
+    for(i=0 ; i<Units.List_cnt ; i++)
+                  Units.List[i].object->vCalculate(t1, t2, NULL, 0) ;
 
 /*---------------------------------------------- Отработка программы */
 
@@ -2636,17 +2647,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    int i ;
 
 
+    for(i=0 ; i<Units.List_cnt ; i++)                               /* Отработка подчененных объектов */ 
+                  Units.List[i].object->vCalculateShow() ;
+
          this->iSaveTracePoint("ADD") ;                             /* Сохранение точки траектории */  
 
          this->iShowTrace_() ;                                      /* Отображение траектории */
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
-     this->Features[i]->vBodyBasePoint("Flyer.Body", this->x_base, 
-                                                     this->y_base, 
-                                                     this->z_base ) ;
-     this->Features[i]->vBodyAngles   ("Flyer.Body", this->a_azim, 
-                                                     this->a_elev, 
-                                                     this->a_roll ) ;
+     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
+                                             this->y_base, 
+                                             this->z_base ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
+                                             this->a_elev, 
+                                             this->a_roll ) ;
                                             }
 
   return(0) ;
@@ -2705,7 +2719,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Matrix2d  Velo_Matrix ;  
             int  v_flag ;    /* Флаг перерасчета проекций скорости */
            char  used[1024] ;
-         double  a_new, e_new, r_new, g_new, v_new ;
+         double  x_new, y_new, z_new, a_new, e_new, r_new, g_new, v_new ;
          double  value ;
             int  status ;
             int  i ;
@@ -2716,6 +2730,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(p_frame>=program->frames_cnt)  return(0) ;
 
+/*---------------------------------------------------- Инициализация */
+
+       if(p_frame==0) {
+                          x_prv=this->x_base ;
+                          y_prv=this->y_base ;
+                          z_prv=this->z_base ;
+                          a_prv=this->a_azim ;
+                          e_prv=this->a_elev ;
+                          r_prv=this->a_roll ;
+                          v_prv=this->v_abs ;
+                          g_prv=this->g_ctrl ;
+                      }
 /*----------------------- Пересчет абсолютного времени в программное */
 
                  t1-=p_start ;
@@ -2925,7 +2951,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  WAIT  program->frames[p_frame]
 
   if(WAIT.wait_flag) {
+/*- - - - - - - - - - - - - - - - - - - - -  Достижение X-координаты */
+     if(strstr(WAIT.used, ";X;")) {
+                                       x_new =this->x_base ;
+                                       value =WAIT.x ;
 
+       if(x_new>x_prv)  status=iAngleInCheck(value, x_prv, x_new) ;
+       else             status=iAngleInCheck(value, x_new, x_prv) ;
+
+       if(!status)   p_frame++ ;
+                                  }
+/*- - - - - - - - - - - - - - - - - - - - -  Достижение Y-координаты */
+     if(strstr(WAIT.used, ";Y;")) {
+                                       y_new =this->y_base ;
+                                       value =WAIT.y ;
+
+       if(y_new>y_prv)  status=iAngleInCheck(value, y_prv, y_new) ;
+       else             status=iAngleInCheck(value, y_new, y_prv) ;
+
+       if(!status)   p_frame++ ;
+                                  }
+/*- - - - - - - - - - - - - - - - - - - - -  Достижение Z-координаты */
+     if(strstr(WAIT.used, ";Z;")) {
+                                       z_new =this->z_base ;
+                                       value =WAIT.z ;
+
+       if(z_new>z_prv)  status=iAngleInCheck(value, z_prv, z_new) ;
+       else             status=iAngleInCheck(value, z_new, z_prv) ;
+
+       if(!status)   p_frame++ ;
+                                  }
+/*- - - - - - - - - - - - - - - - - - - - - - - - Достижение азимута */
      if(strstr(WAIT.used, ";A;")) {
                                        a_new =this->a_azim ;
                                        value =WAIT.a ;
@@ -2943,7 +2999,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(!status)   p_frame++ ;
                                   }
-
+/*- - - - - - - - - - - - - - - - - - - - Достижение угла возвышения */
      if(strstr(WAIT.used, ";E;")) {
                                        e_new =this->a_elev ;
                                        value =WAIT.e ;
@@ -2961,12 +3017,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(!status)   p_frame++ ;
                                   }
-
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                      }
 
 #undef  WAIT
 
-/*-------------------------------------- Фиксируе выходное состояние */
+/*------------------------------------- Фиксируем выходное состояние */
 
                      x_prv=this->x_base ;
                      y_prv=this->y_base ;

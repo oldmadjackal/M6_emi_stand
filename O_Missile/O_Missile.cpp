@@ -26,9 +26,9 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
+#include "..\F_Hit\F_Hit.h"
 
 #include "O_Missile.h"
-
 #pragma warning(disable : 4996)
 
 #define  SEND_ERROR(text)    SendMessage(RSS_Kernel::kernel_wnd, WM_USER,  \
@@ -748,6 +748,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                strcpy(missile->target, target) ;
 
+   for(i=0 ; i<missile->Features_cnt ; i++)
+     if(!stricmp(missile->Features[i]->Type, "Hit")) 
+         strcpy(((RSS_Feature_Hit *)(missile->Features[i]))->target, target) ;
+
 /*-------------------------------------------------------------------*/
 
 #undef   _PARS_MAX    
@@ -918,9 +922,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint("Missile.Body", object->x_base, 
-                                                         object->y_base, 
-                                                         object->z_base ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
+                                               object->y_base, 
+                                               object->z_base ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -1125,9 +1129,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Missile.Body", object->a_azim, 
-                                                      object->a_elev, 
-                                                      object->a_roll ) ;
+     object->Features[i]->vBodyAngles(NULL, object->a_azim, 
+                                            object->a_elev, 
+                                            object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -1396,9 +1400,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Missile.Body", object->a_azim, 
-                                                      object->a_elev, 
-                                                      object->a_roll ) ;
+     object->Features[i]->vBodyAngles(NULL, object->a_azim, 
+                                            object->a_elev, 
+                                            object->a_roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
@@ -1535,12 +1539,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object->iShowTrace_() ;
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
    for(i=0 ; i<object->Features_cnt ; i++) {
-     object->Features[i]->vBodyBasePoint("Missile.Body", object->x_base, 
-                                                         object->y_base, 
-                                                         object->z_base ) ;
-     object->Features[i]->vBodyAngles   ("Missile.Body", object->a_azim, 
-                                                         object->a_elev, 
-                                                         object->a_roll ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
+                                               object->y_base, 
+                                               object->z_base ) ;
+     object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
+                                               object->a_elev, 
+                                               object->a_roll ) ;
                                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
@@ -2109,12 +2113,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          this->iShowTrace_() ;                                      /* Отображение траектории */
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
-     this->Features[i]->vBodyBasePoint("Missile.Body", this->x_base, 
-                                                       this->y_base, 
-                                                       this->z_base ) ;
-     this->Features[i]->vBodyAngles   ("Missile.Body", this->a_azim, 
-                                                       this->a_elev, 
-                                                       this->a_roll ) ;
+     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
+                                             this->y_base, 
+                                             this->z_base ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
+                                             this->a_elev, 
+                                             this->a_roll ) ;
                                             }
 
   return(0) ;

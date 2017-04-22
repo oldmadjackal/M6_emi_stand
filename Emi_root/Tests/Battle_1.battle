@@ -1,0 +1,8 @@
+ T=0  start f1
+ T=0  start f2
+ T=0  start f3
+DT=5  start r1 15
+DT=2  event f3 MIS_CROSS
+DT=0  start r2 15
+DT=5  event f3 ATTACK
+ T=30 exit

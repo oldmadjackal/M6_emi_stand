@@ -1,0 +1,99 @@
+#step 0.
+
+#file tests\keys.keys
+
+marker cr m1 cross red
+m1 base 400 0 0
+marker cr m2 cross red
+m2 base -400 0 0
+marker cr m3 cross green
+m3 base 0 0 0
+marker cr m4 cross green
+m4 base 0 200 0
+marker cr m5 cross blue
+m5 base 0 0 400
+
+body cr b1 плоскость 2000 2000
+sc color b1 green
+b1 angle/e 90
+b1 base -1000 0 1000 
+
+body cr b2 цилиндр-8 30 20
+sc color b2 rgb 128:128:0
+b2 base  100 0 50 
+
+body cr b3 цилиндр-8 30 20
+sc color b3 rgb 128:128:0
+b3 base  100 0 -50 
+
+flyer cr f1 летун-1 15 2 28 2 5
+f1 base 0 50 -800
+f1 v 20
+
+ewunit cr ew1
+ew1 owner f1
+ew1 range 100 1000
+ew1 velocity 100
+ew1 event MIS_CROSS
+
+flyer cr f2 летун-1 15 2 28 2 5
+f2 base 20 60 -850
+f2 v 20
+
+flyer cr f3 летун-1 15 2 28 2 5
+f3 base 200 200 -100
+f3 v 30
+
+missile cr r1 ракета-1 0.2 3
+hit radius r1 10
+r1 v 130
+r1 c/g 50
+r1 owner f1
+r1 target f3
+
+missile cr r2 ракета-1 0.2 3
+hit radius r2 10
+r2 v 130
+r2 c/g 50
+r2 owner f2
+r2 target f3
+
+missile cr r3 ракета-1 0.2 3
+hit radius r3 7
+r3 v 130
+r3 c/g 70
+r3 owner f3
+r3 target f1
+
+missile cr r4 ракета-1 0.2 3
+hit radius r4 7
+r4 v 130
+r4 c/g 70
+r4 owner f3
+r4 target f2
+
+zoom 1200
+eye 0 300 400
+eye>5
+;lookat f1
+;lookat
+
+;f1 angle 180 0 0
+;f1 a>> 5
+
+f1 program tests\right_90.pgm
+f1 event MIS_CROSS right_90
+
+f2 program tests\hited.pgm
+f2 event HITED hited
+
+f3 program tests\right_90.pgm
+f3 program tests\right_to_launch.pgm
+f3 event MIS_CROSS right_90
+f3 event ATTACK right_to_launch
+
+la m4
+eye -250 400 275
+
+battle program tests\battle_1.battle
+battle run

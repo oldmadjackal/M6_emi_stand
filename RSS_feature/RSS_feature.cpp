@@ -109,7 +109,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                ѕроверка непротиворечивости свойства              */  
 
-    int RSS_Feature::vCheck(void *data)
+    int RSS_Feature::vCheck(void *data, RSS_Objects_List *checked)
 
 {
    return(0) ;
