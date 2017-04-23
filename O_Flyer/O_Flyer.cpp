@@ -2419,15 +2419,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vSpecial(char *oper, void *data)
 {
-/*-------------------------------------------- —сылка на модуль €дра */
-
-    if(!stricmp(oper, "KERNEL")) {
-
-                             this->kernel=(RSS_Kernel *)data ;
-                                      return(0) ;
-                                 }
-/*-------------------------------------------------------------------*/
-
   return(-1) ;
 }
 

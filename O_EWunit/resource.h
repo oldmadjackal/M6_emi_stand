@@ -1,11 +1,13 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by O_EWunit.rc
 //
 #define IDC_HELP_LIST                   1000
 #define IDC_NAME                        1001
+#define IDC_INDICATOR                   1001
 #define IDC_MODEL                       1002
 #define IDC_LIBRARY_PATH                1003
+#define IDC_TITLE                       1003
 #define IDC_LIBRARY_BROWSE              1004
 #define IDC_PAR_NAME_1                  1006
 #define IDC_PAR_NAME_2                  1007

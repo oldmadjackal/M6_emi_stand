@@ -1528,6 +1528,12 @@ typedef  struct {
  { "stop",      "stop",  "# STOP - остановить рабочий поток",
                           NULL,
                          &RSS_Module_Main::cStop   },
+ { "next",      "next",  "# NEXT - выполнять рабочий поток в пошаговом режиме",
+                          NULL,
+                         &RSS_Module_Main::cNext   },
+ { "resume",    "resume","# RESUME - выполнять рабочий поток в непрерывном режиме",
+                          NULL,
+                         &RSS_Module_Main::cResume   },
  { "modules",   "mod",   "# MODULES - список подключенных модулей", 
                           NULL,
                          &RSS_Module_Main::cModules   },
@@ -2825,7 +2831,33 @@ typedef  struct {
   int  RSS_Module_Main::cStop(char *cmd)
 
 { 
-      EmiRoot_threads("STOP", NULL) ;
+      RSS_Kernel::kernel->stop=1 ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции NEXT                    */
+
+  int  RSS_Module_Main::cNext(char *cmd)
+
+{ 
+      RSS_Kernel::kernel->next=_RSS_KERNEL_NEXT_STEP ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции RESUME                  */
+
+  int  RSS_Module_Main::cResume(char *cmd)
+
+{
+      RSS_Kernel::kernel->next=0 ;
 
    return(0) ;
 }

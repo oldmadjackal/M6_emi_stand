@@ -60,8 +60,6 @@
                       char  target[128] ;                     /* Объект-цель */
                 RSS_Object *o_target ;
 
-                RSS_Kernel *kernel ;                          /* Ссылка на модуль ядра */
-
    private:
 
      RSS_Object_MissileTrace *mTrace ;                        /* Траектория */

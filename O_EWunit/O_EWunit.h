@@ -17,6 +17,19 @@
 
 #define  _EWUNIT_THREATS_MAX  50
 
+/*------------------ Описание класса контекста объекта "Станция РЭБ" */
+
+  class O_EWUNIT_API RSS_Transit_EWunit : public RSS_Transit {
+
+    public:
+             virtual   int  vExecute(void) ;             /* Исполнение действия */
+                                             
+    public:
+                            RSS_Transit_EWunit() ;        /* Конструктор */
+                           ~RSS_Transit_EWunit() ;        /* Деструктор */
+
+                                                               } ;
+
 /*---------------------------- Описание класса объекта "Станция РЭБ" */
 
   class O_EWUNIT_API RSS_Object_EWunit : public RSS_Object {
@@ -35,11 +48,12 @@
                     double  event_time ;                      /* Время события */
                        int  event_send ;                      /* Влаг отправки события */
 
-                RSS_Kernel *kernel ;                          /* Ссылка на модуль ядра */
-         RSS_Module_Battle *battle ;                          /* Ссылка на BATTLE-модуль  */
+         RSS_Module_Battle *battle ;                          /* Ссылка на BATTLE-модуль */
 
                 RSS_Object *threats[_EWUNIT_THREATS_MAX] ;    /* Список угроз */
                        int  threats_cnt ;
+
+                      HWND  hWnd ;                            /* Окно индикатора */ 
 
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
@@ -77,6 +91,7 @@
                      int  cRange        (char *) ;                     /* Инструкция RANGE */
                      int  cVelocity     (char *) ;                     /* Инструкция VELOCITY */
                      int  cEvent        (char *) ;                     /* Инструкция EVENT */ 
+                     int  cShow         (char *) ;                     /* Инструкция SHOW */ 
 
               RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта по имени */
                      int  CreateObject  (RSS_Model_data *) ;           /* Создание объекта */ 
@@ -102,4 +117,6 @@
 /* Файл  O_EWunit.cpp */
 
 /* Файл  O_EWunit_dialog.cpp */
-  BOOL CALLBACK  Object_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Object_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Object_EWunit_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+ LRESULT CALLBACK  Object_EWunit_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;

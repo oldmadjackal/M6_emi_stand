@@ -34,6 +34,8 @@
 #define  SEND_ERROR(text)    SendMessage(RSS_Kernel::kernel_wnd, WM_USER,  \
                                          (WPARAM)_USER_ERROR_MESSAGE,      \
                                          (LPARAM) text)
+#define  CREATE_DIALOG       CreateDialogIndirectParam
+
 
 BOOL APIENTRY DllMain( HANDLE hModule, 
                        DWORD  ul_reason_for_call,
@@ -119,6 +121,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " VELOCITY <Имя> <Скорость>\n"
                     "   Задать пороговую скорость идентификации УР",
                     &RSS_Module_EWunit::cVelocity },
+ { "show",    "s",  "#SHOW - отобразить индикатор обстановки станции РЭБ",
+                    " SHOW <Имя> \n"
+                    "   Отобразить индикатор обстановки станции РЭБ\n",
+                    &RSS_Module_EWunit::cShow },
  {  NULL }
                                                             } ;
 
@@ -136,10 +142,30 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      RSS_Module_EWunit::RSS_Module_EWunit(void)
 
 {
+  static  WNDCLASS  Indicator_wnd ;
+
+/*---------------------------------------------------- Инициализация */
+
 	   keyword="EmiStand" ;
     identification="EWunit_object" ;
 
         mInstrList=RSS_Module_EWunit_InstrList ;
+
+/*----------------------------- Регистрация класса элемент Indicator */
+
+	Indicator_wnd.lpszClassName="Object_EWunit_Indicator_class" ;
+	Indicator_wnd.hInstance    = GetModuleHandle(NULL) ;
+	Indicator_wnd.lpfnWndProc  = Object_EWunit_Indicator_prc ;
+	Indicator_wnd.hCursor      = LoadCursor(NULL, IDC_ARROW) ;
+	Indicator_wnd.hIcon        =  NULL ;
+	Indicator_wnd.lpszMenuName =  NULL ;
+	Indicator_wnd.hbrBackground=  NULL ;
+	Indicator_wnd.style        =    0 ;
+	Indicator_wnd.hIcon        =  NULL ;
+
+            RegisterClass(&Indicator_wnd) ;
+
+/*-------------------------------------------------------------------*/
 }
 
 
@@ -820,6 +846,51 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции SHOW                    */
+/*								    */
+/*        SHOW <Имя>                                                */
+
+  int  RSS_Module_EWunit::cShow(char *cmd)
+
+{
+               char  *name ;
+  RSS_Object_EWunit  *object ;
+               char  *end ;
+
+/*---------------------------------------- Разборка командной строки */
+
+                  name=cmd ;
+                   end=strchr(name, ' ') ;
+                if(end!=NULL)  *end=0 ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя объекта. \n"
+                                      "Например: SHOW <Имя_объекта> ...") ;
+                                     return(-1) ;
+                         }
+
+       object=(RSS_Object_EWunit *)FindObject(name, 1) ;            /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*----------------------------------------- Создание окна индикатора */
+
+          strcpy(object->Context->action, "INDICATOR") ;
+
+     SendMessage(RSS_Kernel::kernel_wnd, 
+                 WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                          (LPARAM) object->Context   ) ;
+
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		   Поиск обьекта типа EWUNIT по имени               */
 
   RSS_Object *RSS_Module_EWunit::FindObject(char *name, int  check_type)
@@ -896,6 +967,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               SEND_ERROR("Секция EWUNIT: Недостаточно памяти для создания объекта") ;
                         return(-1) ;
                      }
+
+       object->Module=this ;
+
 /*------------------------------------- Сохранения списка параметров */
 
 /*---------------------------------- Создание списка свойств обьекта */
@@ -956,6 +1030,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    strcpy(Type, "EWunit") ;
 
+  Context        =new RSS_Transit_EWunit ;
+  Context->object=this ;
+
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
@@ -965,6 +1042,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   memset(owner,  0, sizeof(owner )) ;
        o_owner =NULL ;   
+
+          hWnd =NULL ;
 }
 
 
@@ -1034,13 +1113,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_EWunit::vSpecial(char *oper, void *data)
 {
-/*-------------------------------------------- Ссылка на модуль ядра */
-
-    if(!stricmp(oper, "KERNEL")) {
-
-                             this->kernel=(RSS_Kernel *)data ;
-                                      return(0) ;
-                                 }
 /*------------------------------------------ Ссылка на модуль BATTLE */
 
     if(!stricmp(oper, "BATTLE")) {
@@ -1154,15 +1226,67 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
 /*------------------------------------- Передача события на носитель */
 
-     if(event_send) {
+    if(event_send) {
                         o_owner->vEvent(event_name, event_time) ;
                            event_send=0 ;
-                    }
+                   }
 /*--------------------------------- Отображение данных на индикаторе */
 
+    if(this->hWnd!=NULL)  SendMessage(this->hWnd, WM_PAINT, NULL, NULL) ;
 
 /*-------------------------------------------------------------------*/
 
   return(0) ;
 }
 
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_EWunit::RSS_Transit_EWunit(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_EWunit::~RSS_Transit_EWunit(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_EWunit::vExecute(void)
+
+{
+  RSS_Object_EWunit *object ;
+
+
+     object=(RSS_Object_EWunit *)this->object ;
+
+   if(!stricmp(action, "INDICATOR")) {
+
+       object->hWnd=CREATE_DIALOG(GetModuleHandle(NULL),
+                                  (LPCDLGTEMPLATE)object->Module->Resource("IDD_ROUND", RT_DIALOG),
+	  	                   NULL, Object_EWunit_Show_dialog, 
+                                       (LPARAM)object) ;
+
+                       ShowWindow(object->hWnd, SW_SHOW) ;
+
+                                     }
+
+   return(0) ;
+}

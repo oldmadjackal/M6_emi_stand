@@ -765,7 +765,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
       for(i=0 ; i<mObjects_cnt ; i++) {
 
-            mObjects[i].object->vSpecial       ("KERNEL", this->kernel) ;
             mObjects[i].object->vSpecial       ("BATTLE", this) ;
             mObjects[i].object->vCalculateStart() ;
             mObjects[i].active  =1 ;
@@ -798,6 +797,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------- Главный исполнительный цикл */
 
+                      RSS_Kernel::kernel->next=0 ;
+
               time_0=this->kernel->vGetTime() ;
               time_c=0. ;
               time_s=0. ;
@@ -805,6 +806,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   do {
            if(this->kernel->stop)  break ;                          /* Если внешнее прерывание... */
 
+           if(this->kernel->next==_RSS_KERNEL_WAIT_STEP) {          /* Управление пошаговым режимом */
+                                     Sleep(100) ;
+                                      continue ;
+                                                         }
+           if(this->kernel->next==_RSS_KERNEL_NEXT_STEP) {
+                      this->kernel->next=_RSS_KERNEL_WAIT_STEP ;
+                                                         }
 /*------------------------------------------------ Отработка времени */
 
               time_c+=RSS_Kernel::calc_time_step ;
@@ -985,7 +993,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        return(_EXIT_FRAME) ;
                                     }
 
-                   object->vSpecial       ("KERNEL", this->kernel) ;
                    object->vCalculateStart() ;
 
                mObjects[mObjects_cnt].object  =object ;

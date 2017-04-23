@@ -133,6 +133,7 @@
      class RSS_Objects_List   Units ;          /* Список объектов-составных частей */
 
                 RSS_Transit  *Context ;        /* Интерфейс передачи контекстов */
+          class  RSS_Kernel  *Module ;         /* Программный модуль объекта */
 
                         int   ErrorEnable ;    /* Флаг выдачи сообщений об ошибках */
 

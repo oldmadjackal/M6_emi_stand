@@ -42,7 +42,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  RSS_KERNEL_API          HWND   RSS_Kernel::active_wnd           =NULL ;
  RSS_KERNEL_API     HINSTANCE   RSS_Kernel::kernel_inst          =NULL ;
 
- RSS_KERNEL_API           int   RSS_Kernel::stop                 =  0 ; 
+ RSS_KERNEL_API           int   RSS_Kernel::stop                 =  0 ;
+ RSS_KERNEL_API           int   RSS_Kernel::next                 =  0 ;
 
  RSS_KERNEL_API    RSS_Object **RSS_Kernel::kernel_objects       =NULL ; 
  RSS_KERNEL_API           int   RSS_Kernel::kernel_objects_cnt   =  0 ; 

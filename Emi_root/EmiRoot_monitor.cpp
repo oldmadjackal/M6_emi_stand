@@ -102,11 +102,6 @@
           SendMessage(hMonitor, WM_USER, (WPARAM)_USER_THREAD_DELETE,
                                          (LPARAM)&thread_data) ;
                                     }
-/*---------------------------------------- Остановка рабочего потока */
-
-     if(!stricmp(action, "STOP")) {
-                                       RSS_Kernel::kernel->stop=1 ;
-                                  }
 /*-------------------------------------------------------------------*/
 
    return(0) ;

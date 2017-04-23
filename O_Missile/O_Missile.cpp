@@ -1908,15 +1908,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Missile::vSpecial(char *oper, void *data)
 {
-/*-------------------------------------------- Ссылка на модуль ядра */
-
-    if(!stricmp(oper, "KERNEL")) {
-
-                             this->kernel=(RSS_Kernel *)data ;
-                                      return(0) ;
-                                 }
-/*-------------------------------------------------------------------*/
-
   return(-1) ;
 }
 
@@ -1932,8 +1923,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     Matrix2d  Velo_Matrix ;  
          int  i ; 
 
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
 /*-------------------------------------- Привязка к объекту-носителю */
 
