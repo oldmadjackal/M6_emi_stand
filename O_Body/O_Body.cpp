@@ -124,7 +124,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    " ANGLE> <Имя>\n"
                    "   Задает клавиатурное управление углами ориентации объекта\n",
                    &RSS_Module_Body::cAngle },
- { "Visible", "v", "#VISIBLE - задание режима видимости объекта",
+ { "visible", "v", "#VISIBLE - задание режима видимости объекта",
                    " VISIBLE <Имя> \n"
                    "   Изменить состояние видимости объекта на противоположное",
                    &RSS_Module_Body::cVisible },
