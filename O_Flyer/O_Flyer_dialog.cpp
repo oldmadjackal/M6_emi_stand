@@ -14,6 +14,7 @@
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
+#include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
@@ -310,6 +311,142 @@
 
                 object=Module->vCreateObject(data) ;
              if(object!=NULL)  EndDialog(hDlg, 0) ;
+
+                              return(FALSE) ;
+                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			  return(FALSE) ;
+			     break ;
+			}
+/*--------------------------------------------------------- Закрытие */
+
+    case WM_CLOSE:      {
+                            EndDialog(hDlg, -1) ;
+  			       return(FALSE) ;
+			              break ;
+			}
+/*----------------------------------------------------------- Прочее */
+
+    default :        {
+			  return(FALSE) ;
+			    break ;
+		     }
+/*-------------------------------------------------------------------*/
+	      }
+/*-------------------------------------------------------------------*/
+
+    return(TRUE) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/* 	     Обработчик сообщений диалогового окна UNITS             */
+
+    BOOL CALLBACK  Object_Flyer_Units_dialog(  HWND hDlg,     UINT Msg, 
+ 		  	                     WPARAM wParam, LPARAM lParam) 
+{
+           static  HFONT  font ;         /* Шрифт */
+ static RSS_Module_Flyer *Module ;
+ static RSS_Object_Flyer *object ;
+                RSS_Unit *unit ;
+                     int  elm ;          /* Идентификатор элемента диалога */
+                     int  status ;
+                    char  unit_name[1024] ;
+                    char  unit_type[1024] ;
+                    char  text[1024] ;
+                    char *end ;
+                     int  i ;
+     
+/*------------------------------------------------- Большая разводка */
+
+  switch(Msg) {
+
+/*---------------------------------------------------- Инициализация */
+
+    case WM_INITDIALOG: {
+
+              object=(RSS_Object_Flyer *)lParam ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Пропись шрифтов */
+        if(font==NULL)
+           font=CreateFont(14, 0, 0, 0, FW_THIN, 
+                                 false, false, false,
+                                  ANSI_CHARSET,
+                                   OUT_DEFAULT_PRECIS,
+                                    CLIP_DEFAULT_PRECIS,
+                                     DEFAULT_QUALITY,
+                                      VARIABLE_PITCH,
+                                       "Courier New Cyr") ;
+         SendMessage(ITEM(IDC_LIST), WM_SETFONT, (WPARAM)font, 0) ;
+/*- - - - - - - - - - - - - - - - - Инициализация списка компонентов */
+#define  UNIT  object->Units.List[i].object
+
+                                          LB_CLEAR(IDC_LIST) ;
+
+     for(i=0 ; i<object->Units.List_cnt ; i++) {
+
+                 sprintf(text, "%-10.10s %s", UNIT->Name, UNIT->Decl) ;
+              LB_ADD_ROW(IDC_LIST, text) ;
+                                               }
+
+#undef   UNIT
+/*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
+#define   MODULES       RSS_Kernel::kernel->modules 
+#define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt 
+
+
+                                          CB_CLEAR(IDC_TYPE) ;
+
+   for(i=0 ; i<MODULES_CNT ; i++) 
+     if(MODULES[i].entry->category      !=NULL &&
+        MODULES[i].entry->identification!=NULL   )
+      if(!stricmp("Unit", MODULES[i].entry->category)) {
+
+             MODULES[i].entry->vGetParameter("$$MODULE_NAME", text) ;
+
+                   CB_ADD_LIST(IDC_TYPE, text) ;
+                                                       }
+
+#undef    MODULES
+#undef    MODULES_CNT
+/*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  			  return(FALSE) ;
+  			     break ;
+  			}
+
+/*------------------------------------------------ Отработка событий */
+
+    case WM_COMMAND:    {
+
+	status=HIWORD(wParam) ;
+	   elm=LOWORD(wParam) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Добавление компонентов */
+     if(elm==IDC_ADD) {
+
+                 GETsl(IDC_NAME, unit_name, sizeof(unit_name)) ;
+                  GETc(IDC_TYPE, unit_type) ;
+
+       if(unit_name[0]==0) {
+              SEND_ERROR("Не задано имя компонента") ;
+                                return(FALSE) ;
+                           }
+       if(unit_type[0]==0) {
+              SEND_ERROR("Не задан тип компонента") ;
+                                return(FALSE) ;
+                           }
+
+          end=strchr(unit_type, ' ') ;
+       if(end!=NULL)  *end=0 ;
+
+          unit=Module->AddUnit(object, unit_name, unit_type, text) ;
+       if(unit==NULL) {
+                        SEND_ERROR(text) ;
+                          return(FALSE) ;
+                      }
+
+                 sprintf(text, "%-10.10s %s", unit->Name, unit->Decl) ;
+              LB_ADD_ROW(IDC_LIST, text) ;
 
                               return(FALSE) ;
                          }

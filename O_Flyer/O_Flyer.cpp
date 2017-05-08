@@ -494,7 +494,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    RSS_Model_data  create_data ;
  RSS_Object_Flyer *object ;
              char  name[128] ;
-              int  status ;
+//            int  status ;
              char *entry ;
              char *end ;
               int  i ;
@@ -1626,8 +1626,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              char *unit_name ;
              char *unit_type ;
  RSS_Object_Flyer *object ;
-       RSS_Kernel *unit_module ;
-         RSS_Unit *unit ;
+       RSS_Object *unit ;
+              int  status ;
+             char  error[1024] ;
              char *end ;
               int  i ;
 
@@ -1669,55 +1670,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(unit_name==NULL ||
       unit_type==NULL   ) {
-/*
+
         status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                       (LPCDLGTEMPLATE)Resource("IDD_UNITS", RT_DIALOG),
                                        GetActiveWindow(), 
                                        Object_Flyer_Units_dialog, 
-                                      (LPARAM)&data               ) ;
+                                      (LPARAM)object               ) ;
          return(status) ;
-*/
+
                           }
-/*---------------------------------------- Контроль имени компонента */
-
-        for(i=0 ; i<object->Units.List_cnt ; i++)
-          if(!stricmp(unit_name, object->Units.List[i].object->Name))  break ;
-
-      if(i<object->Units.List_cnt) {
-            SEND_ERROR("В состав объекта уже включен компонент с таким именем") ;
-                                     return(-1) ;
-                                   }
-/*------------------------------------ Идентификация типа компонента */
-
-#define   MODULES       this->kernel->modules 
-#define   MODULES_CNT   this->kernel->modules_cnt 
-
-         unit_module=NULL ;
-
-   for(i=0 ; i<MODULES_CNT ; i++) 
-     if(MODULES[i].entry->category      !=NULL &&
-        MODULES[i].entry->identification!=NULL   )
-      if(!stricmp("Unit",     MODULES[i].entry->category      ) &&
-         !stricmp( unit_type, MODULES[i].entry->identification)   )  unit_module=MODULES[i].entry ;
-      
-      if(unit_module==NULL) {
-                SEND_ERROR("Неизвестный тип компонента") ;
-                                     return(-1) ;
-                            }
-
-#undef    MODULES
-#undef    MODULES_CNT
-
 /*-------------------------------- Создание и регистрация компонента */
 
-        unit=(RSS_Unit *)unit_module->vCreateObject(NULL) ;
-     if(unit==NULL)   return(-1) ;
-
-        strncpy(unit->Name, unit_name, sizeof(unit->Name)-1) ;
-                unit->Owner=object ;
-
-                    object->Units.Add(unit, "") ;
-
+         unit=AddUnit(object, unit_name, unit_type, error) ;        
+      if(unit==NULL) {
+                       SEND_ERROR(error) ;
+                             return(-1) ;
+                     }
 /*-------------------------------------------------------------------*/
 
 #undef   _PARS_MAX    
@@ -2395,6 +2363,63 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------------------------------*/
 
    return(0) ;
+}
+
+
+/*********************************************************************/
+/*                                                                   */
+/*                 Добавление компонента к объекту                   */
+
+  class RSS_Unit *RSS_Module_Flyer::AddUnit(RSS_Object_Flyer *object, char *unit_name, char *unit_type, char *error)
+
+{
+   RSS_Kernel *unit_module ;
+     RSS_Unit *unit ;
+          int  i ;
+
+/*---------------------------------------- Контроль имени компонента */
+
+   for(i=0 ; i<object->Units.List_cnt ; i++)
+     if(!stricmp(unit_name, object->Units.List[i].object->Name))  break ;
+
+      if(i<object->Units.List_cnt) {
+            strcpy(error, "В состав объекта уже включен компонент с таким именем") ;
+                                     return(NULL) ;
+                                 }
+/*------------------------------------ Идентификация типа компонента */
+
+#define   MODULES       RSS_Kernel::kernel->modules 
+#define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt 
+
+                 unit_module=NULL ;
+
+   for(i=0 ; i<MODULES_CNT ; i++) 
+     if(MODULES[i].entry->category      !=NULL &&
+        MODULES[i].entry->identification!=NULL   )
+      if(!stricmp("Unit",     MODULES[i].entry->category      ) &&
+         !stricmp( unit_type, MODULES[i].entry->identification)   )  unit_module=MODULES[i].entry ;
+      
+      if(unit_module==NULL) {
+                strcpy(error, "Неизвестный тип компонента") ;
+                                     return(NULL) ;
+                            }
+
+#undef    MODULES
+#undef    MODULES_CNT
+
+/*-------------------------------- Создание и регистрация компонента */
+
+        unit=(RSS_Unit *)unit_module->vCreateObject(NULL) ;
+     if(unit==NULL)   return(NULL) ;
+
+        strncpy(unit->Name, unit_name, sizeof(unit->Name)-1) ;
+                unit->Owner=object ;
+
+                  object->Units.Add(unit, "") ;
+
+/*-------------------------------------------------------------------*/
+
+  return(unit) ;
 }
 
 

@@ -140,7 +140,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------------- Инициализация */
 
 	   keyword="EmiStand" ;
-    identification="EW-station" ;
+    identification="EWunit" ;
           category="Unit" ;
 
         mInstrList=RSS_Module_EWunit_InstrList ;
@@ -191,7 +191,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                         return(NULL) ;
                    }
 
-       unit->Module=this ;
+             unit->Module=this ;
+
+      strcpy(unit->Decl, "Доплеровская станция обнаружения пусков ракет") ;
 
 /*------------------------------- Создание списка свойств компонента */
 

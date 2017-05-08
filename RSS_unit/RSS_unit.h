@@ -19,10 +19,9 @@
 
        public:
 
-           class RSS_Object *Owner ;           /* Объект - носитель */
+           class RSS_Object  *Owner ;          /* Объект, которому данный принадлежит как составная часть */
 
        public:
-
 			     RSS_Unit        () ;                   /* Конструктор */
 			    ~RSS_Unit        () ;                   /* Деструктор */
 

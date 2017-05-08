@@ -170,6 +170,8 @@
 
         RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */
                      int  iReadProgram  (RSS_Object_Flyer *, char *) ; /* Считывание файла описания программы */
+          class RSS_Unit *AddUnit       (RSS_Object_Flyer *,           /* Добавление компонента к объекту */
+                                             char *, char *, char * ) ;
 
     public:
 	                  RSS_Module_Flyer() ;              /* Конструктор */
@@ -194,3 +196,4 @@
 /* Файл  O_Flyer_dialog.cpp */
   BOOL CALLBACK  Object_Flyer_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
   BOOL CALLBACK  Object_Flyer_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  BOOL CALLBACK  Object_Flyer_Units_dialog (HWND, UINT, WPARAM, LPARAM) ;
