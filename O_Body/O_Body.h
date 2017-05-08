@@ -39,21 +39,21 @@
       struct RSS_Module_Body_instr *mInstrList ;          /* Список команд */
 				     
     public:
-     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
-     virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
-     virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ; /* Создание объекта */ 
+     virtual         int  vGetParameter (char *, char *) ;   /* Получить параметр */
+     virtual         int  vExecuteCmd   (const char *) ;     /* Выполнить команду */
+     virtual        void  vReadSave     (std::string *) ;    /* Чтение данных из строки */
+     virtual        void  vWriteSave    (std::string *) ;    /* Записать данные в строку */
 
     public:
-                     int  cHelp         (char *) ;          /* Инструкция HELP */ 
-                     int  cCreate       (char *) ;          /* Инструкция CREATE */ 
-                     int  cInfo         (char *) ;          /* Инструкция INFO */ 
-                     int  cVisible      (char *) ;          /* Инструкция VISIBLE */
-                     int  cBase         (char *) ;          /* Инструкция BASE */ 
-                     int  cAngle        (char *) ;          /* Инструкция ANGLE */ 
+                     int  cHelp         (char *) ;           /* Инструкция HELP */ 
+                     int  cCreate       (char *) ;           /* Инструкция CREATE */ 
+                     int  cInfo         (char *) ;           /* Инструкция INFO */ 
+                     int  cVisible      (char *) ;           /* Инструкция VISIBLE */
+                     int  cBase         (char *) ;           /* Инструкция BASE */ 
+                     int  cAngle        (char *) ;           /* Инструкция ANGLE */ 
 
-         RSS_Object_Body *FindObject    (char *) ;          /* Поиск обьекта типа BODY по имени */
-                     int  CreateObject  (RSS_Model_data *); /* Создание объекта */ 
+         RSS_Object_Body *FindObject    (char *) ;           /* Поиск обьекта типа BODY по имени */
 
     public:
 	                  RSS_Module_Body() ;               /* Конструктор */

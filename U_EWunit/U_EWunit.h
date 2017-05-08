@@ -1,14 +1,14 @@
 
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "СТАНЦИЯ РЭБ"            */
+/*		МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "СТАНЦИЯ РЭБ"         */
 /*								    */
 /********************************************************************/
 
-#ifdef O_EWUNIT_EXPORTS
-#define O_EWUNIT_API __declspec(dllexport)
+#ifdef U_EWUNIT_EXPORTS
+#define U_EWUNIT_API __declspec(dllexport)
 #else
-#define O_EWUNIT_API __declspec(dllimport)
+#define U_EWUNIT_API __declspec(dllimport)
 #endif
 
 #include "..\T_Battle\T_Battle.h"
@@ -19,7 +19,7 @@
 
 /*------------------ Описание класса контекста объекта "Станция РЭБ" */
 
-  class O_EWUNIT_API RSS_Transit_EWunit : public RSS_Transit {
+  class U_EWUNIT_API RSS_Transit_EWunit : public RSS_Transit {
 
     public:
              virtual   int  vExecute(void) ;             /* Исполнение действия */
@@ -32,17 +32,12 @@
 
 /*---------------------------- Описание класса объекта "Станция РЭБ" */
 
-  class O_EWUNIT_API RSS_Object_EWunit : public RSS_Object {
+  class U_EWUNIT_API RSS_Unit_EWunit : public RSS_Unit {
 
     public:
-                      char  model_path[FILENAME_MAX] ;        /* Файл модели */
-
                     double  range_min ;                       /* Диапазон дальностей обнаружения */
                     double  range_max ;
                     double  velocity ;                        /* Критическая скорость сближения */
-
-                      char  owner[128] ;                      /* Объект-носитель */
-                RSS_Object *o_owner ;
 
                       char  event_name[128] ;                 /* Имя формируемого события */
                     double  event_time ;                      /* Время события */
@@ -64,13 +59,13 @@
                virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
                virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
 
-	                     RSS_Object_EWunit() ;              /* Конструктор */
-	                    ~RSS_Object_EWunit() ;              /* Деструктор */
+	                     RSS_Unit_EWunit() ;                /* Конструктор */
+	                    ~RSS_Unit_EWunit() ;                /* Деструктор */
                                                         } ;
 
 /*---------------- Описание класса управления объектом "Станция РЭБ" */
 
-  class O_EWUNIT_API RSS_Module_EWunit : public RSS_Kernel {
+  class U_EWUNIT_API RSS_Module_EWunit : public RSS_Kernel {
 
     public:
 
@@ -78,23 +73,21 @@
       struct RSS_Module_EWunit_instr *mInstrList ;          /* Список команд */
 
     public:
-     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
-     virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
-     virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ; /* Создание объекта */ 
+     virtual         int  vGetParameter (char *, char *) ;   /* Получить параметр */
+     virtual         int  vExecuteCmd   (const char *) ;     /* Выполнить команду */
+     virtual        void  vReadSave     (std::string *) ;    /* Чтение данных из строки */
+     virtual        void  vWriteSave    (std::string *) ;    /* Записать данные в строку */
 
     public:
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
-                     int  cCreate       (char *) ;                     /* Инструкция CREATE */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
-                     int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
                      int  cRange        (char *) ;                     /* Инструкция RANGE */
                      int  cVelocity     (char *) ;                     /* Инструкция VELOCITY */
                      int  cEvent        (char *) ;                     /* Инструкция EVENT */ 
                      int  cShow         (char *) ;                     /* Инструкция SHOW */ 
 
-              RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта по имени */
-                     int  CreateObject  (RSS_Model_data *) ;           /* Создание объекта */ 
+                RSS_Unit *FindUnit      (char *) ;                     /* Поиск компонента по имени */
 
     public:
 	                  RSS_Module_EWunit() ;              /* Конструктор */
@@ -114,9 +107,9 @@
 
 /*--------------------------------------------- Диалоговые процедуты */
 
-/* Файл  O_EWunit.cpp */
+/* Файл  U_EWunit.cpp */
 
-/* Файл  O_EWunit_dialog.cpp */
-    BOOL CALLBACK  Object_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Object_EWunit_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
- LRESULT CALLBACK  Object_EWunit_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;
+/* Файл  U_EWunit_dialog.cpp */
+    BOOL CALLBACK  Unit_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Unit_EWunit_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+ LRESULT CALLBACK  Unit_EWunit_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;

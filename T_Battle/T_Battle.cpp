@@ -138,7 +138,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
                 keyword="EmiStand" ;
-         identification="Battle_task" ;
+         identification="Battle" ;
+               category="Task" ;
 
              mInstrList=RSS_Module_Battle_InstrList ;
 }

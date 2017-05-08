@@ -143,7 +143,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
 	   keyword="EmiStand" ;
-    identification="Marker_object" ;
+    identification="Marker" ;
+          category="Object" ;
 
         mInstrList=RSS_Module_Marker_InstrList ;
 
@@ -158,6 +159,141 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Module_Marker::~RSS_Module_Marker(void)
 
 {
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Создание объекта                              */
+
+  RSS_Object *RSS_Module_Marker::vCreateObject(RSS_Model_data *data)
+
+{
+  RSS_Object_Marker *object ;
+               char *end ;
+                int  i ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+#define  COLOR  data->pars[0].value
+ 
+/*--------------------------------------------------- Проверка имени */
+
+    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
+              SEND_ERROR("Секция MARKER: Не задано имя объекта") ;
+                                return(NULL) ;
+                         }
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, data->name)) {
+              SEND_ERROR("Секция MARKER: Объект с таким именем уже существует") ;
+                                return(NULL) ;
+                                                    }
+/*--------------------------------------- Определение модели маркера */
+
+    if(data->model[0]==0) {                                         /* Если модель по-умолчанию... */
+                             strcpy(data->model, "Cross") ;
+                          }
+
+    if(stricmp(data->model, "Cross"  ) &&
+       stricmp(data->model, "Pyramid")   ) {
+                 
+              SEND_ERROR("Секция MARKER: Неизвестная модель маркера") ;
+                                              return(NULL) ;
+                                           }
+/*---------------------------------------- Определение цвета маркера */
+
+   if(COLOR[0]==0) {                                                /* Если цвет по-умолчанию... */
+                      strcpy(COLOR, "Red") ;
+                   }
+
+   if(stricmp(COLOR, "Red"  ) &&
+      stricmp(COLOR, "Green") && 
+      stricmp(COLOR, "Blue")    ) {
+                 
+              SEND_ERROR("Секция MARKER: Неизвестный цвет маркера") ;
+                                            return(NULL) ;
+                                  }
+/*------------------------------------------------- Создание обьекта */
+
+       object=new RSS_Object_Marker ;
+    if(object==NULL) {
+              SEND_ERROR("Секция MARKER: Недостаточно памяти для создания объекта") ;
+                        return(NULL) ;
+                     }
+
+     strncpy(object->model, data->model, sizeof(object->model)-1) ;
+             object->size=mSize ;
+
+   if(!stricmp(COLOR, "Red"  ))  object->color=RGB(255,   0,   0) ;
+   if(!stricmp(COLOR, "Green"))  object->color=RGB(  0, 255,   0) ;
+   if(!stricmp(COLOR, "Blue" ))  object->color=RGB(  0,   0, 255) ;
+
+/*------------------------------------- Сохранения списка параметров */
+
+#define  PAR      object->Parameters
+#define  PAR_CNT  object->Parameters_cnt
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
+     for(i=0 ; i<5 ; i++)
+       if(data->pars[i].text[0]!=0) {
+
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
+                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
+                         PAR_CNT++ ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#undef  PAR
+#undef  PAR_CNT
+
+/*--------------------------------------------- Формирование маркера */
+
+                      object->iFormMarker_() ;
+
+/*------------------ Формирование позиционирующего заголовка маркера */
+
+                      object->iPlaceMarker_() ;
+
+/*---------------------------------- Введение объекта в общий список */
+
+       OBJECTS=(RSS_Object **)
+                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
+    if(OBJECTS==NULL) {
+              SEND_ERROR("Секция MARKER: Переполнение памяти") ;
+                                return(NULL) ;
+                      }
+
+              OBJECTS[OBJECTS_CNT]=object ;
+       strcpy(OBJECTS[OBJECTS_CNT]->Name, data->name) ;
+                      OBJECTS_CNT++ ;
+
+        SendMessage(this->kernel_wnd, WM_USER,
+                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+#undef     COLOR
+
+  return(object) ;
 }
 
 
@@ -325,7 +461,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 int  buff_size ;
      RSS_Model_data  create_data ;
   RSS_Object_Marker *object ;
-                int  status ;
                char *entry ;
                char *end ;
 
@@ -363,10 +498,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        *end= 0 ;
 /*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
-                status=CreateObject(&create_data) ;
-             if(status)  return ;
-
-        object=(RSS_Object_Marker *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
+                object=(RSS_Object_Marker *)vCreateObject(&create_data) ;
+             if(object==NULL)  return ;
 /*- - - - - - - - - - - - - - - - - - - - - - Параметры визуализации */
        entry=strstr(buff, "SIZE=") ;  object->size=atof(entry+strlen("SIZE=")) ;
        entry=strstr(buff, "COLOR=") ; object->color=strtoul(entry+strlen("COLOR="), &end, 16) ;
@@ -433,11 +566,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
  RSS_Model_data  data ;
+     RSS_Object *object ;
            char *name ;
            char *model ;
            char *pars[4] ;
            char *end ;
-            int  status ;
             int  i ;
 
 /*-------------------------------------- Дешифровка командной строки */
@@ -478,8 +611,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Создание маркера */
 
-      status=CreateObject(&data) ;
-   if(status!=0)  return(status) ;
+      object=vCreateObject(&data) ;
+   if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------ Отображение сцены */
 
@@ -973,142 +1106,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   OBJECTS
 #undef   OBJECTS_CNT
 
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Создание объекта                              */
-
-  int  RSS_Module_Marker::CreateObject(RSS_Model_data *data)
-
-{
-  RSS_Object_Marker *object ;
-               char *end ;
-//              int  status ;
-                int  i ;
-
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
-
-#define  COLOR  data->pars[0].value
- 
-/*--------------------------------------------------- Проверка имени */
-
-    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция MARKER: Не задано имя объекта") ;
-                                return(-1) ;
-                         }
-
-       for(i=0 ; i<OBJECTS_CNT ; i++)
-         if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция MARKER: Объект с таким именем уже существует") ;
-                                return(-1) ;
-                                                    }
-/*--------------------------------------- Определение модели маркера */
-
-    if(data->model[0]==0) {                                         /* Если модель по-умолчанию... */
-                             strcpy(data->model, "Cross") ;
-                          }
-
-    if(stricmp(data->model, "Cross"  ) &&
-       stricmp(data->model, "Pyramid")   ) {
-                 
-              SEND_ERROR("Секция MARKER: Неизвестная модель маркера") ;
-                                              return(-1) ;
-                                           }
-/*---------------------------------------- Определение цвета маркера */
-
-   if(COLOR[0]==0) {                                                /* Если цвет по-умолчанию... */
-                      strcpy(COLOR, "Red") ;
-                   }
-
-   if(stricmp(COLOR, "Red"  ) &&
-      stricmp(COLOR, "Green") && 
-      stricmp(COLOR, "Blue")    ) {
-                 
-              SEND_ERROR("Секция MARKER: Неизвестный цвет маркера") ;
-                                            return(-1) ;
-                                  }
-/*------------------------------------------------- Создание обьекта */
-
-       object=new RSS_Object_Marker ;
-    if(object==NULL) {
-              SEND_ERROR("Секция MARKER: Недостаточно памяти для создания объекта") ;
-                        return(-1) ;
-                     }
-
-     strncpy(object->model, data->model, sizeof(object->model)-1) ;
-             object->size=mSize ;
-
-   if(!stricmp(COLOR, "Red"  ))  object->color=RGB(255,   0,   0) ;
-   if(!stricmp(COLOR, "Green"))  object->color=RGB(  0, 255,   0) ;
-   if(!stricmp(COLOR, "Blue" ))  object->color=RGB(  0,   0, 255) ;
-
-/*------------------------------------- Сохранения списка параметров */
-
-#define  PAR      object->Parameters
-#define  PAR_CNT  object->Parameters_cnt
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
-     for(i=0 ; i<5 ; i++)
-       if(data->pars[i].text[0]!=0) {
-
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
-                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
-                         PAR_CNT++ ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция MARKER: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#undef  PAR
-#undef  PAR_CNT
-
-/*--------------------------------------------- Формирование маркера */
-
-                      object->iFormMarker_() ;
-
-/*------------------ Формирование позиционирующего заголовка маркера */
-
-                      object->iPlaceMarker_() ;
-
-/*---------------------------------- Введение объекта в общий список */
-
-       OBJECTS=(RSS_Object **)
-                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
-    if(OBJECTS==NULL) {
-              SEND_ERROR("Секция MARKER: Переполнение памяти") ;
-                                return(-1) ;
-                      }
-
-              OBJECTS[OBJECTS_CNT]=object ;
-       strcpy(OBJECTS[OBJECTS_CNT]->Name, data->name) ;
-                      OBJECTS_CNT++ ;
-
-        SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-#undef     COLOR
-
-  return(0) ;
 }
 
 

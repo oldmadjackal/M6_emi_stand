@@ -138,6 +138,7 @@
 {
  static RSS_Module_Body *Module ;
  static  RSS_Model_data *data ;
+             RSS_Object *object ;
  static            char  models_list[4096] ;
  static            RECT  PictureFrame ;
                 HBITMAP  hBitmap ;
@@ -149,7 +150,7 @@
                     int  assigned ;
                    char *end ;
                     int  i ;
-     
+
 /*------------------------------------------------- Большая разводка */
 
   switch(Msg) {
@@ -307,8 +308,8 @@
           for(i=0 ; i<5 ; i++)
                   GETs(IDC_PAR_VALUE_1+i, data->pars[i].value) ;  
 
-                status=Module->CreateObject(data) ;
-             if(status==0)  EndDialog(hDlg, 0) ;
+                object=Module->vCreateObject(data) ;
+             if(object==0)  EndDialog(hDlg, 0) ;
 
                               return(FALSE) ;
                          }

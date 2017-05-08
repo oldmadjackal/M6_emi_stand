@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="O_EWunit"
-	ProjectGUID="{37045592-D3D9-4760-9C64-F7506B15C42C}"
+	Name="U_EWunit"
+	ProjectGUID="{28B10681-EEF4-431E-8F16-FE7E34538A31}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -42,17 +42,17 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/O_EWunit.tlb"
+				TypeLibraryName=".\Debug/U_EWunit.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;O_EWUNIT_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;U_EWUNIT_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/O_EWunit.pch"
+				PrecompiledHeaderFile=".\Debug/U_EWunit.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -74,15 +74,15 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies=" opengl32.lib glu32.lib"
-				OutputFile=".\Debug/O_EWunit.dll"
+				OutputFile=".\Debug/U_EWunit.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\O_EWunit.def"
+				ModuleDefinitionFile=".\U_EWunit.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/O_EWunit.pdb"
+				ProgramDatabaseFile=".\Debug/U_EWunit.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/O_EWunit.lib"
+				ImportLibrary=".\Debug/U_EWunit.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -97,7 +97,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/O_EWunit.bsc"
+				OutputFile=".\Debug/U_EWunit.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -139,18 +139,18 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/O_EWunit.tlb"
+				TypeLibraryName=".\Release/U_EWunit.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;O_EWUNIT_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;U_EWUNIT_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/O_EWunit.pch"
+				PrecompiledHeaderFile=".\Release/U_EWunit.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -171,14 +171,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies=" opengl32.lib glu32.lib"
-				OutputFile=".\Release/O_EWunit.dll"
+				OutputFile=".\Release/U_EWunit.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile=".\O_EWunit.def"
-				ProgramDatabaseFile=".\Release/O_EWunit.pdb"
+				ModuleDefinitionFile=".\U_EWunit.def"
+				ProgramDatabaseFile=".\Release/U_EWunit.pdb"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Release/O_EWunit.lib"
+				ImportLibrary=".\Release/U_EWunit.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -193,7 +193,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/O_EWunit.bsc"
+				OutputFile=".\Release/U_EWunit.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -216,7 +216,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="O_EWunit.cpp"
+				RelativePath="U_EWunit.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -236,7 +236,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="O_EWunit_dialog.cpp"
+				RelativePath="U_EWunit_dialog.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -261,11 +261,11 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="O_EWunit.h"
+				RelativePath=".\resource.h"
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
+				RelativePath="U_EWunit.h"
 				>
 			</File>
 		</Filter>
@@ -274,11 +274,11 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="O_EWunit.def"
+				RelativePath="U_EWunit.def"
 				>
 			</File>
 			<File
-				RelativePath="O_EWunit.rc"
+				RelativePath="U_EWunit.rc"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"

@@ -149,10 +149,11 @@
                   double  a_step ;                          /* Шаг изменения углов */
 
     public:
-     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
-     virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
-     virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ; /* Создание объекта */ 
+     virtual         int  vGetParameter (char *, char *) ;   /* Получить параметр */
+     virtual         int  vExecuteCmd   (const char *) ;     /* Выполнить команду */
+     virtual        void  vReadSave     (std::string *) ;    /* Чтение данных из строки */
+     virtual        void  vWriteSave    (std::string *) ;    /* Записать данные в строку */
 
     public:
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
@@ -164,10 +165,10 @@
                      int  cControl      (char *) ;                     /* Инструкция CONTROL */
                      int  cProgram      (char *) ;                     /* Инструкция PROGRAM */
                      int  cEvent        (char *) ;                     /* Инструкция EVENT */
+                     int  cUnit         (char *) ;                     /* Инструкция UNIT */
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
 
         RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */
-                     int  CreateObject  (RSS_Model_data *) ;           /* Создание объекта */ 
                      int  iReadProgram  (RSS_Object_Flyer *, char *) ; /* Считывание файла описания программы */
 
     public:

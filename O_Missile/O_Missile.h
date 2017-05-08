@@ -97,10 +97,11 @@
                   double  a_step ;                          /* Шаг изменения углов */
 
     public:
-     virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
-     virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
-     virtual        void  vReadSave     (std::string *) ;   /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ;           /* Создание объекта */ 
+     virtual         int  vGetParameter (char *, char *) ;             /* Получить параметр */
+     virtual         int  vExecuteCmd   (const char *) ;               /* Выполнить команду */
+     virtual        void  vReadSave     (std::string *) ;              /* Чтение данных из строки */
+     virtual        void  vWriteSave    (std::string *) ;              /* Записать данные в строку */
 
     public:
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
@@ -115,7 +116,6 @@
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
 
               RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта типа BODY по имени */
-                     int  CreateObject  (RSS_Model_data *) ;           /* Создание объекта */ 
 
     public:
 	                  RSS_Module_Missile() ;              /* Конструктор */

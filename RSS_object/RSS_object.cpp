@@ -98,6 +98,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Object::~RSS_Object(void)
 
 {
+    int  i ;
+
+/*--------------------------------------------- Удаление компонентов */
+
+   for(i=0 ; i<this->Units.List_cnt ; i++)
+                  delete this->Units.List[i].object ;
+
+/*-------------------------------------------------------------------*/
+
 }
 
 

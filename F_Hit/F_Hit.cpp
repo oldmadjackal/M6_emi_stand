@@ -110,7 +110,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
 	   keyword="EmiStand" ;
-    identification="Hit_feature" ;
+    identification="Hit" ;
+          category="Feature" ;
 
         mInstrList=RSS_Module_Hit_InstrList ;
 }
@@ -1061,33 +1062,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       if(!track_flag)  break ;                                      /* Если стартовая точка трассировки */
 
       if(!iOverallTest(HIT))  break ;                               /* Если габариты объектов не пересекаются... */
+/*- - - - - - - - - - - - - - - - - - - - - - Контроль поражения тел */
+     for(i=0 ; i< HIT->Bodies_cnt ; i++) {                          /* CIRCLE.2 - Перебор тел цели  */
+
+//       if(!iFacetsTest(HIT->Bodies[i] ))  continue;     
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
                        hit_flag=1 ;
-
-#ifdef  _REMARK_
-/*- - - - - - - - - - - - - - - - - - - - - Контроль пересечения тел */
-
-     for(i=0 ; i<this->Bodies_cnt ; i++)
-     for(j=0 ; j< HIT->Bodies_cnt ; j++) {                          /* CIRCLE.2 - Перебор пар тел объектов */
-
-                 sprintf(mark_1, "%s.%s", this->Object->Name, 
-                                          this->Bodies[i].name) ;
-                 sprintf(mark_2, "%s.%s", OBJECTS[n]->Name,   
-                                           HIT->Bodies[j].name) ;
-       if(!iMarkForCheck(mark_1, mark_2))  continue ;               /* Если тело не назначено для проверки... */
-
-       if(!iOverallTest(&this->Bodies[i].overall,                   /* Если габариты тел не пересекаются... */
-                        & HIT->Bodies[j].overall ))  continue;     
-
-       if(!iFacetsTest(&this->Bodies[i],                            /* Если грани тел не пересекаются... */
-                       & HIT->Bodies[j] ))  continue;     
-
-                   return(1) ;
-
-                                          }                         /* CONTINUE.2 */
+                          break ;
+                                         }                          /* CONTINUE.2 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-#endif
                                           break ;
                                   }                                 /* CONTINUE.1 */
 /*----------------------- Переход на следующую иттерацию трассировки */
@@ -1173,11 +1157,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*                    Проверка пересечения граней                   */ 
+/*                Проверка пересечения граней тела цели             */ 
 
-    int RSS_Feature_Hit::iFacetsTest(RSS_Feature_Hit_Body *b1,
-                                     RSS_Feature_Hit_Body *b2 )
+    int RSS_Feature_Hit::iFacetsTest(RSS_Feature_Hit_Body *body)
 {
+#ifdef _REMARK_
+
     Matrix2d  SummaryA ;
     Matrix2d  SummaryP ;
     Matrix2d  Point ;
@@ -1189,8 +1174,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       double  v1, v2 ;
          int  cross ;
          int  cross1, cross2 ;
-         int  n1 ;
-         int  n2 ;
+         int  n ;
          int  m1[2] ;  /* Индексы вершин ребер "активного" тела, */
          int  m2[2] ;  /*  пересекающих грань "пассивного" тела  */
          int  m ;
@@ -1204,9 +1188,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------------- Подготовка */
 
-/*---------------------------------- Перебор граней "активного" тела */
+/*---------------------------------------------- Перебор граней тела */
 
-    for(n1=0 ; n1<b1->Facets_cnt ; n1++) {
+    for(n=0 ; n<body->Facets_cnt ; n++) {
 
          F1.overall.x_min=V1[F1.vertexes[0]].x_abs ;                /* Определение габаритного размера */
          F1.overall.x_max=V1[F1.vertexes[0]].x_abs ;
@@ -1486,8 +1470,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(cross1>0)  return(1) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                            }
-/*---------------------------------- Перебор граней "активного" тела */
-                                         }
+/*---------------------------------------------- Перебор граней тела */
+                                        }
 /*-------------------------------------------------------------------*/
 
 #undef  F1
@@ -1495,7 +1479,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef  V1
 #undef  V2
 
+#endif
+
   return(0) ;
+
 }
 
 

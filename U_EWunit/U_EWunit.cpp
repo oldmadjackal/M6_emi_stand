@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "СТАНЦИЯ РЭБ"	    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "СТАНЦИЯ РЭБ"	    */
 /*								    */
 /********************************************************************/
 
@@ -23,11 +23,12 @@
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
+#include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 
-#include "O_EWunit.h"
+#include "U_EWunit.h"
 
 #pragma warning(disable : 4996)
 
@@ -65,14 +66,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Идентификационный вход                      */
 
- O_EWUNIT_API char *Identify(void)
+ U_EWUNIT_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- O_EWUNIT_API RSS_Kernel *GetEntry(void)
+ U_EWUNIT_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -95,20 +96,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
                     &RSS_Module_EWunit::cHelp   },
- { "create",  "cr", "#CREATE - создать объект",
-                    " CREATE <Имя>\n"
-                    "   Создает именованный обьект",
-                    &RSS_Module_EWunit::cCreate },
  { "info",    "i",  "#INFO - выдать информацию по объекту",
                     " INFO <Имя> \n"
                     "   Выдать основную информацию по объекту в главное окно\n"
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_EWunit::cInfo },
- { "owner",   "o",  "#OWNER - назначить носитель станции РЭБ",
-                    " OWNER <Имя> <Носитель>\n"
-                    "   Назначить объект - носитель станции РЭБ",
-                    &RSS_Module_EWunit::cOwner },
  { "event",   "e",  "#EVENT - назначить событие факта обнаружения угрозы",
                     " EVENT <Имя> <Событие>\n"
                     "   Назначить событие факта обнаружения угрозы",
@@ -147,15 +140,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------------- Инициализация */
 
 	   keyword="EmiStand" ;
-    identification="EWunit_object" ;
+    identification="EW-station" ;
+          category="Unit" ;
 
         mInstrList=RSS_Module_EWunit_InstrList ;
 
 /*----------------------------- Регистрация класса элемент Indicator */
 
-	Indicator_wnd.lpszClassName="Object_EWunit_Indicator_class" ;
+	Indicator_wnd.lpszClassName="Unit_EWunit_Indicator_class" ;
 	Indicator_wnd.hInstance    = GetModuleHandle(NULL) ;
-	Indicator_wnd.lpfnWndProc  = Object_EWunit_Indicator_prc ;
+	Indicator_wnd.lpfnWndProc  = Unit_EWunit_Indicator_prc ;
 	Indicator_wnd.hCursor      = LoadCursor(NULL, IDC_ARROW) ;
 	Indicator_wnd.hIcon        =  NULL ;
 	Indicator_wnd.lpszMenuName =  NULL ;
@@ -176,6 +170,42 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Module_EWunit::~RSS_Module_EWunit(void)
 
 {
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Создание объекта                              */
+
+  RSS_Object *RSS_Module_EWunit::vCreateObject(RSS_Model_data *data)
+
+{
+   RSS_Unit_EWunit *unit ;
+               int  i ;
+ 
+/*---------------------------------------------- Создание компонента */
+
+       unit=new RSS_Unit_EWunit ;
+    if(unit==NULL) {
+               SEND_ERROR("Секция EWUNIT: Недостаточно памяти для создания компонента") ;
+                        return(NULL) ;
+                   }
+
+       unit->Module=this ;
+
+/*------------------------------- Создание списка свойств компонента */
+
+        unit->Features_cnt=this->feature_modules_cnt ;
+        unit->Features    =(RSS_Feature **)
+                             calloc(this->feature_modules_cnt, 
+                                     sizeof(unit->Features[0])) ;
+
+   for(i=0 ; i<this->feature_modules_cnt ; i++)
+        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit) ;
+
+/*-------------------------------------------------------------------*/
+
+  return(unit) ;
 }
 
 
@@ -303,8 +333,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                char *buff ;
                 int  buff_size ;
      RSS_Model_data  create_data ;
- RSS_Object_EWunit *object ;
-                int  status ;
+//  RSS_Unit_EWunit *unit ;
                char *entry ;
                char *end ;
 
@@ -312,8 +341,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(memicmp(data->c_str(), "#BEGIN MODULE EWUNIT\n", 
                       strlen("#BEGIN MODULE EWUNIT\n")) &&
-      memicmp(data->c_str(), "#BEGIN OBJECT EWUNIT\n", 
-                      strlen("#BEGIN OBJECT EWUNIT\n"))   )  return ;
+      memicmp(data->c_str(), "#BEGIN UNIT EWUNIT\n", 
+                      strlen("#BEGIN UNIT EWUNIT\n"  ))   )  return ;
 
 /*------------------------------------------------ Извлечение данных */
 
@@ -322,27 +351,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        strcpy(buff, data->c_str()) ;
 
-/*------------------------------------------------- Создание объекта */
+/*---------------------------------------------- Создание компонента */
 
-   if(!memicmp(buff, "#BEGIN OBJECT EWUNIT\n", 
-              strlen("#BEGIN OBJECT EWUNIT\n"))) {                 /* IF.1 */
+   if(!memicmp(buff, "#BEGIN UNIT EWUNIT\n", 
+              strlen("#BEGIN UNIT EWUNIT\n"))) {                    /* IF.1 */
 /*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
               memset(&create_data, 0, sizeof(create_data)) ;
 
-                                     entry=strstr(buff, "NAME=") ;  /* Извлекаем имя объекта */
+                                     entry=strstr(buff, "NAME=") ;  /* Извлекаем имя компонента */
            strncpy(create_data.name, entry+strlen("NAME="), 
                                        sizeof(create_data.name)-1) ;
         end=strchr(create_data.name, '\n') ;
        *end= 0 ;
-/*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
-/*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
-                status=CreateObject(&create_data) ;
+/*- - - - - - - - - - - - -  Проверка повторного создания компонента */
+/*- - - - - - - - - - - - - - - - - - - - - - -  Создание компонента */
+/*
+                status=vCreateObject(NULL) ;
              if(status)  return ;
-
-        object=(RSS_Object_EWunit *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
-/*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
+*/
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                                                }                   /* END.1 */
+                                               }                    /* END.1 */
 /*-------------------------------------------- Освобождение ресурсов */
 
                 free(buff) ;
@@ -381,80 +409,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Object_EWunit_Help_dialog) ;
+			   GetActiveWindow(), Unit_EWunit_Help_dialog) ;
 
    return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Реализация инструкции CREATE                  */
-/*								    */
-/*      CREATE <Имя>                                                */
-
-  int  RSS_Module_EWunit::cCreate(char *cmd)
-
-{
- RSS_Model_data  data ;
-           char *name ;
-           char *model ;
-           char *pars[10] ;
-           char *end ;
-           char  tmp[1024] ;
-            int  status ;
-            int  i ;
-
-/*-------------------------------------- Дешифровка командной строки */
-
-                             model ="" ;
-     for(i=0 ; i<10 ; i++)  pars[i]="" ;
-
-   do {                                                             /* BLOCK.1 */
-                  name=cmd ;                                        /* Извлекаем имя объекта */
-                   end=strchr(name, ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-
-                 model=end+1 ;                                      /* Извлекаем название модели */
-                   end=strchr(model, ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-          
-     for(i=0 ; i<10 ; i++) {                                        /* Извлекаем параметры */
-               pars[i]=end+1 ;            
-                   end=strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                           }
-      } while(0) ;                                                  /* BLOCK.1 */
-
-/*--------------------------------- Подготовка блока данных создания */
-
-         memset(&data, 0, sizeof(data)) ;
-
-        strncpy(data.name,  name,  sizeof(data.name)) ;
-        strncpy(data.model, model, sizeof(data.model)) ;
-
-    for(i=0 ; *pars[i]!=0 ; i++) {
-        strncpy(data.pars[i].value,  pars[i], sizeof(data.pars[i].value)) ;
-         strcpy(data.pars[i].text, "") ;
-                                 }
-
-        sprintf(data.lib_path, "%s\\Body.lib", getcwd(tmp, sizeof(tmp))) ;
-
-/*---------------------- Проверка необходимости уточнения параметров */
-
-   if(data.name[0]!=0) {
-                            status=CreateObject(&data) ;
-                         if(status==0) {
-                                          this->kernel->vShow(NULL) ;
-                                             return(0) ;
-                                       }
-                       }
-/*-------------------------------------------------------------------*/
-
-   return(status) ;
 }
 
 
@@ -469,7 +426,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
                char  *name ;
-  RSS_Object_EWunit  *object ;
+    RSS_Unit_EWunit  *unit ;
                 int   all_flag ;   /* Флаг режима полной информации */
                char  *end ;
         std::string   info ;
@@ -497,17 +454,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    end=strchr(name, ' ') ;
                 if(end!=NULL)  *end=0 ;
 
-/*------------------------------------------- Контроль имени объекта */
+/*----------------------------------------- Контроль имени компонент */
 
     if(name   ==NULL ||
        name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя объекта. \n"
-                                      "Например: INFO <Имя_объекта> ...") ;
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: INFO <Имя_компонент> ...") ;
                                      return(-1) ;
                          }
 
-       object=(RSS_Object_EWunit *)FindObject(name, 1) ;            /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
+       unit=(RSS_Unit_EWunit *)FindUnit(name) ;                     /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
 
@@ -517,18 +474,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "V-threshold % 5lf\r\n" 
                     "Owner       %s\r\n" 
                     "\r\n",
-                        object->Name, object->Type, 
-                        object->range_min, object->range_max, object->velocity,
-                        object->owner
+                        unit->Name,      unit->Type, 
+                        unit->range_min, unit->range_max, unit->velocity,
+                        unit->Owner->Name
                     ) ;
 
            info=text ;
 
 /*----------------------------------------------- Запрос на Свойства */
 
-   for(i=0 ; i<object->Features_cnt ; i++) {
+   for(i=0 ; i<unit->Features_cnt ; i++) {
 
-                      object->Features[i]->vGetInfo(&f_info) ;
+                        unit->Features[i]->vGetInfo(&f_info) ;
                                                info+=f_info ;
                                                info+="\r\n" ;
                                            }
@@ -551,77 +508,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции OWNER                   */
-/*								    */
-/*       OWNER <Имя> <Носитель>                                     */
-
-  int  RSS_Module_EWunit::cOwner(char *cmd)
-
-{
-#define   _PARS_MAX  10
-
-               char  *pars[_PARS_MAX] ;
-               char  *name ;
-               char  *owner ;
-  RSS_Object_EWunit  *unit ;
-         RSS_Object  *object ;
-               char  *end ;
-                int   i ;
-
-/*---------------------------------------- Разборка командной строки */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-      
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-                     name=pars[0] ;
-                    owner=pars[1] ;   
-
-/*------------------------------------------- Контроль имени объекта */
-
-    if(name==NULL) {                                                /* Если имя не задано... */
-                      SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: OWNER <Имя_объекта> ...") ;
-                                     return(-1) ;
-                   }
-
-       unit=(RSS_Object_EWunit *)FindObject(name, 1) ;              /* Ищем объект-цель по имени */
-    if(unit==NULL)  return(-1) ;
-
-/*------------------------------------------ Контроль имени носителя */
-
-    if(owner==NULL) {                                               /* Если имя не задано... */
-                      SEND_ERROR("Не задано имя объекта-носителя. \n"
-                                 "Например: OWNER <Имя_станции> <Имя_носителя>") ;
-                                     return(-1) ;
-                    }
-
-       object=FindObject(owner, 0) ;                                /* Ищем объект-носитель по имени */
-    if(object==NULL)  return(-1) ;
-
-/*------------------------------------------------- Пропись носителя */
-
-          strcpy(unit->owner, owner) ;
-                 unit->o_owner=object ;
-
-               object->Units.Add(unit, "Unit") ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   _PARS_MAX    
-
-   return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
 /*		      Реализация инструкции EVENT                   */
 /*								    */
 /*       EVENT <Имя> <Событие>                                      */
@@ -634,7 +520,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                char  *pars[_PARS_MAX] ;
                char  *name ;
                char  *event_name ;
-  RSS_Object_EWunit  *unit ;
+    RSS_Unit_EWunit  *unit ;
                char  *end ;
                 int   i ;
 
@@ -661,7 +547,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       unit=(RSS_Object_EWunit *)FindObject(name, 1) ;              /* Ищем объект-цель по имени */
+       unit=(RSS_Unit_EWunit *)FindUnit(name) ;                     /* Ищем объект-цель по имени */
     if(unit==NULL)  return(-1) ;
 
 /*-------------------------------------------------- Пропись события */
@@ -699,7 +585,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                char **xyz ;
              double   coord[_COORD_MAX] ;
                 int   coord_cnt ;
-  RSS_Object_EWunit  *object ;
+    RSS_Unit_EWunit  *unit ;
                char  *error ;
                char  *end ;
                 int   i ;
@@ -719,16 +605,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      name= pars[0] ;
                       xyz=&pars[1] ;   
 
-/*------------------------------------------- Контроль имени объекта */
+/*---------------------------------------- Контроль имени компонента */
 
     if(name==NULL) {                                                /* Если имя не задано... */
-                      SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: RANGE <Имя_объекта> ...") ;
+                      SEND_ERROR("Не задано имя компонента. \n"
+                                 "Например: RANGE <Имя_компонента> ...") ;
                                      return(-1) ;
                    }
 
-       object=(RSS_Object_EWunit *)FindObject(name, 1) ;            /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
+       unit=(RSS_Unit_EWunit *)FindUnit(name) ;                     /* Ищем компонента по имени */
+    if(unit==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
 
@@ -752,8 +638,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Пропись скорости */
 
-                   object->range_min=coord[0] ;
-                   object->range_max=coord[1] ;
+                   unit->range_min=coord[0] ;
+                   unit->range_max=coord[1] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -781,7 +667,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                char **xyz ;
              double   coord[_COORD_MAX] ;
                 int   coord_cnt ;
-  RSS_Object_EWunit  *object ;
+    RSS_Unit_EWunit  *unit ;
                char  *error ;
                char  *end ;
                 int   i ;
@@ -801,16 +687,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      name= pars[0] ;
                       xyz=&pars[1] ;   
 
-/*------------------------------------------- Контроль имени объекта */
+/*---------------------------------------- Контроль имени компонента */
 
     if(name==NULL) {                                                /* Если имя не задано... */
-                      SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: VELOCITY <Имя_объекта> ...") ;
+                      SEND_ERROR("Не задано имя компонента.\n"
+                                 "Например: VELOCITY <Имя_компонента> ...") ;
                                      return(-1) ;
                    }
 
-       object=(RSS_Object_EWunit *)FindObject(name, 1) ;            /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
+       unit=(RSS_Unit_EWunit *)FindUnit(name) ;                     /* Ищем компонента по имени */
+    if(unit==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
 
@@ -833,7 +719,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Пропись скорости */
 
-                   object->velocity=coord[0] ;
+                   unit->velocity=coord[0] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -854,7 +740,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
                char  *name ;
-  RSS_Object_EWunit  *object ;
+    RSS_Unit_EWunit  *unit ;
                char  *end ;
 
 /*---------------------------------------- Разборка командной строки */
@@ -863,25 +749,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    end=strchr(name, ' ') ;
                 if(end!=NULL)  *end=0 ;
 
-/*------------------------------------------- Контроль имени объекта */
+/*---------------------------------------- Контроль имени компонента */
 
     if(name   ==NULL ||
        name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя объекта. \n"
-                                      "Например: SHOW <Имя_объекта> ...") ;
+                           SEND_ERROR("Не задано имя компонента. \n"
+                                      "Например: SHOW <Имя_компонента> ...") ;
                                      return(-1) ;
                          }
 
-       object=(RSS_Object_EWunit *)FindObject(name, 1) ;            /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
+       unit=(RSS_Unit_EWunit *)FindUnit(name) ;                     /* Ищем компонента по имени */
+    if(unit==NULL)  return(-1) ;
 
 /*----------------------------------------- Создание окна индикатора */
 
-          strcpy(object->Context->action, "INDICATOR") ;
+          strcpy(unit->Context->action, "INDICATOR") ;
 
      SendMessage(RSS_Kernel::kernel_wnd, 
                  WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
-                          (LPARAM) object->Context   ) ;
+                          (LPARAM) unit->Context       ) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -893,130 +779,83 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		   Поиск обьекта типа EWUNIT по имени               */
 
-  RSS_Object *RSS_Module_EWunit::FindObject(char *name, int  check_type)
+  RSS_Unit *RSS_Module_EWunit::FindUnit(char *name)
 
 {
-     char   text[1024] ;
-      int   i ;
+ RSS_Object *object ;
+ RSS_Object *unit ;
+       char  o_name[128] ;
+       char *u_name ;
+       char  text[1024] ;
+        int  i ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
 
-/*------------------------------------------- Поиск объекта по имени */ 
+/*-------------------------------------------------- Разделение имен */ 
 
-       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
-         if(!stricmp(OBJECTS[i]->Name, name))  break ;
+               memset(o_name, 0, sizeof(o_name)) ;
+              strncpy(o_name, name, sizeof(o_name)-1) ;
+        u_name=strchr(o_name, '$') ;
 
-    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
-                           sprintf(text, "Объекта с именем '%s' "
-                                         "НЕ существует", name) ;
+     if(u_name==NULL) {
+                           sprintf(text, "Имя '%s' не является именем компонента объекта", name) ;
                         SEND_ERROR(text) ;
                             return(NULL) ;
-                       }
-/*-------------------------------------------- Контроль типа объекта */ 
-
-    if(check_type)
-     if(strcmp(OBJECTS[i]->Type, "EWunit")) {
-
-           SEND_ERROR("Объект не является объектом типа EWunit") ;
-                            return(NULL) ;
-                                             }
-/*-------------------------------------------------------------------*/ 
-
-   return(OBJECTS[i]) ;
-  
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Создание объекта                              */
-
-  int  RSS_Module_EWunit::CreateObject(RSS_Model_data *data)
-
-{
-   RSS_Object_EWunit *object ;
-                 int  i ;
-
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
- 
-/*--------------------------------------------------- Проверка имени */
-
-    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция EWunit: Не задано имя объекта") ;
-                                return(-1) ;
-                         }
-
-       for(i=0 ; i<OBJECTS_CNT ; i++)
-         if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция EWunit: Объект с таким именем уже существует") ;
-                                return(-1) ;
-                                                    }
-/*-------------------------------------- Считывание описания обьекта */
-
-/*--------------------------------------- Контроль списка параметров */
-
-/*------------------------------------------------- Создание обьекта */
-
-       object=new RSS_Object_EWunit ;
-    if(object==NULL) {
-              SEND_ERROR("Секция EWUNIT: Недостаточно памяти для создания объекта") ;
-                        return(-1) ;
-                     }
-
-       object->Module=this ;
-
-/*------------------------------------- Сохранения списка параметров */
-
-/*---------------------------------- Создание списка свойств обьекта */
-
-      object->Features_cnt=this->feature_modules_cnt ;
-      object->Features    =(RSS_Feature **)
-                             calloc(this->feature_modules_cnt, 
-                                     sizeof(object->Features[0])) ;
-
-   for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
-
-/*-------------------------------------- Считывание описаний свойств */
-
-/*---------------------------------- Введение объекта в общий список */
-
-       OBJECTS=(RSS_Object **)
-                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
-    if(OBJECTS==NULL) {
-              SEND_ERROR("Секция EWunit: Переполнение памяти") ;
-                                return(-1) ;
                       }
 
-              OBJECTS[OBJECTS_CNT]=object ;
-                      OBJECTS_CNT++ ;
+       *u_name=0 ;
+        u_name++ ;
+     
+/*------------------------------------------- Поиск объекта по имени */ 
 
-       strcpy(object->Name, data->name) ;
+             object=NULL ;
 
-        SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, o_name)) {
+                                                   object=OBJECTS[i] ;
+                                                     break ; 
+                                                }
 
-/*-------------------------------------------------------------------*/
+    if(object==NULL) {
+                           sprintf(text, "Объекта с именем '%s' НЕ существует", o_name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                     }
+/*---------------------------------------- Поиск компонента по имени */ 
+
+       for(i=0 ; i<object->Units.List_cnt ; i++)
+         if(!stricmp(object->Units.List[i].object->Name, u_name)) { 
+                         unit=object->Units.List[i].object ;
+                                               break ;
+                                                                  }
+
+    if(unit==NULL) {
+                           sprintf(text, "Объект '%s' не включает компонент '%s'", o_name, u_name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                   }
+/*-------------------------------------------- Контроль типа объекта */ 
+
+     if(strcmp(unit->Type, "EWunit")) {
+
+           SEND_ERROR("Компонент не является компонентом типа EWunit") ;
+                            return(NULL) ;
+                                      }
+/*-------------------------------------------------------------------*/ 
+
+   return((RSS_Unit *)unit) ;
 
 #undef   OBJECTS
 #undef   OBJECTS_CNT
 
-#undef   PAR
-#undef   PAR_CNT
-
-  return(0) ;
 }
 
 
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "СТАНЦИЯ РЭБ"	           **/
+/**	  ОПИСАНИЕ КЛАССА КОМПОНЕНТА "СТАНЦИЯ РЭБ"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -1025,7 +864,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Object_EWunit::RSS_Object_EWunit(void)
+     RSS_Unit_EWunit::RSS_Unit_EWunit(void)
 
 {
    strcpy(Type, "EWunit") ;
@@ -1040,10 +879,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        range_max=5000. ;
        velocity =1000. ;
 
-  memset(owner,  0, sizeof(owner )) ;
-       o_owner =NULL ;   
-
-          hWnd =NULL ;
+           hWnd =NULL ;
 }
 
 
@@ -1051,7 +887,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Object_EWunit::~RSS_Object_EWunit(void)
+    RSS_Unit_EWunit::~RSS_Unit_EWunit(void)
 
 {
       vFree() ;
@@ -1062,7 +898,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Object_EWunit::vFree(void)
+  void   RSS_Unit_EWunit::vFree(void)
 
 {
   int  i ;
@@ -1086,14 +922,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Object_EWunit::vWriteSave(std::string *text)
+    void  RSS_Unit_EWunit::vWriteSave(std::string *text)
 
 {
   char  field[1024] ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN OBJECT EWUNIT\n" ;
+     *text="#BEGIN UNIT EWUNIT\n" ;
 
 /*----------------------------------------------------------- Данные */
 
@@ -1111,7 +947,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Специальные действия                      */
 
-     int  RSS_Object_EWunit::vSpecial(char *oper, void *data)
+     int  RSS_Unit_EWunit::vSpecial(char *oper, void *data)
 {
 /*------------------------------------------ Ссылка на модуль BATTLE */
 
@@ -1130,7 +966,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Object_EWunit::vCalculateStart(void)
+     int  RSS_Unit_EWunit::vCalculateStart(void)
 {
   return(0) ;
 }
@@ -1140,7 +976,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object_EWunit::vCalculate(double t1, double t2, char *callback, int cb_size)
+     int  RSS_Unit_EWunit::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
   RSS_Object *object ;
       double  v_x, v_y, v_z ;
@@ -1164,17 +1000,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------ Расчет относительной скорости и положения */
 
-         v_x=object->x_velocity-o_owner->x_velocity ;               /* Скорость объекта относительно носителя */
-         v_y=object->y_velocity-o_owner->y_velocity ;
-         v_z=object->z_velocity-o_owner->z_velocity ;
+         v_x=object->x_velocity-this->Owner->x_velocity ;           /* Скорость объекта относительно носителя */
+         v_y=object->y_velocity-this->Owner->y_velocity ;
+         v_z=object->z_velocity-this->Owner->z_velocity ;
 
          v  =sqrt(v_x*v_x+v_y*v_y+v_z*v_z) ;
 
       if(v==0)  continue ;                                          /* Если объект неподвижен относительно носителя... */
 
-         d_x=o_owner->x_base-object->x_base ;                       /* Направление от объекта на носитель (не наоборот!) */
-         d_y=o_owner->y_base-object->y_base ;
-         d_z=o_owner->z_base-object->z_base ;
+         d_x=this->Owner->x_base-object->x_base ;                   /* Направление от объекта на носитель (не наоборот!) */
+         d_y=this->Owner->y_base-object->y_base ;
+         d_z=this->Owner->z_base-object->z_base ;
 
          d  =sqrt(d_x*d_x+d_y*d_y+d_z*d_z) ;
       if(d==0.)  continue ;                                         /* Если метка объекта и носителя совпадают... */
@@ -1222,12 +1058,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_EWunit::vCalculateShow(void)
+     int  RSS_Unit_EWunit::vCalculateShow(void)
 {
 /*------------------------------------- Передача события на носитель */
 
     if(event_send) {
-                        o_owner->vEvent(event_name, event_time) ;
+                        this->Owner->vEvent(event_name, event_time) ;
                            event_send=0 ;
                    }
 /*--------------------------------- Отображение данных на индикаторе */
@@ -1272,19 +1108,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Transit_EWunit::vExecute(void)
 
 {
-  RSS_Object_EWunit *object ;
+  RSS_Unit_EWunit *unit ;
 
 
-     object=(RSS_Object_EWunit *)this->object ;
+       unit=(RSS_Unit_EWunit *)this->object ;
 
    if(!stricmp(action, "INDICATOR")) {
 
-       object->hWnd=CREATE_DIALOG(GetModuleHandle(NULL),
-                                  (LPCDLGTEMPLATE)object->Module->Resource("IDD_ROUND", RT_DIALOG),
-	  	                   NULL, Object_EWunit_Show_dialog, 
+       unit->hWnd=CREATE_DIALOG(GetModuleHandle(NULL),
+                                (LPCDLGTEMPLATE)unit->Module->Resource("IDD_ROUND", RT_DIALOG),
+	                         NULL, Unit_EWunit_Show_dialog, 
                                        (LPARAM)object) ;
 
-                       ShowWindow(object->hWnd, SW_SHOW) ;
+                       ShowWindow(unit->hWnd, SW_SHOW) ;
 
                                      }
 

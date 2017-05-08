@@ -163,8 +163,7 @@
                      int  RecalcPoints  (void) ;                    /* Перерасчет точек тел объекта */
               RSS_Kernel *iGetCalculator(void) ;                    /* Определение нужного вычислителя */
                      int  iOverallTest  (RSS_Feature_Hit *) ;       /* Проверка пересечение "габаритов" трасс */
-                     int  iFacetsTest   (RSS_Feature_Hit_Body *,    /* Проверка пересечения граней */
-                                         RSS_Feature_Hit_Body * ) ;
+                     int  iFacetsTest   (RSS_Feature_Hit_Body *) ;  /* Проверка пересечения граней */
                      int  iToFlat       (RSS_Feature_Hit_Vertex *,  /* Расчет матрицы разворота плоскости x0z в плоскость точек P0-P1-P2 */
                                          RSS_Feature_Hit_Vertex *,
                                          RSS_Feature_Hit_Vertex *,

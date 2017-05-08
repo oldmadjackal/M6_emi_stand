@@ -23,6 +23,7 @@
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
+#include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
@@ -152,6 +153,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " EVENT <Имя> <Имя события> <Имя программы>\n"
                     "   Привязка события к программе управления объектом\n",
                     &RSS_Module_Flyer::cEvent },
+ { "unit",     "u", "#UNIT - добавить компонент в состав объекта",
+                    " UNIT <Имя>\n"
+                    "   просмотреть список компонентов, добавить компонент в диалоговом режиме\n"
+                    " UNIT <Имя объекта> <Имя компонента> <Тип компонента>\n"
+                    "   добавить компонент в состав объекта",
+                    &RSS_Module_Flyer::cUnit },
  { "trace",    "t", "#TRACE - моделирование движения объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Моделирование движения объекта в реальном времени\n"
@@ -176,7 +183,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
 	   keyword="EmiStand" ;
-    identification="Flyer_object" ;
+    identification="Flyer" ;
+          category="Object" ;
 
         mInstrList=RSS_Module_Flyer_InstrList ;
 
@@ -192,6 +200,171 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Module_Flyer::~RSS_Module_Flyer(void)
 
 {
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Создание объекта                              */
+
+  RSS_Object *RSS_Module_Flyer::vCreateObject(RSS_Model_data *data)
+
+{
+  RSS_Object_Flyer *object ;
+              char  models_list[4096] ;
+              char *end ;
+               int  i ;
+               int  j ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+#define       PAR             object->Parameters
+#define       PAR_CNT         object->Parameters_cnt
+ 
+/*--------------------------------------------------- Проверка имени */
+
+    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
+              SEND_ERROR("Секция FLYER: Не задано имя объекта") ;
+                                return(NULL) ;
+                         }
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, data->name)) {
+              SEND_ERROR("Секция FLYER: Объект с таким именем уже существует") ;
+                                return(NULL) ;
+                                                    }
+/*-------------------------------------- Считывание описания обьекта */
+/*- - - - - - - - - - - - Если модель задана названием и библиотекой */
+   if(data->path[0]==0) {
+
+    if(data->model[0]==0) {                                         /* Если модель НЕ задано */
+              SEND_ERROR("Секция FLYER: Не задана модель объекта") ;
+                                return(NULL) ;
+                          }
+
+        RSS_Model_list(data->lib_path, models_list,                 /* Формирование списка моделей */
+                                sizeof(models_list)-1, "BODY" );
+
+        for(end=models_list ; *end ; ) {                            /* Ищем модель по списку */
+                        if(!stricmp(data->model, end))  break ;
+                                         end+=strlen(end)+1 ;
+                                         end+=strlen(end)+1 ;
+                                       }
+
+           if(*end==0) {
+              SEND_ERROR("Секция FLYER: Неизвестная модель тела") ;
+                                return(NULL) ;
+                       }
+
+                                    end+=strlen(end)+1 ;            /* Извлекаем имя файла */
+
+                      sprintf(data->path, "%s\\%s", data->lib_path, end) ;
+           RSS_Model_ReadPars(data) ;                               /* Считываем параметры модели */
+                        }
+/*- - - - - - - - - - - - - - - - -  Если модель задана полным путем */
+   else                 {
+                              RSS_Model_ReadPars(data) ;            /* Считываем параметры модели */
+                        }
+/*--------------------------------------- Контроль списка параметров */
+
+     for(i=0 ; i<5 ; i++)
+       if((data->pars[i].text [0]==0 &&
+           data->pars[i].value[0]!=0   ) ||
+          (data->pars[i].text [0]!=0 &&
+           data->pars[i].value[0]==0   )   ) {
+
+              SEND_ERROR("Секция FLYER: Несоответствие числа параметров модели") ;
+                                return(NULL) ;
+                                             }
+/*------------------------------------------------- Создание обьекта */
+
+       object=new RSS_Object_Flyer ;
+    if(object==NULL) {
+              SEND_ERROR("Секция FLYER: Недостаточно памяти для создания объекта") ;
+                        return(NULL) ;
+                     }
+/*------------------------------------- Сохранения списка параметров */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
+     for(i=0 ; i<5 ; i++)
+       if(data->pars[i].text[0]!=0) {
+
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
+                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
+                     PAR[PAR_CNT].ptr  = NULL ;
+                         PAR_CNT++ ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+
+/*---------------------------------- Создание списка свойств обьекта */
+
+      object->Features_cnt=this->feature_modules_cnt ;
+      object->Features    =(RSS_Feature **)
+                             calloc(this->feature_modules_cnt, 
+                                     sizeof(object->Features[0])) ;
+
+   for(i=0 ; i<this->feature_modules_cnt ; i++)
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+
+/*-------------------------------------- Считывание описаний свойств */
+
+           RSS_Model_ReadSect(data) ;                               /* Считываем секции описаний модели */
+
+   for(i=0 ; data->sections[i].title[0] ; i++) {
+
+     for(j=0 ; j<object->Features_cnt ; j++) {
+
+          object->Features[j]->vBodyPars(NULL, PAR) ;
+          object->Features[j]->vReadSave(data->sections[i].title, 
+                                         data->sections[i].decl, "Flyer.Body") ;
+                                             }
+
+                                         data->sections[i].title[0]= 0 ;
+                                        *data->sections[i].decl    ="" ;
+                                               }
+/*---------------------------------- Введение объекта в общий список */
+
+       OBJECTS=(RSS_Object **)
+                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
+    if(OBJECTS==NULL) {
+              SEND_ERROR("Секция FLYER: Переполнение памяти") ;
+                                return(NULL) ;
+                      }
+
+              OBJECTS[OBJECTS_CNT]=object ;
+                      OBJECTS_CNT++ ;
+
+       strcpy(object->Name,       data->name) ;
+       strcpy(object->model_path, data->path) ;
+
+        SendMessage(this->kernel_wnd, WM_USER,
+                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+#undef   PAR
+#undef   PAR_CNT
+
+  return(object) ;
 }
 
 
@@ -371,10 +544,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        } 
 /*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
-                status=CreateObject(&create_data) ;
-             if(status)  return ;
-
-        object=(RSS_Object_Flyer *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
+                object=(RSS_Object_Flyer *)vCreateObject(&create_data) ;
+             if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
        entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
@@ -447,6 +618,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
  RSS_Model_data  data ;
+     RSS_Object *object ;
            char *name ;
            char *model ;
            char *pars[10] ;
@@ -496,11 +668,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------- Проверка необходимости уточнения параметров */
 
    if(data.name[0]!=0) {
-                            status=CreateObject(&data) ;
-                         if(status==0) {
-                                          this->kernel->vShow(NULL) ;
-                                             return(0) ;
-                                       }
+                            object=vCreateObject(&data) ;
+                         if(object!=NULL) {
+                                            this->kernel->vShow(NULL) ;
+                                               return(0) ;
+                                          }
                        }
 /*----------------------------------------------- Проведение диалога */
 
@@ -1394,7 +1566,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     if(name==NULL) {                                                /* Если имя не задано... */
                       SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: ANGLE <Имя_объекта> ...") ;
+                                 "Например: EVENT <Имя_объекта> ...") ;
                                      return(-1) ;
                    }
 
@@ -1428,6 +1600,123 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
         strncpy(object->events[i].name,    event_name, sizeof(object->events[i].name   )-1) ;
         strncpy(object->events[i].program, program,    sizeof(object->events[i].program)-1) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции UNIT                    */
+/*								    */
+/*     UNIT <Имя объекта>                                           */
+/*     UNIT <Имя объекта> <Имя компонента> <Тип компонента>         */
+
+  int  RSS_Module_Flyer::cUnit(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+             char *pars[_PARS_MAX] ;
+             char *name ;
+             char *unit_name ;
+             char *unit_type ;
+ RSS_Object_Flyer *object ;
+       RSS_Kernel *unit_module ;
+         RSS_Unit *unit ;
+             char *end ;
+              int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+           if( pars[0]==NULL ||
+              *pars[0]==  0    ) {
+                                     SEND_ERROR("Не задан объект управления") ;
+                                         return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+                unit_name=pars[1] ;
+                unit_type=pars[2] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: UNIT <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*--------------------------------------- Переход в диалоговый режим */
+
+   if(unit_name==NULL ||
+      unit_type==NULL   ) {
+/*
+        status=DialogBoxIndirectParam( GetModuleHandle(NULL),
+                                      (LPCDLGTEMPLATE)Resource("IDD_UNITS", RT_DIALOG),
+                                       GetActiveWindow(), 
+                                       Object_Flyer_Units_dialog, 
+                                      (LPARAM)&data               ) ;
+         return(status) ;
+*/
+                          }
+/*---------------------------------------- Контроль имени компонента */
+
+        for(i=0 ; i<object->Units.List_cnt ; i++)
+          if(!stricmp(unit_name, object->Units.List[i].object->Name))  break ;
+
+      if(i<object->Units.List_cnt) {
+            SEND_ERROR("В состав объекта уже включен компонент с таким именем") ;
+                                     return(-1) ;
+                                   }
+/*------------------------------------ Идентификация типа компонента */
+
+#define   MODULES       this->kernel->modules 
+#define   MODULES_CNT   this->kernel->modules_cnt 
+
+         unit_module=NULL ;
+
+   for(i=0 ; i<MODULES_CNT ; i++) 
+     if(MODULES[i].entry->category      !=NULL &&
+        MODULES[i].entry->identification!=NULL   )
+      if(!stricmp("Unit",     MODULES[i].entry->category      ) &&
+         !stricmp( unit_type, MODULES[i].entry->identification)   )  unit_module=MODULES[i].entry ;
+      
+      if(unit_module==NULL) {
+                SEND_ERROR("Неизвестный тип компонента") ;
+                                     return(-1) ;
+                            }
+
+#undef    MODULES
+#undef    MODULES_CNT
+
+/*-------------------------------- Создание и регистрация компонента */
+
+        unit=(RSS_Unit *)unit_module->vCreateObject(NULL) ;
+     if(unit==NULL)   return(-1) ;
+
+        strncpy(unit->Name, unit_name, sizeof(unit->Name)-1) ;
+                unit->Owner=object ;
+
+                    object->Units.Add(unit, "") ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1656,171 +1945,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   OBJECTS
 #undef   OBJECTS_CNT
 
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Создание объекта                              */
-
-  int  RSS_Module_Flyer::CreateObject(RSS_Model_data *data)
-
-{
-  RSS_Object_Flyer *object ;
-              char  models_list[4096] ;
-              char *end ;
-               int  i ;
-               int  j ;
-
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
-
-#define       PAR             object->Parameters
-#define       PAR_CNT         object->Parameters_cnt
- 
-/*--------------------------------------------------- Проверка имени */
-
-    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция FLYER: Не задано имя объекта") ;
-                                return(-1) ;
-                         }
-
-       for(i=0 ; i<OBJECTS_CNT ; i++)
-         if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция FLYER: Объект с таким именем уже существует") ;
-                                return(-1) ;
-                                                    }
-/*-------------------------------------- Считывание описания обьекта */
-/*- - - - - - - - - - - - Если модель задана названием и библиотекой */
-   if(data->path[0]==0) {
-
-    if(data->model[0]==0) {                                         /* Если модель НЕ задано */
-              SEND_ERROR("Секция FLYER: Не задана модель объекта") ;
-                                return(-1) ;
-                          }
-
-        RSS_Model_list(data->lib_path, models_list,                 /* Формирование списка моделей */
-                                sizeof(models_list)-1, "BODY" );
-
-        for(end=models_list ; *end ; ) {                            /* Ищем модель по списку */
-                        if(!stricmp(data->model, end))  break ;
-                                         end+=strlen(end)+1 ;
-                                         end+=strlen(end)+1 ;
-                                       }
-
-           if(*end==0) {
-              SEND_ERROR("Секция FLYER: Неизвестная модель тела") ;
-                                return(-1) ;
-                       }
-
-                                    end+=strlen(end)+1 ;            /* Извлекаем имя файла */
-
-                      sprintf(data->path, "%s\\%s", data->lib_path, end) ;
-           RSS_Model_ReadPars(data) ;                               /* Считываем параметры модели */
-                        }
-/*- - - - - - - - - - - - - - - - -  Если модель задана полным путем */
-   else                 {
-                              RSS_Model_ReadPars(data) ;            /* Считываем параметры модели */
-                        }
-/*--------------------------------------- Контроль списка параметров */
-
-     for(i=0 ; i<5 ; i++)
-       if((data->pars[i].text [0]==0 &&
-           data->pars[i].value[0]!=0   ) ||
-          (data->pars[i].text [0]!=0 &&
-           data->pars[i].value[0]==0   )   ) {
-
-              SEND_ERROR("Секция FLYER: Несоответствие числа параметров модели") ;
-                                return(-1) ;
-                                             }
-/*------------------------------------------------- Создание обьекта */
-
-       object=new RSS_Object_Flyer ;
-    if(object==NULL) {
-              SEND_ERROR("Секция FLYER: Недостаточно памяти для создания объекта") ;
-                        return(-1) ;
-                     }
-/*------------------------------------- Сохранения списка параметров */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
-     for(i=0 ; i<5 ; i++)
-       if(data->pars[i].text[0]!=0) {
-
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
-                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
-                     PAR[PAR_CNT].ptr  = NULL ;
-                         PAR_CNT++ ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция FLYER: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-
-/*---------------------------------- Создание списка свойств обьекта */
-
-      object->Features_cnt=this->feature_modules_cnt ;
-      object->Features    =(RSS_Feature **)
-                             calloc(this->feature_modules_cnt, 
-                                     sizeof(object->Features[0])) ;
-
-   for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
-
-/*-------------------------------------- Считывание описаний свойств */
-
-           RSS_Model_ReadSect(data) ;                               /* Считываем секции описаний модели */
-
-   for(i=0 ; data->sections[i].title[0] ; i++) {
-
-     for(j=0 ; j<object->Features_cnt ; j++) {
-
-          object->Features[j]->vBodyPars(NULL, PAR) ;
-          object->Features[j]->vReadSave(data->sections[i].title, 
-                                         data->sections[i].decl, "Flyer.Body") ;
-                                             }
-
-                                         data->sections[i].title[0]= 0 ;
-                                        *data->sections[i].decl    ="" ;
-                                               }
-/*---------------------------------- Введение объекта в общий список */
-
-       OBJECTS=(RSS_Object **)
-                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
-    if(OBJECTS==NULL) {
-              SEND_ERROR("Секция FLYER: Переполнение памяти") ;
-                                return(-1) ;
-                      }
-
-              OBJECTS[OBJECTS_CNT]=object ;
-                      OBJECTS_CNT++ ;
-
-       strcpy(object->Name,       data->name) ;
-       strcpy(object->model_path, data->path) ;
-
-        SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-
-#undef   PAR
-#undef   PAR_CNT
-
-  return(0) ;
 }
 
 

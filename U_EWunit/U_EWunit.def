@@ -1,4 +1,4 @@
-LIBRARY O_EWunit
+LIBRARY U_EWunit
    EXPORTS
          Identify   DATA
 	 GetEntry   DATA

@@ -66,6 +66,7 @@
                               double  mSize ;                /* Коэф.размера маркера */   
 
     public:
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ; /* Создание объекта */ 
      virtual         int  vGetParameter  (char *, char *) ;  /* Получить параметр */
      virtual        void  vShow          (char *) ;          /* Отобразить связанные данные */
      virtual         int  vExecuteCmd    (const char *) ;    /* Выполнить команду */
@@ -80,7 +81,6 @@
                      int  cAngle      (char *) ;             /* Инструкция ANGLE */ 
 
        RSS_Object_Marker *FindObject  (char *) ;             /* Поиск обьекта типа MARKER по имени */
-                     int  CreateObject(RSS_Model_data *);    /* Создание объекта */ 
 
     public:
 	                  RSS_Module_Marker() ;              /* Конструктор */

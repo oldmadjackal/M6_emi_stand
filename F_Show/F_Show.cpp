@@ -117,7 +117,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
 	   keyword="EmiStand" ;
-    identification="Show_feature" ;
+    identification="Show" ;
+          category="Feature" ;
 
         mInstrList=RSS_Module_Show_InstrList ;
 }

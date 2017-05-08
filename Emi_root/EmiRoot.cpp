@@ -802,7 +802,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
   static    char  arrow_SHT_step[32] ;
   static     int  arrow_wait ;
              int  arrow_command ;
-            char  object[32] ;
+            char  o_name[128] ;          /* Имя объекта */ 
+            char *u_name ;               /* Имя компонента */
+      RSS_Object *object ;
+      RSS_Object *unit ;
              int  postfix_flag ;         /* Флаг обработки потфиксной команды */
             HWND  hDlg ;
              int  status ;
@@ -1121,19 +1124,48 @@ typedef  struct {
 /*----------------------------------------- Разыменовывание объектов */
 
      do {                                                           /* BLOCK.1 */
-/*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
-                 memset(object, 0, sizeof(object)) ;
-                strncpy(object, command, sizeof(object)-1) ;
-             end=strchr(object, ' ') ;                              /* Вырезаем первое слово команды */
+/*- - - - - - - - - - - - - -  Предполагаемое имя объейта/компонента */
+                 memset(o_name, 0, sizeof(o_name)) ;
+                strncpy(o_name, command, sizeof(o_name)-1) ;
+             end=strchr(o_name, ' ') ;                              /* Вырезаем первое слово команды */
           if(end!=NULL)  *end=0 ;
 
+             u_name=strchr(o_name, '$') ;                           /* Если надо -разделяем имена объекта и компонента */
+          if(u_name!=NULL)  {
+                               *u_name=0 ;
+                                u_name++ ;
+                            }
+/*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
+                     object=NULL ;
+
         for(i=0 ; i<OBJECTS_CNT ; i++)                              /* Ишем обьект по имени */
-          if(!stricmp(OBJECTS[i]->Name, object))  break ;
+          if(!stricmp(OBJECTS[i]->Name, o_name)) {
+                                                   object=OBJECTS[i] ;
+                                                        break ;
+                                                 } 
+          if(object==NULL)  break ;                                 /* Если такого нет... */
+/*- - - - - - - - - - - - - - - - - - - - - Идентификация компонента */
+       if(u_name!=NULL) {
+                            unit=NULL ;
 
-          if(i==OBJECTS_CNT)  break ;                               /* Если такого нет... */
+         for(i=0 ; i<object->Units.List_cnt ; i++)                  /* Ишем компонент по имени */
+          if(!stricmp(object->Units.List[i].object->Name, u_name)) {
+                         unit=object->Units.List[i].object ;
+                                               break ;
+                                                                   }
 
+                                     if(unit==NULL)  break ;        /* Если такого нет... */
+
+                            object=unit ;
+                        }
+/*- - - - - - - - - - - - - - - - - -  Фиксируем обьект по-умолчанию */
              memset(__object_def, 0, sizeof(__object_def)) ;
-            strncpy(__object_def, object, sizeof(__object_def)-1) ; /* Фиксируем обьект по-умолчанию */
+            strncpy(__object_def, o_name, sizeof(__object_def)-1) ;
+
+        if(u_name!=NULL) {
+            strncat(__object_def, "$",    sizeof(__object_def)-1) ;
+            strncat(__object_def, u_name, sizeof(__object_def)-1) ;
+                         }
 
           if(end==NULL) {  command[0]=0 ;  break ;  }               /* Если в команде только */
                                                                     /*   указание обЪекта... */
@@ -1143,7 +1175,7 @@ typedef  struct {
              if(word2==NULL) {
                                  word2="" ;
                                  word3="" ;
-                               *object= 0 ;
+                               *o_name= 0 ;
                                   break ;
                              }
                 word2++ ;
@@ -1154,9 +1186,9 @@ typedef  struct {
                            
           } while(0) ;
 
-           sprintf(work, "%s %s %s %s", OBJECTS[i]->Type,           /* Переформировываем команду */
+           sprintf(work, "%s %s %s %s", object->Type,               /* Переформировываем команду */
                                         word2,
-                                        object,
+                                      __object_def,
                                         word3            ) ;
                    command=work ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/

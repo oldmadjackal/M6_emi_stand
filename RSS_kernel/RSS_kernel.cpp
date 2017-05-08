@@ -297,6 +297,7 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 {
           keyword    =NULL ;
    identification    =NULL ;
+         category    =NULL ;
 
 	  modules    =NULL ;
 	  modules_cnt=  0 ;
@@ -405,7 +406,7 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 /*								    */
 /*		        Создать объект                  	    */
 
-    RSS_Object *RSS_Kernel::vCreateObject(void)
+    RSS_Object *RSS_Kernel::vCreateObject(RSS_Model_data *model)
 
 {
    return(NULL) ;

@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "СТАНЦИЯ РЭБ" 	    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "СТАНЦИЯ РЭБ" 	    */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -15,10 +15,11 @@
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
+#include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "O_EWunit.h"
+#include "U_EWunit.h"
 
 #pragma warning(disable : 4996)
 
@@ -37,8 +38,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Object_EWunit_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                     WPARAM wParam, LPARAM lParam) 
+    BOOL CALLBACK  Unit_EWunit_Help_dialog(  HWND hDlg,     UINT Msg, 
+ 		                           WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_EWunit  Module ;
                 int  elm ;         /* Идентификатор элемента диалога */
@@ -138,17 +139,17 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна ROUND             */
 
- typedef struct {  RSS_Object_EWunit *data ;
-                                HWND  hDlg ; }  Indicator_context ;
+ typedef struct {  RSS_Unit_EWunit *data ;
+                              HWND  hDlg ; }  Indicator_context ;
 
 
 #define  _IND_MAX  10
 
-   BOOL CALLBACK  Object_EWunit_Show_dialog(  HWND  hDlg,     UINT  Msg, 
-                                            WPARAM  wParam, LPARAM  lParam) 
+   BOOL CALLBACK  Unit_EWunit_Show_dialog(  HWND  hDlg,     UINT  Msg, 
+                                          WPARAM  wParam, LPARAM  lParam) 
 {
   static Indicator_context   contexts[_IND_MAX] ;
-         RSS_Object_EWunit  *context ;
+           RSS_Unit_EWunit  *context ;
                       HWND   hElem  ;
                        int   elm ;           /* Идентификатор элемента диалога */
                        int   status ;
@@ -170,7 +171,7 @@
 
     case WM_INITDIALOG: {
 
-                 context=(RSS_Object_EWunit *)lParam ;
+                 context=(RSS_Unit_EWunit *)lParam ;
 /*- - - - - - - - - - - - - - - - - -  Контроль повторного контекста */
            for(i=0 ; i<_IND_MAX ; i++) 
              if(contexts[i].data==context) {
@@ -184,7 +185,8 @@
                 contexts[i].hDlg=  hDlg ;
                 contexts[i].data=context ;
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Пропись заголовка */
-              sprintf(title, "Индикатор станции РЭБ: %s.%s", context->owner, context->Name) ;
+              sprintf(title, "Индикатор станции РЭБ: %s.%s",
+                                  context->Owner->Name, context->Name) ;
           SendMessage(hDlg, WM_SETTEXT, 0, (LPARAM)title) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
                       hElem=GetDlgItem(hDlg, IDC_INDICATOR) ;
@@ -246,10 +248,10 @@
 /*                                                                   */
 /*            Элемент - индикатор круговых диаграмм                  */
 
- LRESULT CALLBACK  Object_EWunit_Indicator_prc(
-                                      HWND  hWnd,     UINT  Msg,
- 			            WPARAM  wParam, LPARAM  lParam
-                                              )
+ LRESULT CALLBACK  Unit_EWunit_Indicator_prc(
+                                        HWND  hWnd,     UINT  Msg,
+ 			              WPARAM  wParam, LPARAM  lParam
+                                            )
 {
                   HDC  hDC_wnd ;
                   HDC  hDC ;
@@ -261,7 +263,7 @@
                HBRUSH  Brush ;
                HBRUSH  Brush_prv ;
                  RECT  Rect ;
-    RSS_Object_EWunit *data ;               /* Описание индикатора */
+      RSS_Unit_EWunit *data ;               /* Описание индикатора */
                  char  data_ptr[32] ;       /* Адрес описания, кодированный */
                   int  rad ;
                   int  x_c ;
@@ -281,7 +283,7 @@
         SendMessage(hWnd, WM_GETTEXT, (WPARAM)sizeof(data_ptr),
                                       (LPARAM)       data_ptr  ) ;
 
-           data=(RSS_Object_EWunit *)Ptr_decode(data_ptr) ;
+           data=(RSS_Unit_EWunit *)Ptr_decode(data_ptr) ;
                                }
 /*--------------------------------------------------- Общая разводка */
 
@@ -331,10 +333,10 @@
 
                                  color=RGB(255, 0, 0) ;
 
-                 dx=data->threats[i]->x_base-data->o_owner->x_base ;
-                 dz=data->threats[i]->z_base-data->o_owner->z_base ;
+                 dx=data->threats[i]->x_base-data->Owner->x_base ;
+                 dz=data->threats[i]->z_base-data->Owner->z_base ;
 
-              angle=1.5*_PI-(atan2(dx, dz)-data->o_owner->a_azim*_GRD_TO_RAD) ;
+              angle=1.5*_PI-(atan2(dx, dz)-data->Owner->a_azim*_GRD_TO_RAD) ;
 
                            Pen    =           CreatePen(PS_SOLID, 0, color) ;
                            Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;

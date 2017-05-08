@@ -3,6 +3,7 @@
 
 #define  RSS_KERNEL_H 
 
+#include "..\RSS_Model\RSS_Model.h"
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
 
@@ -177,6 +178,7 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
    public :
                    char  *keyword ;	            /* Ключевое слов - идентификатор проекта */
                    char  *identification ;          /* Идентификатор модуля */
+                   char  *category ;                /* Категория программного модуля */
                     int   priority ;                /* Приоритет перехвата управления */
                     int   events_processing ;       /* Флаг собственной обработки событий */
                     
@@ -197,34 +199,34 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 	    virtual int   vKernelEvents (void) ;           /* Обработка событий */
 
    public:
-     virtual        void  vStart        (void) ;           /* Стартовая разводка */
-     virtual        void  vInit         (void) ;           /* Инициализация связей */
-     virtual        void  vReadSave     (std::string *) ;  /* Считать данные из строки */
-     virtual        void  vWriteSave    (std::string *) ;  /* Записать данные в строку */
-     virtual  RSS_Object *vCreateObject (void) ;           /* Создать объект */
-     virtual RSS_Feature *vCreateFeature(RSS_Object *) ;   /* Создать свойство */
-     virtual         int  vExecuteCmd   (const char *) ;   /* Выполнить команду */
-     virtual         int  vExecuteCmd   (const char *,     /* Выполнить команду с выдачей результата по ссылке */
+     virtual        void  vStart        (void) ;               /* Стартовая разводка */
+     virtual        void  vInit         (void) ;               /* Инициализация связей */
+     virtual        void  vReadSave     (std::string *) ;      /* Считать данные из строки */
+     virtual        void  vWriteSave    (std::string *) ;      /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ;   /* Создать объект */
+     virtual RSS_Feature *vCreateFeature(RSS_Object *) ;       /* Создать свойство */
+     virtual         int  vExecuteCmd   (const char *) ;       /* Выполнить команду */
+     virtual         int  vExecuteCmd   (const char *,         /* Выполнить команду с выдачей результата по ссылке */
                                           RSS_IFace *) ;
-     virtual         int  vCalculate    (char *, char *,   /* Вычислить выражение */
+     virtual         int  vCalculate    (char *, char *,       /* Вычислить выражение */
                                          struct RSS_Parameter *,
                                          struct RSS_Parameter *,
                                          double *, 
                                          void **, char *) ;
-     virtual         int  vGetParameter (char *, char *) ; /* Получить параметр */
-     virtual        void  vSetParameter (char *, char *) ; /* Установить параметр */
-     virtual        void  vProcess      (void) ;           /* Выполнить целевой функционал */
-     virtual        void  vShow         (char *) ;         /* Отобразить связанные данные */
-     virtual        void  vChangeContext(void)  ;          /* Выполнить действие в контексте потока */
+     virtual         int  vGetParameter (char *, char *) ;     /* Получить параметр */
+     virtual        void  vSetParameter (char *, char *) ;     /* Установить параметр */
+     virtual        void  vProcess      (void) ;               /* Выполнить целевой функционал */
+     virtual        void  vShow         (char *) ;             /* Отобразить связанные данные */
+     virtual        void  vChangeContext(void)  ;              /* Выполнить действие в контексте потока */
 
-     virtual RSS_Context *vAddData      (RSS_Context ***); /* Ввод контекста модуля в список контекстов */
-     virtual         int  vReadData     (RSS_Context ***,  /* Считать данные контекста модуля из строки */
+     virtual RSS_Context *vAddData      (RSS_Context ***) ;    /* Ввод контекста модуля в список контекстов */
+     virtual         int  vReadData     (RSS_Context ***,      /* Считать данные контекста модуля из строки */
                                          std::string * ) ;
-     virtual        void  vWriteData    (RSS_Context *,    /* Записать данные контекста модуля в строку */
+     virtual        void  vWriteData    (RSS_Context *,        /* Записать данные контекста модуля в строку */
                                          std::string * ) ;
-     virtual        void  vReleaseData  (RSS_Context *) ;  /* Освободить ресурсы данных контекста модуля */
+     virtual        void  vReleaseData  (RSS_Context *) ;      /* Освободить ресурсы данных контекста модуля */
 
-     virtual      double  vGetTime      (void) ;           /* Системное время */
+     virtual      double  vGetTime      (void) ;               /* Системное время */
 
     public:
 

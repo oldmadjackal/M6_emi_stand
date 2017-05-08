@@ -145,7 +145,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
 	   keyword="EmiStand" ;
-    identification="Body_object" ;
+    identification="Body" ;
+          category="Object" ;
+
 
         mInstrList=RSS_Module_Body_InstrList ;
 }
@@ -158,6 +160,171 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Module_Body::~RSS_Module_Body(void)
 
 {
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Создание объекта                              */
+
+  RSS_Object *RSS_Module_Body::vCreateObject(RSS_Model_data *data)
+
+{
+  RSS_Object_Body *object ;
+             char  models_list[4096] ;
+             char *end ;
+              int  i ;
+              int  j ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+#define       PAR             object->Parameters
+#define       PAR_CNT         object->Parameters_cnt
+ 
+/*--------------------------------------------------- Проверка имени */
+
+    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
+              SEND_ERROR("Секция BODY: Не задано имя объекта") ;
+                                return(NULL) ;
+                         }
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, data->name)) {
+              SEND_ERROR("Секция BODY: Объект с таким именем уже существует") ;
+                                return(NULL) ;
+                                                    }
+/*-------------------------------------- Считывание описания обьекта */
+/*- - - - - - - - - - - - Если модель задана названием и библиотекой */
+   if(data->path[0]==0) {
+
+    if(data->model[0]==0) {                                         /* Если модель НЕ задано */
+              SEND_ERROR("Секция BODY: Не задана модель объекта") ;
+                                return(NULL) ;
+                          }
+
+        RSS_Model_list(data->lib_path, models_list,                 /* Формирование списка моделей */
+                                sizeof(models_list)-1, "BODY" );
+
+        for(end=models_list ; *end ; ) {                            /* Ищем модель по списку */
+                        if(!stricmp(data->model, end))  break ;
+                                         end+=strlen(end)+1 ;
+                                         end+=strlen(end)+1 ;
+                                       }
+
+           if(*end==0) {
+              SEND_ERROR("Секция BODY: Неизвестная модель тела") ;
+                                return(NULL) ;
+                       }
+
+                                    end+=strlen(end)+1 ;            /* Извлекаем имя файла */
+
+                      sprintf(data->path, "%s\\%s", data->lib_path, end) ;
+           RSS_Model_ReadPars(data) ;                               /* Считываем параметры модели */
+                        }
+/*- - - - - - - - - - - - - - - - -  Если модель задана полным путем */
+   else                 {
+                              RSS_Model_ReadPars(data) ;            /* Считываем параметры модели */
+                        }
+/*--------------------------------------- Контроль списка параметров */
+
+     for(i=0 ; i<5 ; i++)
+       if((data->pars[i].text [0]==0 &&
+           data->pars[i].value[0]!=0   ) ||
+          (data->pars[i].text [0]!=0 &&
+           data->pars[i].value[0]==0   )   ) {
+
+              SEND_ERROR("Секция BODY: Несоответствие числа параметров модели") ;
+                                return(NULL) ;
+                                             }
+/*------------------------------------------------- Создание обьекта */
+
+       object=new RSS_Object_Body ;
+    if(object==NULL) {
+              SEND_ERROR("Секция BODY: Недостаточно памяти для создания объекта") ;
+                        return(NULL) ;
+                     }
+/*------------------------------------- Сохранения списка параметров */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
+     for(i=0 ; i<5 ; i++)
+       if(data->pars[i].text[0]!=0) {
+
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
+                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
+                     PAR[PAR_CNT].ptr  = NULL ;
+                         PAR_CNT++ ;
+                                    }
+/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
+           PAR=(struct RSS_Parameter *)
+                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
+        if(PAR==NULL) {
+                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
+                                            return(NULL) ;
+                      }
+
+             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
+
+/*---------------------------------- Создание списка свойств обьекта */
+
+      object->Features_cnt=this->feature_modules_cnt ;
+      object->Features    =(RSS_Feature **)
+                             calloc(this->feature_modules_cnt, 
+                                     sizeof(object->Features[0])) ;
+
+   for(i=0 ; i<this->feature_modules_cnt ; i++)
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+
+/*-------------------------------------- Считывание описаний свойств */
+
+           RSS_Model_ReadSect(data) ;                               /* Считываем секции описаний модели */
+
+   for(i=0 ; data->sections[i].title[0] ; i++) {
+
+     for(j=0 ; j<object->Features_cnt ; j++) {
+
+          object->Features[j]->vBodyPars(NULL, PAR) ;
+          object->Features[j]->vReadSave(data->sections[i].title, 
+                                         data->sections[i].decl, "Body.Body") ;
+                                             }
+
+                                         data->sections[i].title[0]= 0 ;
+                                        *data->sections[i].decl    ="" ;
+                                               }
+/*---------------------------------- Введение объекта в общий список */
+
+       OBJECTS=(RSS_Object **)
+                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
+    if(OBJECTS==NULL) {
+              SEND_ERROR("Секция BODY: Переполнение памяти") ;
+                                return(NULL) ;
+                      }
+
+              OBJECTS[OBJECTS_CNT]=object ;
+                      OBJECTS_CNT++ ;
+
+       strcpy(object->Name,       data->name) ;
+       strcpy(object->model_path, data->path) ;
+
+        SendMessage(this->kernel_wnd, WM_USER,
+                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+#undef   PAR
+#undef   PAR_CNT
+
+  return(object) ;
 }
 
 
@@ -287,7 +454,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    RSS_Model_data  create_data ;
   RSS_Object_Body *object ;
              char  name[128] ;
-              int  status ;
              char *entry ;
              char *end ;
               int  i ;
@@ -337,10 +503,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        } 
 /*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
-                status=CreateObject(&create_data) ;
-             if(status)  return ;
-
-        object=(RSS_Object_Body *)this->kernel->kernel_objects[this->kernel->kernel_objects_cnt-1] ;
+              object=(RSS_Object_Body *)vCreateObject(&create_data) ;
+           if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
        entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
@@ -413,6 +577,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
  RSS_Model_data  data ;
+     RSS_Object *object ;
            char *name ;
            char *model ;
            char *pars[10] ;
@@ -462,8 +627,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------- Проверка необходимости уточнения параметров */
 
    if(data.name[0]!=0) {
-                            status=CreateObject(&data) ;
-                         if(status==0)  return(0) ;
+                            object=vCreateObject(&data) ;
+                         if(object!=NULL)  return(0) ;
                        }
 /*----------------------------------------------- Проведение диалога */
 
@@ -1034,171 +1199,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   OBJECTS
 #undef   OBJECTS_CNT
 
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Создание объекта                              */
-
-  int  RSS_Module_Body::CreateObject(RSS_Model_data *data)
-
-{
-  RSS_Object_Body *object ;
-             char  models_list[4096] ;
-             char *end ;
-              int  i ;
-              int  j ;
-
-#define   OBJECTS       this->kernel->kernel_objects 
-#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
-
-#define       PAR             object->Parameters
-#define       PAR_CNT         object->Parameters_cnt
- 
-/*--------------------------------------------------- Проверка имени */
-
-    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция BODY: Не задано имя объекта") ;
-                                return(-1) ;
-                         }
-
-       for(i=0 ; i<OBJECTS_CNT ; i++)
-         if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция BODY: Объект с таким именем уже существует") ;
-                                return(-1) ;
-                                                    }
-/*-------------------------------------- Считывание описания обьекта */
-/*- - - - - - - - - - - - Если модель задана названием и библиотекой */
-   if(data->path[0]==0) {
-
-    if(data->model[0]==0) {                                         /* Если модель НЕ задано */
-              SEND_ERROR("Секция BODY: Не задана модель объекта") ;
-                                return(-1) ;
-                          }
-
-        RSS_Model_list(data->lib_path, models_list,                 /* Формирование списка моделей */
-                                sizeof(models_list)-1, "BODY" );
-
-        for(end=models_list ; *end ; ) {                            /* Ищем модель по списку */
-                        if(!stricmp(data->model, end))  break ;
-                                         end+=strlen(end)+1 ;
-                                         end+=strlen(end)+1 ;
-                                       }
-
-           if(*end==0) {
-              SEND_ERROR("Секция BODY: Неизвестная модель тела") ;
-                                return(-1) ;
-                       }
-
-                                    end+=strlen(end)+1 ;            /* Извлекаем имя файла */
-
-                      sprintf(data->path, "%s\\%s", data->lib_path, end) ;
-           RSS_Model_ReadPars(data) ;                               /* Считываем параметры модели */
-                        }
-/*- - - - - - - - - - - - - - - - -  Если модель задана полным путем */
-   else                 {
-                              RSS_Model_ReadPars(data) ;            /* Считываем параметры модели */
-                        }
-/*--------------------------------------- Контроль списка параметров */
-
-     for(i=0 ; i<5 ; i++)
-       if((data->pars[i].text [0]==0 &&
-           data->pars[i].value[0]!=0   ) ||
-          (data->pars[i].text [0]!=0 &&
-           data->pars[i].value[0]==0   )   ) {
-
-              SEND_ERROR("Секция BODY: Несоответствие числа параметров модели") ;
-                                return(-1) ;
-                                             }
-/*------------------------------------------------- Создание обьекта */
-
-       object=new RSS_Object_Body ;
-    if(object==NULL) {
-              SEND_ERROR("Секция BODY: Недостаточно памяти для создания объекта") ;
-                        return(-1) ;
-                     }
-/*------------------------------------- Сохранения списка параметров */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
-     for(i=0 ; i<5 ; i++)
-       if(data->pars[i].text[0]!=0) {
-
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-            sprintf( PAR[PAR_CNT].name, "PAR%d", i+1) ;
-                     PAR[PAR_CNT].value=strtod(data->pars[i].value, &end) ;
-                     PAR[PAR_CNT].ptr  = NULL ;
-                         PAR_CNT++ ;
-                                    }
-/*- - - - - - - - - - - - - - - - - - - - Терминируем пустой записью */
-           PAR=(struct RSS_Parameter *)
-                 realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
-        if(PAR==NULL) {
-                         SEND_ERROR("Секция BODY: Переполнение памяти") ;
-                                            return(-1) ;
-                      }
-
-             memset(&PAR[PAR_CNT], 0, sizeof(PAR[PAR_CNT])) ;
-
-/*---------------------------------- Создание списка свойств обьекта */
-
-      object->Features_cnt=this->feature_modules_cnt ;
-      object->Features    =(RSS_Feature **)
-                             calloc(this->feature_modules_cnt, 
-                                     sizeof(object->Features[0])) ;
-
-   for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
-
-/*-------------------------------------- Считывание описаний свойств */
-
-           RSS_Model_ReadSect(data) ;                               /* Считываем секции описаний модели */
-
-   for(i=0 ; data->sections[i].title[0] ; i++) {
-
-     for(j=0 ; j<object->Features_cnt ; j++) {
-
-          object->Features[j]->vBodyPars(NULL, PAR) ;
-          object->Features[j]->vReadSave(data->sections[i].title, 
-                                         data->sections[i].decl, "Body.Body") ;
-                                             }
-
-                                         data->sections[i].title[0]= 0 ;
-                                        *data->sections[i].decl    ="" ;
-                                               }
-/*---------------------------------- Введение объекта в общий список */
-
-       OBJECTS=(RSS_Object **)
-                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
-    if(OBJECTS==NULL) {
-              SEND_ERROR("Секция BODY: Переполнение памяти") ;
-                                return(-1) ;
-                      }
-
-              OBJECTS[OBJECTS_CNT]=object ;
-                      OBJECTS_CNT++ ;
-
-       strcpy(object->Name,       data->name) ;
-       strcpy(object->model_path, data->path) ;
-
-        SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-
-#undef   PAR
-#undef   PAR_CNT
-
-  return(0) ;
 }
 
 
