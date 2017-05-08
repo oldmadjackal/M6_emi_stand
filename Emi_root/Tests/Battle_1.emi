@@ -30,11 +30,10 @@ flyer cr f1 летун-1 15 2 28 2 5
 f1 base 0 50 -800
 f1 v 20
 
-ewunit cr ew1
-ew1 owner f1
-ew1 range 100 1000
-ew1 velocity 100
-ew1 event MIS_CROSS
+f1 unit ew ewunit
+f1$ew range 100 1000
+f1$ew velocity 100
+f1$ew event MIS_CROSS
 
 flyer cr f2 летун-1 15 2 28 2 5
 f2 base 20 60 -850
