@@ -78,8 +78,8 @@
        public:
                 virtual int  vSetHomingDirection   (RSS_Point *) ;                      /* Направление на цель */
                 virtual int  vSetHomingPosition    (RSS_Point *) ;                      /* Относительное положение цели */
-                virtual int  vSetHomingDistance    (double *) ;                         /* Дистанция до цели */
-                virtual int  vSetHomingClosingSpeed(double *) ;                         /* Скорость сближения с целью */
+                virtual int  vSetHomingDistance    (double) ;                           /* Дистанция до цели */
+                virtual int  vSetHomingClosingSpeed(double) ;                           /* Скорость сближения с целью */
 
                 virtual int  vGetWarHeadControl    (char *) ;                           /* Управление БЧ */
                 virtual int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
@@ -98,6 +98,8 @@
                 virtual int  vSetEngineControl     (RSS_Unit_Engine_Control *, int) ;   /* Управление двигателем */
 
                 virtual int  vGetEngineThrust      (RSS_Unit_Engine_Thrust *) ;         /* Вектор тяги двигателя */
+                virtual int  vGetEngineMass        (double *, RSS_Point *) ;            /* Масса и положение центра масс двигателя */
+                virtual int  vGetEngineMI          (double *, double *, double *) ;     /* Моменты инерции двигателя */
 
        public:
 			     RSS_Unit_Engine  () ;                /* Конструктор */
@@ -110,6 +112,8 @@
        public:
                 virtual int  vSetAeroControl       (RSS_Unit_Aero_Control *, int) ;     /* Управление аэродинамическими поверхностями */
                 virtual int  vSetEngineThrust      (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
+                virtual int  vSetEngineMass        (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
+                virtual int  vSetEngineMI          (double, double, double) ;           /* Моменты инерции двигателя */
 
        public:
 			     RSS_Unit_Model  () ;                /* Конструктор */

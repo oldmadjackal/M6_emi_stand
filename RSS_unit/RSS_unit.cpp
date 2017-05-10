@@ -225,7 +225,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Дистанция до цели                 	     */
 
-    int  RSS_Unit_Control::vSetHomingDistance(double *distance)
+    int  RSS_Unit_Control::vSetHomingDistance(double  distance)
 
 {
    return(0) ;
@@ -236,7 +236,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Скорость сближения с целью            	     */
 
-    int  RSS_Unit_Control::vSetHomingClosingSpeed(double *velocity)
+    int  RSS_Unit_Control::vSetHomingClosingSpeed(double  velocity)
 
 {
    return(0) ;
@@ -337,6 +337,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*********************************************************************/
 /*								     */
+/*             	  Масса и положение центра масс двигателя            */
+
+    int  RSS_Unit_Engine::vGetEngineMass(double *mass, RSS_Point *center)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*             	  Моменты инерции двигателя                          */
+
+    int  RSS_Unit_Engine::vGetEngineMI(double *Ix, double *Iy, double *Iz)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
 /*	      Компоненты класса "КОМПОНЕНТ - Модель"       	     */
 /*								     */
 /*********************************************************************/
@@ -381,4 +403,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    return(0) ;
 }
+
+
+/*********************************************************************/
+/*								     */
+/*             	  Масса и положение центра масс двигателя            */
+
+    int  RSS_Unit_Model::vSetEngineMass(double  mass, RSS_Point *center)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*             	  Моменты инерции двигателя                          */
+
+    int  RSS_Unit_Model::vSetEngineMI(double  Ix, double  Iy, double  Iz)
+
+{
+   return(0) ;
+}
+
 
