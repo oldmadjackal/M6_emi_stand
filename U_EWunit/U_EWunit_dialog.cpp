@@ -185,7 +185,7 @@
                 contexts[i].hDlg=  hDlg ;
                 contexts[i].data=context ;
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Пропись заголовка */
-              sprintf(title, "Индикатор станции РЭБ: %s.%s",
+              sprintf(title, "Профиль работы двигателя: %s.%s",
                                   context->Owner->Name, context->Name) ;
           SendMessage(hDlg, WM_SETTEXT, 0, (LPARAM)title) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
@@ -201,8 +201,7 @@
     case WM_PAINT:      {
 
                       hElem=GetDlgItem(hDlg, IDC_INDICATOR) ;
-          SendMessage(hElem, WM_PAINT, NULL, 
-                       (LPARAM)Ptr_incode((void *)context)) ;
+          SendMessage(hElem, WM_PAINT, NULL, NULL) ;
                           
  			    return(FALSE) ;
 			       break ;

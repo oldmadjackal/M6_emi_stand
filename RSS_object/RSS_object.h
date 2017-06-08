@@ -156,7 +156,7 @@
 
    virtual              int  vSpecial        (char *, void *) ;     /* Специальные действия */
 
-   virtual              int  vCalculateStart (void) ;               /* Подготовка расчета изменения состояния */
+   virtual              int  vCalculateStart (double) ;             /* Подготовка расчета изменения состояния */
    virtual              int  vCalculate      (double, double,       /* Расчет изменения состояния */
                                                       char *, int) ;
    virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */

@@ -2577,7 +2577,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Object_Flyer::vCalculateStart(void)
+     int  RSS_Object_Flyer::vCalculateStart(double  t)
 {
   int  i ;
 
@@ -2586,7 +2586,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         this->iSaveTracePoint("CLEAR") ;
 
     for(i=0 ; i<Units.List_cnt ; i++)                               /* Инициализация подчиненных объектов */
-                  Units.List[i].object->vCalculateStart() ;
+                  Units.List[i].object->vCalculateStart(t) ;
 
   return(0) ;
 }

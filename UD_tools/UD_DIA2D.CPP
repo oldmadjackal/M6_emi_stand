@@ -86,7 +86,8 @@
         SendMessage(hWnd, WM_GETTEXT, (WPARAM)sizeof(data_ptr),
                                       (LPARAM)       data_ptr  ) ;
 
-           data=(UD_diag_data *)UD_ptr_decode(data_ptr) ;
+                        data=(UD_diag_data *)UD_ptr_decode(data_ptr) ;
+
                               }
 
 /*---------------------------------------------- Определение статуса */
@@ -148,8 +149,8 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - Вывод данных */
         if(data->data_list    ==NULL ||
            data->data_list_cnt==  0    ) {   
-                                ValidateRect(hWnd,  NULL) ;
-                                    break ;
+                                           ValidateRect(hWnd,  NULL) ;
+                                                break ;
                                          }
 
               hDC=BeginPaint(hWnd, &PaintCfg) ;

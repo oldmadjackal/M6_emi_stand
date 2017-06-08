@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "ТЕЛО"  		    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "НУР-ЛЕГО"  		    */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -14,10 +14,11 @@
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
+#include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "O_Body.h"
+#include "O_Rocket_Lego.h"
 
 #pragma warning(disable : 4996)
 
@@ -32,18 +33,18 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Object_Body_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                   WPARAM wParam, LPARAM lParam) 
+    BOOL CALLBACK  Object_RocketLego_Help_dialog(  HWND hDlg,     UINT Msg, 
+ 		  	                         WPARAM wParam, LPARAM lParam) 
 {
-  RSS_Module_Body  Module ;
-              int  elm ;         /* Идентификатор элемента диалога */
-              int  status ;
-              int  index ;
-              int  insert_flag ;
-             char *help ;
-             char  text[512] ;
-             char *end ;
-              int  i ;
+ RSS_Module_RocketLego  Module ;
+                   int  elm ;         /* Идентификатор элемента диалога */
+                   int  status ;
+                   int  index ;
+                   int  insert_flag ;
+                  char *help ;
+                  char  text[512] ;
+                  char *end ;
+                   int  i ;
 
 /*------------------------------------------------- Большая разводка */
 
@@ -133,24 +134,24 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CREATE            */
 
-    BOOL CALLBACK  Object_Body_Create_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                     WPARAM wParam, LPARAM lParam) 
+    BOOL CALLBACK  Object_RocketLego_Create_dialog(  HWND hDlg,     UINT Msg, 
+ 		  	                           WPARAM wParam, LPARAM lParam) 
 {
-        RSS_Module_Body  Module ;
- static  RSS_Model_data *data ;
-             RSS_Object *object ;
- static            char  models_list[4096] ;
- static            RECT  PictureFrame ;
-                HBITMAP  hBitmap ;
-//              HBITMAP  hBitmap_prv ;
-                    int  elm ;               /* Идентификатор элемента диалога */
-                    int  status ;
-                   char  library[FILENAME_MAX] ;
-                   char  value[512] ;
-                    int  assigned ;
-                   char *end ;
-                    int  i ;
-
+        RSS_Module_RocketLego  Module ;
+ static        RSS_Model_data *data ;
+                   RSS_Object *object ;
+ static                  char  models_list[4096] ;
+ static                  RECT  PictureFrame ;
+                      HBITMAP  hBitmap ;
+//                    HBITMAP  hBitmap_prv ;
+                          int  elm ;               /* Идентификатор элемента диалога */
+                          int  status ;
+                         char  library[FILENAME_MAX] ;
+                         char  value[512] ;
+                          int  assigned ;
+                         char *end ;
+                          int  i ;
+     
 /*------------------------------------------------- Большая разводка */
 
   switch(Msg) {
@@ -309,10 +310,150 @@
                   GETs(IDC_PAR_VALUE_1+i, data->pars[i].value) ;  
 
                 object=Module.vCreateObject(data) ;
-             if(object==0)  EndDialog(hDlg, 0) ;
+             if(object!=NULL)  EndDialog(hDlg, 0) ;
 
                               return(FALSE) ;
                          }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			  return(FALSE) ;
+			     break ;
+			}
+/*--------------------------------------------------------- Закрытие */
+
+    case WM_CLOSE:      {
+                            EndDialog(hDlg, -1) ;
+  			       return(FALSE) ;
+			              break ;
+			}
+/*----------------------------------------------------------- Прочее */
+
+    default :        {
+			  return(FALSE) ;
+			    break ;
+		     }
+/*-------------------------------------------------------------------*/
+	      }
+/*-------------------------------------------------------------------*/
+
+    return(TRUE) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/* 	     Обработчик сообщений диалогового окна LEGO              */
+
+    BOOL CALLBACK  Object_RocketLego_Lego_dialog(  HWND hDlg,     UINT Msg, 
+ 		  	                         WPARAM wParam, LPARAM lParam) 
+{
+ static                 HFONT  font ;         /* Шрифт */
+ static RSS_Module_RocketLego *Module ;
+ static RSS_Object_RocketLego *object ;
+                     RSS_Unit *unit ;
+                          int  elm ;          /* Идентификатор элемента диалога */
+                          int  status ;
+                         char *unit_name ;
+                         char  unit_type[1024] ;
+                         char  text[1024] ;
+                         char *end ;
+                          int  i ;
+     
+/*------------------------------------------------- Большая разводка */
+
+  switch(Msg) {
+
+/*---------------------------------------------------- Инициализация */
+
+    case WM_INITDIALOG: {
+
+              object=(RSS_Object_RocketLego *)lParam ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Пропись шрифтов */
+        if(font==NULL)
+           font=CreateFont(14, 0, 0, 0, FW_THIN, 
+                                 false, false, false,
+                                  ANSI_CHARSET,
+                                   OUT_DEFAULT_PRECIS,
+                                    CLIP_DEFAULT_PRECIS,
+                                     DEFAULT_QUALITY,
+                                      VARIABLE_PITCH,
+                                       "Courier New Cyr") ;
+//         SendMessage(ITEM(IDC_LIST), WM_SETFONT, (WPARAM)font, 0) ;
+/*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
+#define   MODULES       RSS_Kernel::kernel->modules 
+#define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt 
+
+                                          CB_CLEAR(IDC_TYPE_W) ;
+                                          CB_CLEAR(IDC_TYPE_E) ;
+                                          CB_CLEAR(IDC_TYPE_M) ;
+
+   for(i=0 ; i<MODULES_CNT ; i++) 
+     if(MODULES[i].entry->category      !=NULL &&
+        MODULES[i].entry->identification!=NULL   )
+      if(!stricmp("Unit", MODULES[i].entry->category)) {
+
+        if(MODULES[i].entry->lego_type==NULL)  continue ;
+
+             MODULES[i].entry->vGetParameter("$$MODULE_NAME", text) ;
+
+        if(strstr(MODULES[i].entry->lego_type, "WarHead")!=NULL)  CB_ADD_LIST(IDC_TYPE_W, text) ;
+        if(strstr(MODULES[i].entry->lego_type, "Engine" )!=NULL)  CB_ADD_LIST(IDC_TYPE_E, text) ;
+        if(strstr(MODULES[i].entry->lego_type, "Model"  )!=NULL)  CB_ADD_LIST(IDC_TYPE_M, text) ;                  
+                                                       }
+
+#undef    MODULES
+#undef    MODULES_CNT
+/*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+         if(object->unit_warhead!=NULL) {
+             object->unit_warhead->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                    SETc(IDC_TYPE_W, text) ;
+                                        }
+         if(object->unit_engine !=NULL) {
+             object->unit_engine->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                   SETc(IDC_TYPE_E, text) ;
+                                        }
+         if(object->unit_model  !=NULL) {
+             object->unit_model->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                  SETc(IDC_TYPE_M, text) ;
+                                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  			  return(FALSE) ;
+  			     break ;
+  			}
+
+/*------------------------------------------------ Отработка событий */
+
+    case WM_COMMAND:    {
+
+	status=HIWORD(wParam) ;
+	   elm=LOWORD(wParam) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Добавление компонентов */
+     if(elm==IDC_SET) {
+
+        for(i=0 ; i<3 ; i++) {
+
+          if(i==0)  {  GETc(IDC_TYPE_W, unit_type) ;
+                                        unit_name="warhead" ;  }
+          if(i==1)  {  GETc(IDC_TYPE_E, unit_type) ;
+                                        unit_name="engine" ;  }
+          if(i==2)  {  GETc(IDC_TYPE_M, unit_type) ;
+                                        unit_name="model" ;  }
+
+          if(unit_type[0]==0)  continue ;
+
+             end=strchr(unit_type, ' ') ;
+          if(end!=NULL)  *end=0 ;
+
+             unit=Module->AddUnit(object, unit_name, unit_type, text) ;
+          if(unit==NULL) {
+                            SEND_ERROR(text) ;
+                              return(FALSE) ;
+                         }
+                             }
+
+                            EndDialog(hDlg, 0) ;
+
+                              return(FALSE) ;
+                      }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 			  return(FALSE) ;
 			     break ;

@@ -1915,7 +1915,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Object_Missile::vCalculateStart(void)
+     int  RSS_Object_Missile::vCalculateStart(double  t)
 {
     Matrix2d  Sum_Matrix ;
     Matrix2d  Oper_Matrix ;  
@@ -2109,7 +2109,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
                                              this->a_elev, 
                                              this->a_roll ) ;
-                                            }
+                                         }
 
   return(0) ;
 }

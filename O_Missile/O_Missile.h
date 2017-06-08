@@ -71,7 +71,7 @@
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(void) ;            /* Подготовка расчета изменения состояния */
+               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
                virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */

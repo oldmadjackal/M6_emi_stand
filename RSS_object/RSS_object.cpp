@@ -258,7 +258,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Object::vCalculateStart(void)
+     int  RSS_Object::vCalculateStart(double  t)
 {
   return(0) ;
 }
@@ -427,18 +427,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Objects_List::Add(class RSS_Object *object, char *relation)
 
 {
-   if(List_cnt>=List_max) {
-                             List_max+=10 ;
-                             List     =(RSS_Objects_List_Elem *)
-                                         realloc(List, List_max*sizeof(*List)) ;
-                          }
+   int  i ;
+
+/*------------------------------------------------ Замена компонента */
+
+   for(i=0 ; i<List_cnt ; i++)
+     if(!stricmp(object->Name, List[i].object->Name))  break ;
+
+      if(i<List_cnt) {
+                               List[i].object->vFree() ;
+                        delete List[i].object ;
+                     }
+/*------------------------------------- Добавление нового компонента */
+
+   if(i>=List_max) {
+                       List_max+=10 ;
+                       List     =(RSS_Objects_List_Elem *)
+                                  realloc(List, List_max*sizeof(*List)) ;
+                   }
 
    if(List==NULL)  return(-1) ;
 
 
-           List[List_cnt].object=object ;
-   strncpy(List[List_cnt].relation, relation, sizeof(List[0].relation)-1) ;
-                List_cnt++ ;
+               List[i].object=object ;
+       strncpy(List[i].relation, relation, sizeof(List[0].relation)-1) ;
+
+    if(i>=List_cnt)  List_cnt++ ;
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }

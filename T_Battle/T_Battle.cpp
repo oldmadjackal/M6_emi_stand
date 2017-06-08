@@ -767,7 +767,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       for(i=0 ; i<mObjects_cnt ; i++) {
 
             mObjects[i].object->vSpecial       ("BATTLE", this) ;
-            mObjects[i].object->vCalculateStart() ;
+            mObjects[i].object->vCalculateStart(0.) ;
             mObjects[i].active  =1 ;
             mObjects[i].cut_time=0. ;
                                       }
@@ -994,7 +994,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        return(_EXIT_FRAME) ;
                                     }
 
-                   object->vCalculateStart() ;
+                   object->vCalculateStart(t) ;
 
                mObjects[mObjects_cnt].object  =object ;
                mObjects[mObjects_cnt].active  =  1 ;

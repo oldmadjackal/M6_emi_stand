@@ -449,7 +449,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-            SETs(IDC_COMMAND, "@Tests\\Flyers.emi") ;
+            SETs(IDC_COMMAND, "@Tests\\Grad.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -1130,11 +1130,13 @@ typedef  struct {
              end=strchr(o_name, ' ') ;                              /* Вырезаем первое слово команды */
           if(end!=NULL)  *end=0 ;
 
-             u_name=strchr(o_name, '$') ;                           /* Если надо -разделяем имена объекта и компонента */
-          if(u_name!=NULL)  {
-                               *u_name=0 ;
-                                u_name++ ;
-                            }
+          if(o_name[0]!='.') {
+                   u_name=strchr(o_name, '.') ;                     /* Если надо -разделяем имена объекта и компонента */
+                if(u_name!=NULL)  {
+                                     *u_name=0 ;
+                                      u_name++ ;
+                                  }
+                             } 
 /*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
                      object=NULL ;
 
@@ -1163,7 +1165,7 @@ typedef  struct {
             strncpy(__object_def, o_name, sizeof(__object_def)-1) ;
 
         if(u_name!=NULL) {
-            strncat(__object_def, "$",    sizeof(__object_def)-1) ;
+            strncat(__object_def, ".",    sizeof(__object_def)-1) ;
             strncat(__object_def, u_name, sizeof(__object_def)-1) ;
                          }
 

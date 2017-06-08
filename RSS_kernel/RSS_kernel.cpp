@@ -295,16 +295,19 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
      RSS_Kernel::RSS_Kernel(void)
 
 {
-          keyword    =NULL ;
-   identification    =NULL ;
-         category    =NULL ;
+          keyword     =NULL ;
+   identification     =NULL ;
+         category     =NULL ;
+             lego_type=NULL ;
+             lego_set =NULL ;
+         
 
-	  modules    =NULL ;
-	  modules_cnt=  0 ;
-	resources    =NULL ;
-	resources_cnt=  0 ;
+       	  modules     =NULL ; 
+	  modules_cnt =  0 ;
+	resources     =NULL ;
+	resources_cnt =  0 ;
 
-	 priority    =  0 ;
+	 priority     =  0 ;
 }
 
 

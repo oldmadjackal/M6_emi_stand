@@ -1,0 +1,4 @@
+LIBRARY U_ModelSimple
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

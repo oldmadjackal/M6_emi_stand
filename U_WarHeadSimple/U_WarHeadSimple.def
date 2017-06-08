@@ -1,0 +1,4 @@
+LIBRARY U_WarHeadSimple
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

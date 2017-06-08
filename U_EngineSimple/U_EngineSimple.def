@@ -1,0 +1,4 @@
+LIBRARY U_EngineSimple
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

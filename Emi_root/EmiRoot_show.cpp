@@ -75,7 +75,7 @@
               sprintf(message, "EmiRoot_Show register error %d", GetLastError()) ;
         EmiRoot_error(message, MB_ICONERROR) ;
 	                return(-1) ;
-                                      }
+                                          }
 /*-------------------------------------------------------------------*/
 
 	return 0;

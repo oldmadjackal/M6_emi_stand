@@ -179,6 +179,8 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
                    char  *keyword ;	            /* Ключевое слов - идентификатор проекта */
                    char  *identification ;          /* Идентификатор модуля */
                    char  *category ;                /* Категория программного модуля */
+                   char  *lego_type ;               /* Тип Lego-элемента */
+                   char  *lego_set ;                /* Набор Lego-элементов */
                     int   priority ;                /* Приоритет перехвата управления */
                     int   events_processing ;       /* Флаг собственной обработки событий */
                     
