@@ -144,8 +144,9 @@
                            char  text[512] ;
                          double  mass ;
                          double  slideway ;
+                         double  s_azim ;
+                         double  s_elev ;
                            char *end ;
-                            int  i ; 
 
 /*------------------------------------------------- Большая разводка */
 
@@ -162,6 +163,12 @@
 
                   sprintf(text, "%lf", unit->slideway) ;
                      SETs(IDC_SLIDEWAY, text) ;
+
+                  sprintf(text, "%lf", unit->s_azim) ;
+                     SETs(IDC_S_AZIM, text) ;
+
+                  sprintf(text, "%lf", unit->s_elev) ;
+                     SETs(IDC_S_ELEV, text) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
   			     break ;
@@ -188,12 +195,30 @@
                 slideway=strtod(text, &end) ;
 
             if(*end!=0) {
-                           SEND_ERROR("Некорректное значение массы") ;
+                           SEND_ERROR("Некорректное значение длины направляющей") ;
+                                return(FALSE) ;
+                        }
+
+                          GETsl(IDC_S_AZIM, text, sizeof(text)-1) ;
+                  s_azim=strtod(text, &end) ;
+
+            if(*end!=0) {
+                           SEND_ERROR("Некорректное значение стандартного отклонения по направлению") ;
+                                return(FALSE) ;
+                        }
+
+                          GETsl(IDC_S_ELEV, text, sizeof(text)-1) ;
+                  s_elev=strtod(text, &end) ;
+
+            if(*end!=0) {
+                           SEND_ERROR("Некорректное значение стандартного отклонения по углу вылета") ;
                                 return(FALSE) ;
                         }
 
                           unit->mass    =mass ;
                           unit->slideway=slideway ;
+                          unit->s_azim  =s_azim ;
+                          unit->s_elev  =s_elev ;
 
                             EndDialog(hDlg, 1) ;
 

@@ -5,8 +5,10 @@
 #define IDC_HELP_LIST                   1000
 #define IDC_MASS                        1018
 #define IDC_SLIDEWAY                    1019
-#define IDC_BUTTON1                     1020
 #define IDC_SET                         1020
+#define IDC_S_AZIM                      1021
+#define IDC_S_AZIM2                     1022
+#define IDC_S_ELEV                      1022
 
 // Next default values for new objects
 // 

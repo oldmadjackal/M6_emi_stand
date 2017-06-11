@@ -66,13 +66,14 @@
                             int  mTrace_dlist ;
 
     public:
-               virtual void  vFree          (void) ;            /* Освободить ресурсы */
-               virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
+         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
+         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+         virtual        int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
+         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
                        void  iShowTrace     (void) ;            /* Отображение траектории */
@@ -101,6 +102,7 @@
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
                      int  cCreate       (char *) ;                     /* Инструкция CREATE */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
+                     int  cCopy         (char *) ;                     /* Инструкция COPY */ 
                      int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
                      int  cLego         (char *) ;                     /* Инструкция LEGO */ 
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */

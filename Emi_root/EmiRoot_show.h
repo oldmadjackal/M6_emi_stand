@@ -12,16 +12,17 @@
  typedef  struct {
                       char  name[256] ;
                       HWND  hWnd ;
-                     HGLRC  hOpenGL ;                 
+                     HGLRC  hOpenGL ;               
                     double  Look_x ;
                     double  Look_y ;
                     double  Look_z ;
                     double  Look_azim ;
                     double  Look_elev ;
                     double  Look_roll ;
+                    double  Range_strobe ;
                     double  Zoom ;
                       char  AtObject[256] ;
-                    
+
                  }  WndContext ;
 
 /*-------------------------------------------------------- Èםעונפויס */

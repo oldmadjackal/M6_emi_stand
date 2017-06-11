@@ -1,10 +1,12 @@
 
+#define _CRT_RAND_S  // Для подключения функции rand_s
 #include <stdlib.h>
 #include <stdio.h>
 #include <io.h>
 #include <malloc.h>
 #include <time.h>
 #include <errno.h>
+#include <math.h>
 #include <sys\timeb.h>
 
 #include <windows.h>
@@ -611,6 +613,36 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
         _ftime(&time_ms) ;
 
   return(time_ms.time+time_ms.millitm/1000.) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*           Получение величины с нормальным распределением         */
+/*								    */
+/*	m - математическое ожидание                                 */
+/*	s - стандартное отклонение (s*s - дисперсия)                */
+
+     double  RSS_Kernel::gGaussianValue(double  m, double  s)
+
+{
+  unsigned int  g ;
+        double  r ;
+        double  f ;
+        double  v ;
+
+
+            rand_s(&g) ;
+                  r=g/(double)UINT_MAX ;
+       if(r==0.)  r=0.5 ;
+            rand_s(&g) ;
+                  f=g/(double)UINT_MAX ;
+       if(f==0.)  f=0.5 ;
+
+                  v=cos(2*_PI*f)*sqrt(-2.*log(r)) ;
+                  v=m+v*s ;
+
+  return(v) ;
 }
 
 

@@ -104,6 +104,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_RocketLego::cInfo },
+ { "copy",    "cp", "#COPY - копировать объект",
+                    " COPY <Имя образца> <Имя нового объекта>\n"
+                    "   Копировать объект",
+                    &RSS_Module_RocketLego::cCopy },
  { "owner",    "o", "#OWNER - назначить носитель ракеты",
                     " OWNER <Имя> <Носитель>\n"
                     "   Назначить объект - носитель ракеты",
@@ -174,10 +178,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  
 /*--------------------------------------------------- Проверка имени */
 
-    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-              SEND_ERROR("Секция ROCKET LEGO: Не задано имя объекта") ;
-                                return(NULL) ;
-                         }
+//    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
+//              SEND_ERROR("Секция ROCKET LEGO: Не задано имя объекта") ;
+//                                return(NULL) ;
+//                         }
 
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, data->name)) {
@@ -234,6 +238,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               SEND_ERROR("Секция ROCKET LEGO: Недостаточно памяти для создания объекта") ;
                         return(NULL) ;
                      }
+
+       strcpy(object->model_path, data->path) ;
+
 /*------------------------------------- Сохранения списка параметров */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
      for(i=0 ; i<5 ; i++)
@@ -290,6 +297,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                }
 /*---------------------------------- Введение объекта в общий список */
 
+  if(data->name[0]!=0) {                                            /* Если имя задано... */
+
+       strcpy(object->Name, data->name) ;
+
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
     if(OBJECTS==NULL) {
@@ -300,12 +311,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               OBJECTS[OBJECTS_CNT]=object ;
                       OBJECTS_CNT++ ;
 
-       strcpy(object->Name,       data->name) ;
-       strcpy(object->model_path, data->path) ;
-
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
-
+                          (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;
+                       }
 /*-------------------------------------------------------------------*/
 
 #undef   OBJECTS
@@ -744,6 +752,76 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции COPY                    */
+/*								    */
+/*       COPY <Имя образца> <Имя нового объекта>                    */
+
+  int  RSS_Module_RocketLego::cCopy(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char  *copy ;
+ RSS_Object_RocketLego  *rocket ;
+            RSS_Object  *object ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                     copy=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: COPY <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       rocket=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект-цель по имени */
+    if(rocket==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(copy==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-копии. \n"
+                                 "Например: COPY <Имя образца> <Имя нового объекта>") ;
+                                     return(-1) ;
+                   }
+
+//     object=FindObject(copy, 0) ;                                 /* Ищем объект-носитель по имени */
+//  if(object!=NULL) {
+//                    SEND_ERROR("Oбъект-копия уже существует") ;
+//                                   return(-1) ;
+//                   }
+/*---------------------------------------------- Копирование объекта */
+
+            object=rocket->vCopy(copy) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции OWNER                   */
 /*								    */
 /*       OWNER <Имя> <Носитель>                                     */
@@ -922,12 +1000,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 double  time_s ;        /* Последнее время отрисовки */ 
                 double  time_w ;        /* Время ожидания */ 
  RSS_Object_RocketLego *object ;
+                  char  text[1024] ;
                   char *end ;
+                   int  quit_flag ;
+                   int  status ;
                    int  i ;
 
 /*---------------------------------------- Разборка командной строки */
 
                      trace_time=0. ;
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          quit_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'q')!=NULL ||
+                   strchr(cmd, 'Q')!=NULL   )  quit_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
@@ -951,8 +1051,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                       }
                                  }
            else                  {
-                                       trace_time=60. ;
-                                         SEND_ERROR("Время трассировки - 60 секунд") ;
+                                            trace_time=60. ;
+               if(!quit_flag)  SEND_ERROR("Время трассировки - 60 секунд") ;
                                  }
 /*------------------------------------------- Контроль имени объекта */
 
@@ -986,7 +1086,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               time_c=0. ;
               time_s=0. ;
 
-         object->iSaveTracePoint("CLEAR") ;
+         object->vCalculateStart(0) ;
 
     do {                                                            /* CIRCLE.1 - Цикл трассировки */
            if(this->kernel->stop)  break ;                          /* Если внешнее прерывание поиска */
@@ -1000,10 +1100,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
-         object->iSaveTracePoint("ADD") ;
-/*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
-         object->iShowTrace_() ;
+         status=object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
+                object->vCalculateShow() ;
+
+                object->iShowTrace_() ;                             /* Отображение траектории */
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
    for(i=0 ; i<object->Features_cnt ; i++) {
      object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
@@ -1022,8 +1122,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               this->kernel->vShow(NULL) ;
                                                        }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+      if(status)  break ;  
+
        } while(1) ;                                                 /* END CIRCLE.1 - Цикл трассировки */
 
+   if(!quit_flag) {
+              sprintf(text, "Трассировкa завершена за %lf секунд", time_c) ;
+           SEND_ERROR(text) ;
+                  }
 /*-------------------------------------------------------------------*/
 
 #undef   _PARS_MAX
@@ -1165,6 +1271,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    strcpy(Type, "Rocket-Lego") ;
 
+          Module=&ProgramModule ;
+
     Context        =new RSS_Transit_RocketLego ;
     Context->object=this ;
 
@@ -1238,6 +1346,71 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 this->Features    =NULL ;
                 this->Features_cnt=  0 ;
                            }
+}
+
+
+/********************************************************************/
+/*								    */
+/*                        Копировать объект		            */
+
+    class RSS_Object *RSS_Object_RocketLego::vCopy(char *name)
+
+{
+        RSS_Model_data  create_data ;
+ RSS_Object_RocketLego *object ;
+              RSS_Unit *unit ;
+                   int  i ;
+
+/*------------------------------------- Копирование базового объекта */
+
+                 memset(&create_data, 0, sizeof(create_data)) ;
+
+ if(name!=NULL)  strcpy( create_data.name, name) ;
+                 strcpy( create_data.path, this->model_path) ;
+
+    for(i=0 ; i<this->Parameters_cnt ; i++) {
+         sprintf(create_data.pars[i].text,  "PAR%d", i) ;
+         sprintf(create_data.pars[i].value, "%lf", this->Parameters[i].value) ;
+                                            }
+
+                 create_data.pars[i].text [0]=0 ;
+                 create_data.pars[i].value[0]=0 ;
+
+       object=(RSS_Object_RocketLego *)this->Module->vCreateObject(&create_data) ;
+    if(object==NULL)  return(NULL) ;
+ 
+            strcpy(object->owner,  this->owner) ;
+                   object->o_owner=this->o_owner ;
+
+/*----------------------------------------- Копирование лего-модулей */
+
+      if(this->unit_warhead!=NULL) {
+                         unit=(RSS_Unit *)this->unit_warhead->vCopy(NULL) ;
+                  strcpy(unit->Name, "warhead") ;
+                         unit->Owner=object ;
+
+                 object->unit_warhead=(RSS_Unit_WarHead *)unit ;
+                 object->Units.Add(unit, "") ;
+                                   }
+      if(this->unit_engine !=NULL) {
+                         unit=(RSS_Unit *)this->unit_engine->vCopy(NULL) ;
+                  strcpy(unit->Name, "engine") ;
+                         unit->Owner=object ;
+
+                 object->unit_engine=(RSS_Unit_Engine *)unit ;
+                 object->Units.Add(unit, "") ;
+                                   }
+      if(this->unit_model  !=NULL) {
+                         unit=(RSS_Unit *)this->unit_model->vCopy(NULL) ;
+                  strcpy(unit->Name, "model") ;
+                         unit->Owner=object ;
+
+                 object->unit_model=(RSS_Unit_Model *)unit ;
+                 object->Units.Add(unit, "") ;
+                                   }
+/*-------------------------------------------------------------------*/
+
+   return(object) ;
 }
 
 
@@ -1372,12 +1545,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*---------------------------------------------------- Моделирование */
 
-      if(this->unit_warhead!=NULL) {
-
-            status=this->unit_warhead->vCalculate(t1, t2, callback, cb_size) ;
-         if(status)  return(0) ;
-
-                                   } 
       if(this->unit_engine !=NULL) {
 
                        this->unit_engine->vCalculate      (t1, t2, callback, cb_size) ;
@@ -1394,6 +1561,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           if(    mi_use)  this->unit_model->vSetEngineMI    (mi_x, mi_y, mi_z) ;
 
                           this->unit_model->vCalculate(t1, t2, callback, cb_size) ;
+
+                                   } 
+      if(this->unit_warhead!=NULL) {
+
+            status=this->unit_warhead->vCalculate(t1, t2, callback, cb_size) ;
+         if(status)  return(1) ;
 
                                    } 
 /*-------------------------------------------------------------------*/

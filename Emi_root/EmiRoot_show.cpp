@@ -95,6 +95,8 @@
                     int  PixelFormat ;
                    RECT  wnd_rect ;
                  double  xy_aspect ;
+                 double  range ;
+                 double  range_min ;
                 GLfloat  light_pos[4] ;
                Matrix2d  Sum_Matrix ;
                Matrix2d  Oper_Matrix ;  
@@ -246,28 +248,34 @@
               glEnable(GL_LIGHT0) ;
              glLightfv(GL_LIGHT0, GL_POSITION, light_pos) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Задание точки зрения */
-       if(CONTEXT.AtObject[0]!=0)  EmiRoot_lookat_point(&CONTEXT) ; /* Если специфицирована точка наблюдения */
-  
+     if(CONTEXT.AtObject[0]!=0) {                                   /* Если специфицирована точка наблюдения */
+                                   EmiRoot_lookat_point(&CONTEXT) ;
+                                    range=CONTEXT.Range_strobe ;
+                                }
+     else                       {
+                                    range=0. ;
+                                }
+
           glMatrixMode(GL_PROJECTION) ;
         glLoadIdentity() ;
 //      gluPerspective(30., xy_aspect, 5., 100.) ;
 //           glFrustum(-2., 2., -2., 2, 5., 100.) ;
+
+                             range_min=range-10.*CONTEXT.Zoom ;
+           if(range_min<0.)  range_min=  0. ;
+                             range_min=  0. ;
   
                glOrtho(-CONTEXT.Zoom*0.5, 
                         CONTEXT.Zoom*0.5, 
                        -CONTEXT.Zoom*0.5*xy_aspect,
-                        CONTEXT.Zoom*0.5*xy_aspect, -100.*CONTEXT.Zoom, 100.*CONTEXT.Zoom) ;
-//                      CONTEXT.Zoom*0.5*xy_aspect, 1., 100.*CONTEXT.Zoom) ;
-//                      CONTEXT.Zoom*0.5*xy_aspect, 1., 100.) ;
+                        CONTEXT.Zoom*0.5*xy_aspect,
+                               range_min, range+100.*CONTEXT.Zoom) ;
   
           glMatrixMode(GL_MODELVIEW) ;
         glLoadIdentity() ;
 
                Point_Matrix.LoadZero   (3, 1) ;
-//             Point_Matrix.SetCell    (2, 0, 5.) ;
-               Point_Matrix.SetCell    (2, 0, sqrt(CONTEXT.Look_x*CONTEXT.Look_x+
-                                                   CONTEXT.Look_y*CONTEXT.Look_y+
-                                                   CONTEXT.Look_z*CONTEXT.Look_z )) ;
+               Point_Matrix.SetCell    (2, 0, 10.) ;
 
                  Sum_Matrix.Load3d_azim(CONTEXT.Look_azim) ;
                 Oper_Matrix.Load3d_elev(CONTEXT.Look_elev) ;
@@ -758,6 +766,12 @@
      context->Look_elev=-_RAD_TO_GRD*atan (dy/ds) ;
      context->Look_azim=-_RAD_TO_GRD*atan2(x-context->Look_x, 
                                            z-context->Look_z) ;
+
+/*------------------------------------------------- Расчет дальности */
+
+     context->Range_strobe=sqrt((x-context->Look_x)*(x-context->Look_x)+
+                                (y-context->Look_y)*(y-context->Look_y)+
+                                (z-context->Look_z)*(z-context->Look_z) ) ;
 
 /*-------------------------------------------------------------------*/
 

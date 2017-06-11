@@ -89,24 +89,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   struct RSS_Module_ModelSimple_instr  RSS_Module_ModelSimple_InstrList[]={
 
- { "help",    "?",  "#HELP - список доступных команд", 
-                     NULL,
-                    &RSS_Module_ModelSimple::cHelp   },
- { "info",    "i",  "#INFO - выдать информацию по объекту",
-                    " INFO <Имя> \n"
-                    "   Выдать основную информацию по объекту в главное окно\n"
-                    " INFO/ <Имя> \n"
-                    "   Выдать полную информацию по объекту в отдельное окно",
-                    &RSS_Module_ModelSimple::cInfo },
- { "pars",    "p",  "#PARS - задание параметров модели в диалоговом режиме", 
-                     NULL,
-                    &RSS_Module_ModelSimple::cPars   },
- { "mass",    "m",  "#MASS - задание массы НУР (без двигателя)", 
-                     NULL,
-                    &RSS_Module_ModelSimple::cMass   },
- { "slide",   "sw", "#SLIDE - задание длины направляющей", 
-                     NULL,
-                    &RSS_Module_ModelSimple::cSlide  },
+ { "help",      "?",  "#HELP - список доступных команд", 
+                       NULL,
+                      &RSS_Module_ModelSimple::cHelp   },
+ { "info",      "i",  "#INFO - выдать информацию по объекту",
+                      " INFO <Имя> \n"
+                      "   Выдать основную информацию по объекту в главное окно\n"
+                      " INFO/ <Имя> \n"
+                      "   Выдать полную информацию по объекту в отдельное окно",
+                      &RSS_Module_ModelSimple::cInfo },
+ { "pars",      "p",  "#PARS - задание параметров модели в диалоговом режиме", 
+                       NULL,
+                      &RSS_Module_ModelSimple::cPars   },
+ { "mass",      "m",  "#MASS - задание массы НУР (без двигателя)", 
+                       NULL,
+                      &RSS_Module_ModelSimple::cMass   },
+ { "slide",     "sw", "#SLIDE - задание длины направляющей", 
+                       NULL,
+                      &RSS_Module_ModelSimple::cSlide  },
+ { "deviation", "dv", "#DEVIATION - задание отклонений параметров от нормы", 
+                      " DEVIATION <Имя> <azim> <elev>\n"
+                      "   Задание стандартного отклонения по направлению и углу вылета, градусы\n"
+                      " DEVIATION/a <Имя> <azim>\n"
+                      "   Задание стандартного отклонения по направлению, градусы\n"
+                      " DEVIATION/e <Имя> <elev>\n"
+                      "   Задание стандартного отклонения по углу вылета, градусы\n",
+                      &RSS_Module_ModelSimple::cDeviation  },
  {  NULL }
                                                             } ;
 
@@ -420,7 +428,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   char *name ;
   RSS_Unit_ModelSimple  *unit ;
                    int  status ;
-                  char  error[1024] ;
                   char *end ;
                    int  i ;
 
@@ -638,6 +645,121 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*               Реализация инструкции DEVIATION                    */
+/*								    */
+/*   DEVIATION   <Имя> <По направлению> <По углу вылета>            */
+/*   DEVIATION/A <Имя> <По направлению>                             */
+/*   DEVIATION/E <Имя> <По углу вылета>                             */
+
+  int  RSS_Module_ModelSimple::cDeviation(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char **xyz ;
+                double   coord[_COORD_MAX] ;
+                   int   coord_cnt ;
+  RSS_Unit_ModelSimple  *unit ;
+                   int   a_flag ;            /* Флаг задания СО по направлению */
+                   int   e_flag ;            /* Флаг задания СО по углу вылета */
+                  char  *error ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          a_flag=0 ;
+                          e_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'a')!=NULL ||
+                   strchr(cmd, 'A')!=NULL   )  a_flag=1 ;
+                if(strchr(cmd, 'e')!=NULL ||
+                   strchr(cmd, 'E')!=NULL   )  e_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонентa */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: SLIDE <Имя_компонент> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_ModelSimple *)FindUnit(name) ;                /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение параметра") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указаны параметры" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись значений */
+
+        if(a_flag) {
+                               unit->s_azim=coord[0] ;
+                   }
+   else if(e_flag) {
+                               unit->s_elev=coord[0] ;
+                   }
+   else            {
+                               unit->s_azim=coord[0] ;
+              if(coord_cnt>1)  unit->s_elev=coord[1] ;
+                   }
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*	     Поиск обьекта типа ModelSimple по имени                */
 
   RSS_Unit *RSS_Module_ModelSimple::FindUnit(char *name)
@@ -729,6 +851,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
    strcpy(Type, "ModelSimple") ;
+          Module=&ProgramModule ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
@@ -736,6 +859,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               t_0=  0. ; 
              mass=  0. ; 
          slideway=  0. ;
+           s_azim=  0. ;
+           s_elev=  0. ;
     engine_thrust=  0. ; 
     engine_mass  =  0. ; 
 }
@@ -778,6 +903,36 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Копировать объекта		            */
+
+    class RSS_Object *RSS_Unit_ModelSimple::vCopy(char *name)
+
+{
+        RSS_Model_data  create_data ;
+  RSS_Unit_ModelSimple *unit ;
+   
+/*------------------------------------- Копирование базового объекта */
+
+      memset(&create_data, 0, sizeof(create_data)) ;
+
+       unit=(RSS_Unit_ModelSimple *)this->Module->vCreateObject(&create_data) ;
+    if(unit==NULL)  return(NULL) ;
+
+/*------------------------------------- Копирование настроек объекта */
+
+             unit->mass    =this->mass ;
+             unit->slideway=this->slideway ;
+             unit->s_azim  =this->s_azim ;
+             unit->s_elev  =this->s_elev ;
+
+/*-------------------------------------------------------------------*/
+
+   return(unit) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                        Специальные действия                      */
 
      int  RSS_Unit_ModelSimple::vSpecial(char *oper, void *data)
@@ -801,10 +956,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_ModelSimple::vCalculateStart(double  t)
 {
+/*------------------------------------ Инициализация рабочих данных */
+
     this->t_0          =t ;
 
     this->engine_thrust=0. ;
     this->engine_mass  =0. ;
+
+/*------------------------------------------------ Расчет отклонений */
+
+    this->Owner->a_azim+=this->Module->gGaussianValue(0., this->s_azim) ;
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }

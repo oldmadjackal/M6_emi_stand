@@ -139,6 +139,8 @@
 
        public:
 
+   virtual class RSS_Object *vCopy           (char *) ;             /* Копировать объект */
+
    virtual             void  vErrorMessage   (int) ;                /* Вкл./Выкл. сообщений об ошибках */
 
    virtual             void  vReadSave       (std::string *) ;      /* Считать данные из строки */

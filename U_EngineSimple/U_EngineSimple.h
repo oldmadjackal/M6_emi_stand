@@ -46,17 +46,18 @@
                                          HWND  hWnd ;             /* Окно графика профиля */
 
     public:
-               virtual void  vFree            (void) ;                             /* Освободить ресурсы */
-               virtual  int  vCalculateStart  (double) ;                           /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate       (double, double, char *, int) ;      /* Расчет изменения состояния */
+         virtual       void  vFree            (void) ;                             /* Освободить ресурсы */
+         virtual RSS_Object *vCopy            (char *) ;                           /* Копировать объект */
+         virtual        int  vCalculateStart  (double) ;                           /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate       (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      
-               virtual  int  vCalculateShow   (void) ;                             /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial         (char *, void *) ;                   /* Специальные действия */
+         virtual        int  vCalculateShow   (void) ;                             /* Отображение результата расчета изменения состояния */
+         virtual        int  vSpecial         (char *, void *) ;                   /* Специальные действия */
 
-               virtual  int  vSetEngineControl(RSS_Unit_Engine_Control *, int) ;   /* Управление двигателем */
-               virtual  int  vGetEngineThrust (RSS_Unit_Engine_Thrust *) ;         /* Вектор тяги двигателя */
-               virtual  int  vGetEngineMass   (double *, RSS_Point *) ;            /* Масса и положение центра масс двигателя */
-               virtual  int  vGetEngineMI     (double *, double *, double *) ;     /* Моменты инерции двигателя */
+         virtual        int  vSetEngineControl(RSS_Unit_Engine_Control *, int) ;   /* Управление двигателем */
+         virtual        int  vGetEngineThrust (RSS_Unit_Engine_Thrust *) ;         /* Вектор тяги двигателя */
+         virtual        int  vGetEngineMass   (double *, RSS_Point *) ;            /* Масса и положение центра масс двигателя */
+         virtual        int  vGetEngineMI     (double *, double *, double *) ;     /* Моменты инерции двигателя */
 
 	                     RSS_Unit_EngineSimple() ;                /* Конструктор */
 	                    ~RSS_Unit_EngineSimple() ;                /* Деструктор */

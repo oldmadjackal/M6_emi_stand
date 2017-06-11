@@ -898,6 +898,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
    strcpy(Type, "EngineSimple") ;
+          Module=&ProgramModule ;
 
       profile    =NULL ;
       profile_cnt=  0 ;
@@ -944,6 +945,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 this->Features    =NULL ;
                 this->Features_cnt=  0 ;
                            }
+}
+
+
+/********************************************************************/
+/*								    */
+/*                        Копировать объекта		            */
+
+    class RSS_Object *RSS_Unit_EngineSimple::vCopy(char *name)
+
+{
+        RSS_Model_data  create_data ;
+ RSS_Unit_EngineSimple *unit ;
+   
+/*------------------------------------- Копирование базового объекта */
+
+      memset(&create_data, 0, sizeof(create_data)) ;
+
+       unit=(RSS_Unit_EngineSimple *)this->Module->vCreateObject(&create_data) ;
+    if(unit==NULL)  return(NULL) ;
+
+/*------------------------------------- Копирование настроек объекта */
+
+             unit->profile=(RSS_Unit_EngineSimple_Profile *)
+                             calloc(this->profile_cnt, sizeof(*unit->profile)) ;
+      memcpy(unit->profile, this->profile, 
+                            this->profile_cnt*sizeof(*unit->profile)) ;
+             unit->profile_cnt=this->profile_cnt ;
+
+             unit->use_mass=this->use_mass ;
+             unit->use_Cxyz=this->use_Cxyz ;
+             unit->use_Mxyz=this->use_Mxyz ;
+
+/*-------------------------------------------------------------------*/
+
+   return(unit) ;
 }
 
 

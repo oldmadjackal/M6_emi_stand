@@ -112,6 +112,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Копировать объект		            */
+
+    class RSS_Object *RSS_Object::vCopy(char *name)
+
+{
+   return(NULL) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		  Вкл./Выкл. сообщений об ошибках		    */
 
     void  RSS_Object::vErrorMessage(int  on_off)

@@ -232,6 +232,10 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 
     public:
 
+                  double  gGaussianValue(double, double) ;     /* Нормальное распределение */
+
+    public:
+
      static          int   RSS_Kernel::memchk_regime ;
 #define                     _MEMCHECK_OFF      0
 #define                     _MEMCHECK_ACTUAL   1

@@ -487,6 +487,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
    strcpy(Type, "WarHeadSimple") ;
+          Module=&ProgramModule ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
@@ -531,6 +532,29 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Êîïèğîâàòü îáúåêòà		            */
+
+    class RSS_Object *RSS_Unit_WarHeadSimple::vCopy(char *name)
+
+{
+         RSS_Model_data  create_data ;
+ RSS_Unit_WarHeadSimple *unit ;
+   
+/*------------------------------------- Êîïèğîâàíèå áàçîâîãî îáúåêòà */
+
+      memset(&create_data, 0, sizeof(create_data)) ;
+
+       unit=(RSS_Unit_WarHeadSimple *)this->Module->vCreateObject(&create_data) ;
+    if(unit==NULL)  return(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+   return(unit) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                        Ñïåöèàëüíûå äåéñòâèÿ                      */
 
      int  RSS_Unit_WarHeadSimple::vSpecial(char *oper, void *data)
@@ -564,16 +588,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_WarHeadSimple::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
-  static  double  x, y, z ;
 
    if(t2>5.) 
     if(this->Owner->y_base<=0.) {
+
+             if(callback!=NULL) {
                                    strcat(callback, "STOP ") ;
                                    strcat(callback, this->Owner->Name) ;
                                    strcat(callback, ";") ;
+                                }
 
-                               this->Owner->x_base=x+(this->Owner->x_base-x)*y/(y-this->Owner->y_base) ;
-                               this->Owner->z_base=z+(this->Owner->z_base-z)*y/(y-this->Owner->y_base) ;
+                               this->Owner->x_base=x+(this->Owner->x_base-x)*y/fabs(this->Owner->y_base-y) ;
+                               this->Owner->z_base=z+(this->Owner->z_base-z)*y/fabs(this->Owner->y_base-y) ;
                                this->Owner->y_base= 0. ;
 
                                        return(1) ;

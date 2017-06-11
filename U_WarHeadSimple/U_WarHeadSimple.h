@@ -16,16 +16,18 @@
   class U_WARHEAD_SIMPLE_API RSS_Unit_WarHeadSimple : public RSS_Unit_WarHead {
 
     public:
+                     double  x, y, z ;                         /* Последнир проаналазированные координаты */
 
     public:
-               virtual void  vFree             (void) ;                             /* Освободить ресурсы */
-               virtual  int  vCalculateStart   (double) ;                           /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate        (double, double, char *, int) ;      /* Расчет изменения состояния */
+         virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
+         virtual RSS_Object *vCopy             (char *) ;                           /* Копировать объект */
+         virtual        int  vCalculateStart   (double) ;                           /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate        (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      
-               virtual  int  vCalculateShow    (void) ;                             /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial          (char *, void *) ;                   /* Специальные действия */
+         virtual        int  vCalculateShow    (void) ;                             /* Отображение результата расчета изменения состояния */
+         virtual        int  vSpecial          (char *, void *) ;                   /* Специальные действия */
 
-                virtual int  vSetWarHeadControl(char *) ;                           /* Управление БЧ */
+         virtual        int  vSetWarHeadControl(char *) ;                           /* Управление БЧ */
 
 	                     RSS_Unit_WarHeadSimple() ;                /* Конструктор */
 	                    ~RSS_Unit_WarHeadSimple() ;                /* Деструктор */

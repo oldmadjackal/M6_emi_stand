@@ -20,22 +20,25 @@
 
                             double  mass ;                /* Полная масса без массы РД */
                             double  slideway ;            /* Длина движения по направляющей */
+                            double  s_azim ;              /* Стандартое отклонение по направлению */
+                            double  s_elev ;              /* Стандартое отклонение по углу вылета */
 
                             double  engine_thrust ;       /* Сила тяги */
                             double  engine_mass ;         /* Масса РД */
 
     public:
-               virtual void  vFree             (void) ;                             /* Освободить ресурсы */
-               virtual  int  vCalculateStart   (double) ;                           /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate        (double, double, char *, int) ;      /* Расчет изменения состояния */
+         virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
+         virtual RSS_Object *vCopy             (char *) ;                           /* Копировать объект */
+         virtual        int  vCalculateStart   (double) ;                           /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate        (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      
-               virtual  int  vCalculateShow    (void) ;                             /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial          (char *, void *) ;                   /* Специальные действия */
+         virtual        int  vCalculateShow    (void) ;                             /* Отображение результата расчета изменения состояния */
+         virtual        int  vSpecial          (char *, void *) ;                   /* Специальные действия */
 
-                virtual int  vSetAeroControl   (RSS_Unit_Aero_Control *, int) ;     /* Управление аэродинамическими поверхностями */
-                virtual int  vSetEngineThrust  (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
-                virtual int  vSetEngineMass    (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
-                virtual int  vSetEngineMI      (double, double, double) ;           /* Моменты инерции двигателя */
+         virtual        int  vSetAeroControl   (RSS_Unit_Aero_Control *, int) ;     /* Управление аэродинамическими поверхностями */
+         virtual        int  vSetEngineThrust  (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
+         virtual        int  vSetEngineMass    (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
+         virtual        int  vSetEngineMI      (double, double, double) ;           /* Моменты инерции двигателя */
 
 	                     RSS_Unit_ModelSimple() ;                /* Конструктор */
 	                    ~RSS_Unit_ModelSimple() ;                /* Деструктор */
@@ -61,6 +64,7 @@
                      int  cPars         (char *) ;                           /* Инструкция PARS */ 
                      int  cMass         (char *) ;                           /* Инструкция MASS */ 
                      int  cSlide        (char *) ;                           /* Инструкция SLIDE */ 
+                     int  cDeviation    (char *) ;                           /* Инструкция DEVIATION */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 
