@@ -311,7 +311,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(object->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object, NULL) ;
 
 /*-------------------------------------- Считывание описаний свойств */
 
@@ -1898,6 +1898,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      *text+="#END\n" ;
 
 /*-------------------------------------------------------------------*/
+}
+
+
+/********************************************************************/
+/*								    */
+/*                        Обработка событий                         */
+
+     int  RSS_Object_Missile::vEvent(char *event_name, double  t)
+{
+    RSS_Feature_Hit *hit ; 
+
+/*--------------------------------------------------- Поражение цели */
+
+   if(!stricmp(event_name, "HIT")) {
+                                         return(0) ;
+                                   }
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
 }
 
 
