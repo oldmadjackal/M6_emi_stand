@@ -107,11 +107,11 @@
 
                       char  battle_cb[8000] ;                 /* Буфер для команд обратной связи */
 
-   private:
                     double  r_ctrl ;                          /* Параметры плоскости поворота */
             class Matrix2d *m_ctrl ;
                     double  a_ctrl ;
 
+                       int  mTrace_flag ;                     /* Флаг отображения траектории */
      RSS_Object_FlyerTrace *mTrace ;                          /* Траектория */
                        int  mTrace_cnt ;  
                        int  mTrace_max ;
@@ -166,6 +166,7 @@
                      int  cProgram      (char *) ;                     /* Инструкция PROGRAM */
                      int  cEvent        (char *) ;                     /* Инструкция EVENT */
                      int  cUnit         (char *) ;                     /* Инструкция UNIT */
+                     int  cPath         (char *) ;                     /* Инструкция PATH */
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
 
         RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */

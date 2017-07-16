@@ -159,6 +159,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " UNIT <Имя объекта> <Имя компонента> <Тип компонента>\n"
                     "   добавить компонент в состав объекта",
                     &RSS_Module_Flyer::cUnit },
+ { "path",  "path", "#PATH - включение/выклячеие отображения траектории движения",
+                    " PATH <Имя> <0 или 1>\n"
+                    "   Включить (1) или выключить (0) отображения траектории движения\n",
+                    &RSS_Module_Flyer::cPath },
  { "trace",    "t", "#TRACE - моделирование движения объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Моделирование движения объекта в реальном времени\n"
@@ -320,7 +324,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(object->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object, NULL) ;
 
 /*-------------------------------------- Считывание описаний свойств */
 
@@ -1696,6 +1700,68 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции PATH                    */
+/*								    */
+/*      PATH <Имя> 0                                                */
+/*      PATH <Имя> 1                                                */
+
+  int  RSS_Module_Flyer::cPath(char *cmd)
+
+{
+#define   _PARS_MAX   4
+ RSS_Object_Flyer *object ;
+             char *pars[_PARS_MAX] ;
+             char *name ;
+             char *end ;
+              int  i ;
+
+/*-------------------------------------- Дешифровка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя объекта.\n"
+                                      "Например: PATH <Имя> ...") ;
+                                     return(-1) ;
+                         }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*----------------------------------------------- Установка значения */
+
+  if(pars[1]==NULL) {
+                       SEND_ERROR("Не задано значение флага отображения траектории.\n"
+                                  "Например: PATH <Имя> 0") ;
+                                     return(-1) ;
+                    }
+
+      if(!stricmp(pars[1], "0"))  object->mTrace_flag=0 ;
+      else                        object->mTrace_flag=1 ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
@@ -2467,6 +2533,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
       trace_on    =  0 ;
       trace_time  =  0 ;
+
+      mTrace_flag =  1 ;
       mTrace      =NULL ;
       mTrace_cnt  =  0 ;  
       mTrace_max  =  0 ; 
@@ -2606,12 +2674,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     double  r ;                  /* Радиус маневра */
     double  a ;                  /* Ометываемый угол маневра */
     double  s1, s2 ;
-    double  x0, y0, z0 ;         /* Центр маневра */
     double  x1, y1, z1 ;         /* Точка синуса ометываемого угла маневра */
     double  n1_azim, n1_elev ;
     double  n2_azim, n2_elev ;
     double  x2, y2, z2 ;         /* Точка синуса ометываемого угла маневра */
-    double  k ;
        int  i ;
 
 /*----------------------------------- Отработка подчиненных объектов */
@@ -3195,6 +3261,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      mTrace_cnt=0 ;
                                        return(0) ;
                                  }
+/*-------------------------------------- Контроль режима отображения */
+
+   if(mTrace_flag==0)  return(0) ;
+
 /*----------------------------------------------- Довыделение буфера */
 
    if(mTrace_cnt==mTrace_max) {
@@ -3235,7 +3305,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   void  RSS_Object_Flyer::iShowTrace_(void)
 
 {
-    strcpy(Context->action, "SHOW_TRACE") ;
+   if(mTrace_flag==0)  return ;
+
+
+       strcpy(Context->action, "SHOW_TRACE") ;
 
   SendMessage(RSS_Kernel::kernel_wnd, 
                 WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
