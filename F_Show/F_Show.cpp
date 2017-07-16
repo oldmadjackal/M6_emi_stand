@@ -177,13 +177,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*		        Создать свойство                	     */
 
-    RSS_Feature *RSS_Module_Show::vCreateFeature(RSS_Object *object)
+    RSS_Feature *RSS_Module_Show::vCreateFeature(RSS_Object *object, RSS_Feature *feature_ext)
 
 {
   RSS_Feature *feature ;
 
-         feature        =new RSS_Feature_Show ;
+
+    if(feature_ext!=NULL)  feature= feature_ext ;
+    else                   feature=new RSS_Feature_Show ;
+
          feature->Object=object ;
+
   return(feature) ;
 }
 
@@ -222,7 +226,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             strncpy(command, cmd, sizeof(command)-1) ;
 
    if(!direct_command) {
-
          end=strchr(command, ' ') ;
       if(end!=NULL) {  *end=0 ;  end++ ;  }
 

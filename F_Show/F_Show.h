@@ -25,7 +25,8 @@
     public:
      virtual         int  vGetParameter (char *, char *) ;  /* Получить параметр */
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
-     virtual RSS_Feature *vCreateFeature(RSS_Object *) ;    /* Создать свойство */
+     virtual RSS_Feature *vCreateFeature(RSS_Object *,      /* Создать свойство */
+                                         RSS_Feature *) ;
      virtual        void  vShow         (char *) ;          /* Отобразить связанные данные */
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
@@ -68,7 +69,7 @@
                       void *z_calculate ;                    /* Z - контекст вычислителя */
                 }  RSS_Feature_Show_Vertex ;
 
-#define  _VERTEX_PER_FACET_MAX   16
+#define  _VERTEX_PER_FACET_MAX   32
 
  typedef struct {                                           /* Описание грани */
                     int  vertexes[_VERTEX_PER_FACET_MAX] ;
