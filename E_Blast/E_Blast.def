@@ -1,0 +1,4 @@
+LIBRARY E_Blast
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA
