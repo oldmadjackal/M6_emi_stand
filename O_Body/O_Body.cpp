@@ -280,7 +280,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(object->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object, NULL) ;
 
 /*-------------------------------------- —читывание описаний свойств */
 
