@@ -206,7 +206,8 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
      virtual        void  vReadSave     (std::string *) ;      /* Считать данные из строки */
      virtual        void  vWriteSave    (std::string *) ;      /* Записать данные в строку */
      virtual  RSS_Object *vCreateObject (RSS_Model_data *) ;   /* Создать объект */
-     virtual RSS_Feature *vCreateFeature(RSS_Object *) ;       /* Создать свойство */
+     virtual RSS_Feature *vCreateFeature(RSS_Object *,         /* Создать свойство */
+                                         RSS_Feature * ) ;
      virtual         int  vExecuteCmd   (const char *) ;       /* Выполнить команду */
      virtual         int  vExecuteCmd   (const char *,         /* Выполнить команду с выдачей результата по ссылке */
                                           RSS_IFace *) ;

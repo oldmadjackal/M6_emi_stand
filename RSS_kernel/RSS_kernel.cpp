@@ -422,7 +422,7 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 /*								    */
 /*		        Создать свойство                	    */
 
-    RSS_Feature *RSS_Kernel::vCreateFeature(RSS_Object *object)
+    RSS_Feature *RSS_Kernel::vCreateFeature(RSS_Object *object, RSS_Feature *feature)
 
 {
    return(NULL) ;
