@@ -203,7 +203,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(unit->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit) ;
+        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit, NULL) ;
 
 /*-------------------------------------------------------------------*/
 
