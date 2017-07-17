@@ -1,0 +1,4 @@
+LIBRARY O_Sadarm
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA
