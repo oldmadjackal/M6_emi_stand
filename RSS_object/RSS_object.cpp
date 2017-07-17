@@ -223,6 +223,40 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		Сброс контекста проверки свойств                    */
+
+     int  RSS_Object::vResetFeatures(void *data)
+
+{
+  int  i ;
+
+
+   for(i=0 ; i<this->Features_cnt ; i++)
+                this->Features[i]->vResetCheck(data) ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		Подготовка своиств к проверке корректности          */
+
+     int  RSS_Object::vPrepareFeatures(void *data)
+
+{
+  int  i ;
+
+
+   for(i=0 ; i<this->Features_cnt ; i++)
+                this->Features[i]->vPreCheck(data) ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		Проверка непротиворечивости свойств                 */
 
      int  RSS_Object::vCheckFeatures(void *data, RSS_Objects_List *checked)

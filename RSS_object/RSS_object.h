@@ -164,6 +164,8 @@
    virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */
    virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
 
+   virtual              int  vResetFeatures  (void *) ;             /* Сброс контекста проверки свойств */
+   virtual              int  vPrepareFeatures(void *) ;             /* Подготовить свойства к проверке корректности */
    virtual              int  vCheckFeatures  (void *,               /* Проверить корректность свойств */
                                               RSS_Objects_List *) ;
    virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */
