@@ -28,6 +28,8 @@
 
                virtual  int  vParameter    (char *, char *, char *) ; /* Работа с параметрами */  
 
+               virtual  int  vResetCheck   (void *) ;                 /* Сброс контекста проверки непротиворечивости свойства */  
+               virtual  int  vPreCheck     (void *) ;                 /* Подготовка к проверке непротиворечивости свойства */  
                virtual  int  vCheck        (void *,                   /* Проверка непротиворечивости свойства */  
                                             class RSS_Objects_List *) ;
                virtual void  vBodyAdd      (char *) ;                 /* Добавить тело */
