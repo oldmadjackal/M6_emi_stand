@@ -119,7 +119,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     struct RSS_Module_Battle_instr *RSS_Module_Battle::mInstrList       =NULL ;
 
                                OBJ  RSS_Module_Battle::mObjects[_OBJECTS_MAX] ;
-                               int  RSS_Module_Battle::mObjects_cnt    =  0 ;
+                               int  RSS_Module_Battle::mObjects_cnt     =  0 ;
+
+                             FRAME *RSS_Module_Battle::mSpawns[_SPAWNS_MAX] ;
+                               int  RSS_Module_Battle::mSpawns_cnt      =  0 ;
 
                              FRAME *RSS_Module_Battle::mScenario        =NULL ;
                                int  RSS_Module_Battle::mScenario_cnt    =  0 ;
@@ -442,6 +445,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------------------ Очистка контекста */
 
            mObjects_cnt=0 ;
+            mSpawns_cnt=0 ;
 
 /*-------------------------------------------------------------------*/
 
@@ -472,7 +476,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*    {T|DT}=<метка времени> EXIT                                   */
 /*    {T|DT}=<метка времени> START <Имя объекта> [<Время слежения>] */
+/*    {T|DT}=<метка времени> STOP  <Имя объекта>                    */
+/*    {T|DT}=<метка времени> KILL  <Имя объекта>                    */
 /*    {T|DT}=<метка времени> EVENT <Имя объекта> <Событие>          */
+/*    {T|DT}=<метка времени> SPAWN <Имя объекта> <Число> <Темп>     */
+/*    {T|DT}=<метка времени> EXEC  <Системная команда>              */
 
   int  RSS_Module_Battle::cProgram(char *cmd, RSS_IFace *iface)
 
@@ -605,10 +613,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             return(-1) ;
                      }
 
-         if(!memicmp(words[0], "T=", 2)) {  this->mScenario[n].t     =value ;
-                                            this->mScenario[n].dt_use=   0 ;  }
-         else                            {  this->mScenario[n].dt    =value ;
-                                            this->mScenario[n].dt_use=   1 ;  }
+         if(!memicmp(words[0], "T=", 2)) {  this->mScenario[n].t        = value ;
+                                            this->mScenario[n].sync_type=_T_SYNC ;   }
+         else                            {  this->mScenario[n].dt       = value ;
+                                            this->mScenario[n].sync_type=_DT_SYNC ;  }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - Операция START */
          if(!stricmp(words[1], "START")) {
 
@@ -646,6 +654,30 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                          strcpy(this->mScenario[n].command, desc) ;
                                                 n++ ;           
                                          }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Операция STOP */
+         else
+         if(!stricmp(words[1], "STOP")) {
+
+                                                strcpy(desc, words[2]) ;
+             for(i=3 ; words[i]!=NULL ; i++) {  strcat(desc, " ") ;
+                                                strcat(desc, words[i]) ;  }
+
+                         strcpy(this->mScenario[n].action, words[1]) ;
+                         strcpy(this->mScenario[n].object, desc) ;
+                                                n++ ;
+                                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Операция KILL */
+         else
+         if(!stricmp(words[1], "KILL")) {
+
+                                                strcpy(desc, words[2]) ;
+             for(i=3 ; words[i]!=NULL ; i++) {  strcat(desc, " ") ;
+                                                strcat(desc, words[i]) ;  }
+
+                         strcpy(this->mScenario[n].action, words[1]) ;
+                         strcpy(this->mScenario[n].object, desc) ;
+                                                n++ ;
+                                         }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - Операция EVENT */
          else
          if(!stricmp(words[1], "EVENT")) {
@@ -680,6 +712,63 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      strcpy(this->mScenario[n].event,   words[3]) ;
                      strcpy(this->mScenario[n].command, desc) ;
                                             n++ ;           
+                                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - Операция SPAWN */
+         else
+         if(!stricmp(words[1], "SPAWN")) {
+
+              if(words[2]==NULL) {
+                                    sprintf(text, "Не задано имя объекта-шаблона (строка %d)", row) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;
+                                 }
+
+              if(words[3]==NULL) {
+                                    sprintf(text, "Не задана размерность залпа (строка %d)", row) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;
+                                 }
+
+              if(words[4]==NULL) {
+                                    sprintf(text, "Не задан темп порождения (строка %d)", row) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;
+                                 }
+
+            for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+              if(!stricmp(OBJECTS[i]->Name, words[2]))  break ;
+
+              if(i==OBJECTS_CNT) {                                       /* Если имя не найдено... */
+                           sprintf(text, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
+                        SEND_ERROR(text) ;
+                            return(-1) ;
+                                 }
+
+                     strcpy(desc, words[2]) ;
+                     strcat(desc, " ") ;
+                     strcat(desc, words[3]) ;
+                     strcat(desc, " ") ;
+                     strcat(desc, words[4]) ;
+
+                     strcpy(this->mScenario[n].action,  words[1]) ;
+                     strcpy(this->mScenario[n].object,  words[2]) ;
+                            this->mScenario[n].size  =strtoul(words[3], &end, 10) ;
+                            this->mScenario[n].period= strtod(words[4], &end) ;
+                     strcpy(this->mScenario[n].command, desc) ;
+                                            n++ ;           
+
+                                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Операция EXIT */
+         else
+         if(!stricmp(words[1], "EXEC")) {
+
+                                                strcpy(desc, words[2]) ;
+             for(i=3 ; words[i]!=NULL ; i++) {  strcat(desc, " ") ;
+                                                strcat(desc, words[i]) ;  }
+
+                         strcpy(this->mScenario[n].action,  words[1]) ;
+                         strcpy(this->mScenario[n].command, desc) ;
+                                                n++ ;
                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - -  Операция EXIT */
          else
@@ -730,15 +819,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  double  time_s ;              /* Последнее время отрисовки */ 
                  double  time_w ;              /* Время ожидания */ 
                    char *end ;
+                   char  name[1024] ;
                    char  text[1024] ;
-                   char  callback[8000] ;
        RSS_Objects_List  checked ;
+             RSS_Object *clone ;
                   FRAME  frame ;
                     int  n_frame ;
                     int  exit_flag ;
                     int  status ;
                     int  i ;
                     int  j ;
+
+           static  char *callback ;
+#define  _CALLBACK_SIZE  128000
 
 /*------------------------------------------------- Входной контроль */
 
@@ -762,11 +855,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------- Подготовка исполнения */
 
+     if(callback==NULL)  callback=(char *)calloc(1, _CALLBACK_SIZE) ;
+
+                 this->mSpawns_cnt   =0 ;
                  this->mVariables_cnt=0 ;
 
       for(i=0 ; i<mObjects_cnt ; i++) {
 
             mObjects[i].object->vSpecial       ("BATTLE", this) ;
+            mObjects[i].object->vResetFeatures (NULL) ;             /* Инициализация свойств объекта */ 
             mObjects[i].object->vCalculateStart(0.) ;
             mObjects[i].active  =1 ;
             mObjects[i].cut_time=0. ;
@@ -778,7 +875,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for(n_frame=0 ; n_frame<mScenario_cnt ; ) {
 
-        status=iFrameExecute(&mScenario[n_frame], 0) ;
+        status=iFrameExecute(&mScenario[n_frame], 0, 1) ;
 /*- - - - - - - - - - - - - - - - - - - Переход к следующему "кадру" */
      if(status==_NEXT_FRAME) {
                                 n_frame++ ;  continue ;
@@ -834,7 +931,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for( ; n_frame<mScenario_cnt ; ) {                               /* CIRCLE.1 */
 
-        status=iFrameExecute(&mScenario[n_frame], time_c) ;
+        status=iFrameExecute(&mScenario[n_frame], time_c, 1) ;
 /*- - - - - - - - - - - - - - - - - - - Переход к следующему "кадру" */
      if(status==_NEXT_FRAME) {
                                 n_frame++ ;  continue ;
@@ -860,7 +957,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     memset(callback, 0, sizeof(callback)) ;
 
             mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c,
-                                                                   callback, sizeof(callback)-1) ;
+                                                                   callback, _CALLBACK_SIZE-1) ;
             mObjects[i].object->vCalculateShow() ;
 
          if(mObjects[i].cut_time!=    0. &&
@@ -884,21 +981,75 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      strcpy(frame.action, "STOP") ;
                      strcpy(frame.object, cmd+strlen("STOP ")) ;
                                                             }
+                else
+                if(!memicmp(cmd, "KILL ", strlen("KILL "))) {
+                     strcpy(frame.action, "KILL") ;
+                     strcpy(frame.object, cmd+strlen("KILL ")) ;
+                                                            }
+                else
+                if(!memicmp(cmd, "EXEC ", strlen("EXEC "))) {
+                     strcpy(frame.action, "EXEC") ;
+                     strcpy(frame.command, cmd+strlen("EXEC ")) ;
+                                                            }
 
-                    iFrameExecute(&frame, time_c) ;
+                    iFrameExecute(&frame, time_c, 0) ;
                                                      }
                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                }
+/*------------------------------------------------ Обработка спаунов */
+
+      for(i=0 ; i<mSpawns_cnt ; i++) 
+        if(mSpawns[i]!=NULL) {
+
+#define  S  mSpawns[i] 
+
+         while(S->cnt        < S->size &&
+               S->next_event < time_c    ) {
+/*- - - - - - - - - - - - - - - - - - - - - - - - - "Запуск" объекта */
+             sprintf(name, "%s_%d", S->object, S->cnt+1) ;
+
+                clone=S->templ->vCopy(name) ;
+
+                clone->vResetFeatures(NULL) ;                       /* Инициализация свойств объекта */ 
+
+                clone->vCalculateStart(S->next_event) ;
+                clone->vCalculate     (S->next_event, time_c, NULL, 0) ;
+                clone->vCalculateShow () ;
+/*- - - - - - - - - - - - - - - - - - -  Добавление объекта в список */
+           if(mObjects_cnt>=_OBJECTS_MAX) {
+                      SEND_ERROR("Список объектов сценария слишком велик") ;
+                                              exit_flag=1 ;  break ;
+                                          }
+
+                   mObjects[mObjects_cnt].object  =clone ;
+                   mObjects[mObjects_cnt].active  =  1 ;
+
+           if(S->t_par!=0.)
+                   mObjects[mObjects_cnt].cut_time=S->next_event+S->t_par ;
+           else    mObjects[mObjects_cnt].cut_time= 0. ;
+                            mObjects_cnt++ ;
+/*- - - - - - - - - - - - - - - - - - - - -  Анализ следующего пуска */
+                       S->next_event+=S->period ;
+                       S->cnt       ++ ;
+
+                    if(S->cnt==S->size) {  S=NULL ;  break ;  }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                          }
+#undef   S
+                             }
 /*----------------------------------------------- Контроль поражения */
+
+      for(i=0 ; i<mObjects_cnt ; i++)
+        if(mObjects[i].active)  mObjects[i].object->vPrepareFeatures(NULL) ;
 
       for(i=0 ; i<mObjects_cnt ; i++)
         if(mObjects[i].active) {
                                                                checked.Clear() ;
               status=mObjects[i].object->vCheckFeatures(NULL, &checked) ;
            if(status) {
-                          mObjects[i].active=0 ;
-                          mObjects[i].object->vEvent("HIT", time_c) ;
+
+                    mObjects[i].active=mObjects[i].object->vEvent("HIT", time_c) ;
 
              for(j=0 ; j<checked.List_cnt ; j++)
                if(!stricmp(checked.List[j].relation, "Hit"))
@@ -932,31 +1083,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*              Реализация инструкций сервисной задачи              */
 /*                                                                  */
 /*  start  -  Начать отслеживание объекта                           */
-/*  event  -  Передать событие на объекта                           */
 /*  stop   -  Прекратить отслеживание объекта                       */
+/*  kill   -  Удалить объект                                        */
+/*  spawn  -  Порождение серии объектов                             */
+/*  event  -  Передать событие на объекта                           */
+/*  exec   -  Выполнить системную команду                           */
 
-  int  RSS_Module_Battle::iFrameExecute(FRAME *frame, double  t)
+  int  RSS_Module_Battle::iFrameExecute(FRAME *frame, double  t, int sync_use)
 
 { 
        static  double  t_last ;
             RSS_IFace  iface ;
            RSS_Object *object ;
                  char  text[1024] ;
+                 char *end ;
+                  int  status ;
                   int  i ;
+                  int  j ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
 
 /*---------------------------------------------------- Инициализация */
 
-/*----------------------------------------- Контроль временной метки */
+/*--------------------------------- Контроль временной синхронизации */
 
-    if(frame->dt_use==0 &&
-       frame->t     >=t   )  return(_WAIT_FRAME) ;
+ if(sync_use && frame->sync_type!=_NO_SYNC) {
 
-    if(frame->dt_use   ==1 &&
-       frame->dt+t_last>=t   )  return(_WAIT_FRAME) ;
+    if(frame->sync_type==_T_SYNC &&
+       frame->t        >= t         )  return(_WAIT_FRAME) ;
 
+    if(frame->sync_type==_DT_SYNC &&
+       frame->dt+t_last>=  t        )  return(_WAIT_FRAME) ;
+
+                  t_last=t ;
+                                            }
 /*---------------------------------------------------- Операция EXIT */
 
     if(!stricmp(frame->action, "EXIT" )) {
@@ -964,6 +1125,26 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                  SEND_ERROR("Бой завершен") ;
                                      return(_EXIT_FRAME) ;
 
+                                         }
+/*---------------------------------------------------- Операция EXIT */
+    else
+    if(!stricmp(frame->action, "EXEC" )) {
+
+      for(i=0 ; i<RSS_Kernel::kernel->modules_cnt ; i++) {
+      
+             status=RSS_Kernel::kernel->modules[i].entry->vExecuteCmd(frame->command) ;
+          if(status==-1)  return(-1) ;
+          if(status== 0)    break ;
+                                                         }
+
+          if(status== 1)
+             status=RSS_Kernel::kernel->vExecuteCmd(frame->command) ;
+
+          if(status== 1) {
+                              sprintf(text, "Неизвестная команда: %s", frame->command) ;
+                           SEND_ERROR(text) ;
+                               return(_EXIT_FRAME) ;
+                         }
                                          }
 /*--------------------------------------------------- Операция START */
     else
@@ -982,8 +1163,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
         for(i=0 ; i<mObjects_cnt ; i++)
           if(object==mObjects[i].object)  break ;
-
-           if(i<mObjects_cnt) {                                     /* Если объект уже включен в сценарий... */
+          
+           if(i<mObjects_cnt) {                                     /* Если объект уже включен в сценарий... */              
                                     sprintf(text, "Объекта '%s' уже включен в сценарий", frame->object) ;
                                  SEND_ERROR(text) ;
                                      return(_EXIT_FRAME) ;
@@ -1003,6 +1184,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                mObjects[mObjects_cnt].cut_time=t+frame->t_par ;
        else    mObjects[mObjects_cnt].cut_time= 0. ;
                         mObjects_cnt++ ;
+/*- - - - - - - - - - - - - - - - - -  Инициализация свойств объекта */
+                      object->vResetFeatures(NULL) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*---------------------------------------------------- Операция STOP */
@@ -1019,7 +1202,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               }
 
                       object=OBJECTS[i] ;
-
+/*- - - - - - - - - - - - - - - - - - Сброс метки активности объекта */
         for(i=0 ; i<mObjects_cnt ; i++)
           if(object==mObjects[i].object)  break ;
 
@@ -1028,8 +1211,60 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                  SEND_ERROR(text) ;
                                      return(_EXIT_FRAME) ;
                               }
-/*- - - - - - - - - - - - - - - - - - Сброс метки активности объекта */
-               mObjects[i].active= 0 ;
+
+               mObjects[i].active=0 ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                         }
+/*---------------------------------------------------- Операция KILL */
+    else
+    if(!stricmp(frame->action, "KILL")) {
+/*- - - - - - - - - - - - - - - - - - -  Определение режима удаления */
+                      end=strchr(frame->object, '%') ;
+       if(end==NULL)  end=strchr(frame->object, '*') ;
+       if(end!=NULL) *end= 0 ;
+/*- - - - - - - - - - - - - - - - - - - - - - Для группового объекта */
+       if(end!=NULL) {
+
+            for(i=0, j=0 ; i<mObjects_cnt ; i++) {                       /* Очистка списка боя */
+
+              if(i!=j)  mObjects[j].object=mObjects[i].object ;
+
+              if(mObjects[j].object!=NULL)
+               if(memicmp(mObjects[j].object->Name, frame->object,
+                                             strlen(frame->object)))  j++ ;
+                                                 }
+
+                                          mObjects_cnt=j ;
+
+                                      sprintf(text, "kill/b %s%%", frame->object) ;
+              RSS_Kernel::kernel->vExecuteCmd(text) ;               /* Удаление объектов */
+
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - Для одиночного объекта */
+       else          {
+
+         for(i=0 ; i<OBJECTS_CNT ; i++)                             /* Ищем объект по имени */
+           if(!stricmp(OBJECTS[i]->Name, frame->object))  break ;
+
+           if(i==OBJECTS_CNT) {                                     /* Если имя не найдено... */
+                                   sprintf(text, "Объекта '%s' НЕ существует", frame->object) ;
+                                SEND_ERROR(text) ;
+                                    return(_EXIT_FRAME) ;
+                              }
+
+                      object=OBJECTS[i] ;
+
+         for(i=0 ; i<mObjects_cnt ; i++)                            /* Сброс метки активности объекта */
+           if(object==mObjects[i].object)  break ;
+
+           if(i<mObjects_cnt) {
+                                 mObjects[i].object=NULL ;
+                                 mObjects[i].active=  0 ;
+                              }
+
+                                      sprintf(text, "kill/b %s", frame->object) ;
+              RSS_Kernel::kernel->vExecuteCmd(text) ;               /* Удаление объекта */
+                     }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*--------------------------------------------------- Операция EVENT */
@@ -1050,6 +1285,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    object->vEvent(frame->event, t) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
+/*--------------------------------------------------- Операция SPAWN */
+    else
+    if(!stricmp(frame->action, "SPAWN")) {
+/*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
+         for(i=0 ; i<OBJECTS_CNT ; i++)                             /* Ищем объект по имени */
+           if(!stricmp(OBJECTS[i]->Name, frame->object))  break ;
+
+           if(i==OBJECTS_CNT) {                                     /* Если имя не найдено... */
+                                   sprintf(text, "Объекта '%s' НЕ существует", frame->object) ;
+                                SEND_ERROR(text) ;
+                                    return(_EXIT_FRAME) ;
+                              }
+
+                      frame->templ=OBJECTS[i] ;
+/*- - - - - - - - - - - - - - -  Добавление спауна в список активных */
+           for(j=0 ; j<mSpawns_cnt ; j++)
+             if(mSpawns[j]==NULL)  break ;
+
+           if(j>=_SPAWNS_MAX) {                                     /* Если мест в списке нет... */
+                                   sprintf(text, "Переполнение списка спаун-объектов") ;
+                                SEND_ERROR(text) ;
+                                    return(_EXIT_FRAME) ;
+                              }
+
+                mSpawns[j]=frame ;
+                           frame->cnt       =0 ;
+                           frame->next_event=t ;
+
+             if(j>=mSpawns_cnt)  mSpawns_cnt=j+1 ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                         }
 /*--------------------------------------------- Неизвестная операция */
 
     else                                {
@@ -1062,8 +1328,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #undef   OBJECTS
 #undef   OBJECTS_CNT
-
-       t_last=t ;
 
    return(_NEXT_FRAME) ;
 }

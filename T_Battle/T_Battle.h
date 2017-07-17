@@ -21,14 +21,23 @@
 #define  _WAIT_FRAME    1
 
  typedef struct {                           /* Оператор */
-                     int  dt_use ;           /* Флаг типа метки времени */
+                     int  sync_type ;        /* Флаг типа метки времени */
+#define                     _NO_SYNC  0
+#define                      _T_SYNC  1
+#define                     _DT_SYNC  2
                   double  t ;                /* Метка времени */
                   double  dt ;
                     char  action[32] ;       /* Операция */
                     char  object[32] ;       /* Объект */
                     char  event[32] ;        /* Событие */
+                     int  size ;             /* Счетчик событий */
+                  double  period ;           /* Переодичность повторения событий */
                   double  t_par ;            /* Временной параметр */
+
                     char  command[256] ;
+              RSS_Object *templ ;
+                     int  cnt ;
+                  double  next_event ;
                 } RSS_Module_Battle_frame ;
 
 #define  FRAME  RSS_Module_Battle_frame
@@ -51,6 +60,7 @@
 /*--------------------- Описание класса задачи "Задача обслуживания" */
 
 #define  _OBJECTS_MAX   1000
+#define   _SPAWNS_MAX    100
 
   class T_BATTLE_API RSS_Module_Battle : public RSS_Kernel {
 
@@ -61,6 +71,9 @@
 
                     static         OBJ  mObjects[_OBJECTS_MAX] ;
                     static         int  mObjects_cnt ;
+
+                    static       FRAME *mSpawns[_SPAWNS_MAX] ;
+                    static         int  mSpawns_cnt ;
 
                     static       FRAME *mScenario ;               /* Описание задачи обслуживания */
                     static         int  mScenario_cnt ;   
@@ -94,7 +107,7 @@
                      int  cProgram      (char *, RSS_IFace *) ;   /* Инструкция PROGRAM */
                      int  cRun          (char *, RSS_IFace *) ;   /* Инструкция RUN */
 
-                     int  iFrameExecute (FRAME *, double) ;       /* Реализация инструкций сервисной задачи */
+                     int  iFrameExecute (FRAME *, double, int) ;  /* Реализация инструкций сервисной задачи */
 
     public:
 	                  RSS_Module_Battle() ;               /* Конструктор */
