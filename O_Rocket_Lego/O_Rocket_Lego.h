@@ -48,18 +48,23 @@
   class O_ROCKET_LEGO_API RSS_Object_RocketLego : public RSS_Object {
 
     public:
-                      char  model_path[FILENAME_MAX] ;        /* Файл модели */
+                      char   model_path[FILENAME_MAX] ;        /* Файл модели */
 
-          RSS_Unit_WarHead *unit_warhead ;                    /* Компоненты */
-           RSS_Unit_Engine *unit_engine ;
-            RSS_Unit_Model *unit_model ;
+          RSS_Unit_WarHead  *unit_warhead ;                    /* Компоненты */
+           RSS_Unit_Engine  *unit_engine ;
+            RSS_Unit_Model  *unit_model ;
 
-                      char  owner[128] ;                      /* Объект-носитель */
-                RSS_Object *o_owner ;
+                      char   owner[128] ;                      /* Объект-носитель */
+                RSS_Object  *o_owner ;
+
+                RSS_Object **mSpawn ;                          /* Список клонов при эмитации залпа */
+                       int   mSpawn_cnt ;
+
+                      HWND  hDropsViewWnd ;                    /* Окно распределения точек падения/срабатывания */
 
    private:
 
-     RSS_Object_RocketLegoTrace *mTrace ;                        /* Траектория */
+     RSS_Object_RocketLegoTrace *mTrace ;                      /* Траектория */
                             int  mTrace_cnt ;  
                             int  mTrace_max ;
                        COLORREF  mTrace_color ;
@@ -75,8 +80,9 @@
          virtual        int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
          virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
-                       void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
-                       void  iShowTrace     (void) ;            /* Отображение траектории */
+                       void  iShowTrace_    (char *) ;          /* Отображение траектории с передачей контекста */
+                       void  iShowTrace     (char *) ;          /* Отображение траектории */
+                       void  iClearSpawn    (void) ;            /* Освобождение ресурсов моделирования залпа */
 
 	                     RSS_Object_RocketLego() ;          /* Конструктор */
 	                    ~RSS_Object_RocketLego() ;          /* Деструктор */
@@ -106,6 +112,8 @@
                      int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
                      int  cLego         (char *) ;                     /* Инструкция LEGO */ 
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
+                     int  cSpawn        (char *) ;                     /* Инструкция SPAWN */
+                     int  cStat         (char *) ;                     /* Инструкция STAT */
 
               RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта по имени */
           class RSS_Unit *AddUnit       (RSS_Object_RocketLego *,      /* Добавление компонента к объекту */
@@ -135,3 +143,4 @@
   BOOL CALLBACK  Object_RocketLego_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
   BOOL CALLBACK  Object_RocketLego_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
   BOOL CALLBACK  Object_RocketLego_Lego_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  BOOL CALLBACK  Object_RocketLego_Drops_dialog (HWND, UINT, WPARAM, LPARAM) ;

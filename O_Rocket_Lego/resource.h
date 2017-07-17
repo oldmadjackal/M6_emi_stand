@@ -6,6 +6,7 @@
 #define IDC_NAME                        1001
 #define IDC_MODEL                       1002
 #define IDC_LIBRARY_PATH                1003
+#define IDC_VIEW                        1003
 #define IDC_LIBRARY_BROWSE              1004
 #define IDC_PAR_NAME_1                  1006
 #define IDC_PAR_NAME_2                  1007
@@ -19,7 +20,6 @@
 #define IDC_PAR_VALUE_5                 1015
 #define IDC_PICTURE                     1016
 #define IDC_CREATE                      1017
-#define IDC_BUTTON1                     1018
 #define IDC_SET                         1018
 #define IDC_TYPE_W                      1019
 #define IDC_TYPE_E                      1020

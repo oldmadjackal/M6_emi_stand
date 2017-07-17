@@ -17,6 +17,7 @@
 #include "..\RSS_Unit\RSS_Unit.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
+#include "..\Ud_tools\UserDlg.h"
 
 #include "O_Rocket_Lego.h"
 
@@ -462,6 +463,153 @@
 
     case WM_CLOSE:      {
                             EndDialog(hDlg, -1) ;
+  			       return(FALSE) ;
+			              break ;
+			}
+/*----------------------------------------------------------- Прочее */
+
+    default :        {
+			  return(FALSE) ;
+			    break ;
+		     }
+/*-------------------------------------------------------------------*/
+	      }
+/*-------------------------------------------------------------------*/
+
+    return(TRUE) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*      Обработчик сообщений диалогового окна DROPS_VIEW             */
+
+ typedef struct {  RSS_Object_RocketLego *object ;
+                            UD_diag_data  data ;
+                                    HWND  hDlg ;  }  Indicator_context ;
+
+#define  _IND_MAX  10
+
+   BOOL CALLBACK  Object_RocketLego_Drops_dialog(  HWND  hDlg,     UINT  Msg, 
+                                                 WPARAM  wParam, LPARAM  lParam) 
+{
+  static Indicator_context   contexts[_IND_MAX] ;
+              UD_diag_data  *context ;
+     RSS_Object_RocketLego  *object ;
+    struct UD_data_2Dpoint  *data ;
+                    double   x0 ;
+                    double   z0 ;
+                      HWND   hElem  ;
+                       int   elm ;           /* Идентификатор элемента диалога */
+                       int   status ;
+                      char   title[1024] ;
+                       int   n ;
+                       int   i ;
+
+/*-------------------------------------------- Определение контекста */
+
+                                    context= NULL ;
+                                     object= NULL ;
+    for(i=0 ; i<_IND_MAX ; i++) 
+      if(contexts[i].hDlg==hDlg) {  context=&contexts[i].data ;
+                                     object= contexts[i].object ;
+                                               break ;           }
+
+/*------------------------------------------------- Большая разводка */
+
+  switch(Msg) {
+
+/*---------------------------------------------------- Инициализация */
+
+    case WM_INITDIALOG: {
+
+               object=(RSS_Object_RocketLego *)lParam ;
+/*- - - - - - - - - - - - - - - - - -  Контроль повторного контекста */
+           for(i=0 ; i<_IND_MAX ; i++) 
+             if(contexts[i].object==object) {
+                            EndDialog(contexts[i].hDlg, 0) ;
+                                      contexts[i].hDlg=NULL ;
+                                            }
+/*- - - - - - - - - - - - - - - - - - - - - -  Регистрация контекста */
+           for(i=0 ; i<_IND_MAX ; i++) 
+             if(contexts[i].hDlg==NULL)  break ;
+
+                contexts[i].hDlg  =hDlg ;
+                contexts[i].object=object ;
+/*- - - - - - - - - - - - - - - - - Формирование отображаемых данных */
+#define   G_LIST  contexts[i].data.data_list
+
+            G_LIST=(UD_data_list **)calloc(1, sizeof(*G_LIST)) ;
+
+           contexts[i].data.back_color   =RGB(255, 255, 255) ;
+           contexts[i].data.data_list_cnt= 1 ;
+
+            G_LIST[0]          =(UD_data_list *)calloc(2, sizeof(UD_data_list)) ;
+            G_LIST[0]->use_flag        =  1 ;
+            G_LIST[0]->color           = RGB(255,   0,   0) ;
+            G_LIST[0]->grid_flag       =1 ;
+            G_LIST[0]->grid_values_flag=1 ;
+            G_LIST[0]->x_scale_type    =_UD_FREE_SCALE ;
+            G_LIST[0]->x_scale_type    =_UD_FREE_SCALE ;
+            G_LIST[0]->type            =_UD_POINT_DATA ;
+            G_LIST[0]->data_cnt        = object->mSpawn_cnt ;
+            G_LIST[0]->data            = calloc(object->mSpawn_cnt, sizeof(UD_data_2Dpoint)) ;
+                       data            =(UD_data_2Dpoint *)G_LIST[0]->data ;
+
+       for(x0=0., z0=0., n=0 ; n<object->mSpawn_cnt ; n++) {        /* Рассчет средней точки */
+              x0+=object->mSpawn[n]->x_base/(double)object->mSpawn_cnt ;
+              z0+=object->mSpawn[n]->z_base/(double)object->mSpawn_cnt ;
+                                                           }
+
+       for(n=0 ; n<object->mSpawn_cnt ; n++) {                      /* Рассчет отклонений от средней точки */
+                    data[n].x=object->mSpawn[n]->x_base-x0 ;
+                    data[n].y=object->mSpawn[n]->z_base-z0 ;
+                                             }
+
+#undef   G_LIST
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Пропись заголовка */
+              sprintf(title, "Распределение точек падения/срабатывания: %s",
+                                  object->Name) ;
+          SendMessage(hDlg, WM_SETTEXT, 0, (LPARAM)title) ;
+/*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+                      hElem=GetDlgItem(hDlg, IDC_VIEW) ;
+          SendMessage(hElem, WM_SETTEXT, NULL, 
+                       (LPARAM)UD_ptr_incode((void *)&contexts[i].data)) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  			  return(FALSE) ;
+  			     break ;
+  			}
+/*------------------------------------------------ Отработка событий */
+
+    case WM_PAINT:      {
+
+                      hElem=GetDlgItem(hDlg, IDC_VIEW) ;
+          SendMessage(hElem, WM_PAINT, NULL, NULL) ;
+                          
+ 			    return(FALSE) ;
+			       break ;
+			}
+/*------------------------------------------------ Отработка событий */
+
+    case WM_COMMAND:    {
+                            status=HIWORD(wParam) ;
+                               elm=LOWORD(wParam) ;
+
+			  return(FALSE) ;
+			     break ;
+			}
+/*--------------------------------------------------------- Закрытие */
+
+    case WM_CLOSE:      {
+
+         for(i=0 ; i<_IND_MAX ; i++)                                /* Убираем запись об индикаторе */
+           if(contexts[i].hDlg==hDlg) {  contexts[i].hDlg  =NULL ;  /*   из списка контекстов       */
+                                         contexts[i].object=NULL ;
+                                                 break ;           }
+
+                    if(object!=NULL)  object->hDropsViewWnd=NULL ;
+
+                            EndDialog(hDlg, 0) ;
   			       return(FALSE) ;
 			              break ;
 			}

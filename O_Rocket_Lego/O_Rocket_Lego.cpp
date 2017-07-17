@@ -28,6 +28,7 @@
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 #include "..\F_Hit\F_Hit.h"
+#include "..\Ud_tools\UserDlg.h"
 
 #include "O_Rocket_Lego.h"
 #pragma warning(disable : 4996)
@@ -122,6 +123,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n",
                     &RSS_Module_RocketLego::cTrace },
+ { "spawn",   "sp", "#SPAWN - залповый пуск с использованием шаблона объекта",
+                    " SPAWN <Имя> <Число пусков> <Периодичность пусков>\n"
+                    "   Залповый пуск с использованием шаблона объекта\n",
+                    &RSS_Module_RocketLego::cSpawn },
+ { "stat",    "st", "#STAT - отображение статистики по результатам залпового пуска",
+                    " STAT/D <Имя>\n"
+                    "   Статистика точек падения/срабатывания\n",
+                    &RSS_Module_RocketLego::cStat },
  {  NULL }
                                                             } ;
 
@@ -139,11 +148,39 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      RSS_Module_RocketLego::RSS_Module_RocketLego(void)
 
 {
+  static  WNDCLASS  View_wnd ;
+              char  text[1024] ;
+
+/*---------------------------------------------------- Инициализация */
+
 	   keyword="EmiStand" ;
     identification="Rocket-Lego" ;
           category="Object" ;
 
         mInstrList=RSS_Module_RocketLego_InstrList ;
+
+/*--------------------------- Регистрация класса окна UD_Show_view2D */
+
+  if(View_wnd.hInstance==NULL) {
+
+	View_wnd.lpszClassName="O_RocketLego_view_class" ;
+	View_wnd.hInstance    = GetModuleHandle(NULL) ;
+	View_wnd.lpfnWndProc  = UD_diagram_2D_prc ;
+	View_wnd.hCursor      = LoadCursor(NULL, IDC_ARROW) ;
+	View_wnd.hIcon        =  NULL ;
+	View_wnd.lpszMenuName =  NULL ;
+	View_wnd.hbrBackground=  NULL ;
+	View_wnd.style        =    0 ;
+	View_wnd.hIcon        =  NULL ;
+
+    if(!RegisterClass(&View_wnd)) {
+              sprintf(text, "O_RocketLego_view_class register error %d", GetLastError()) ;
+           SEND_ERROR(text) ;
+                    return ;
+                                  }
+
+                               }
+/*-------------------------------------------------------------------*/
 }
 
 
@@ -277,7 +314,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(object->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-      object->Features[i]=this->feature_modules[i]->vCreateFeature(object) ;
+      object->Features[i]=this->feature_modules[i]->vCreateFeature(object, NULL) ;
 
 /*-------------------------------------- Считывание описаний свойств */
 
@@ -1065,20 +1102,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
-/*----------------------------------------- Контроль носителя и цели */
+/*------------------------------------------------ Контроль носителя */
 
        object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
     if(object->o_owner==NULL)  return(-1) ;
-
-/*------------------------------ Привязка стартовой точки к носителю */
-
-       object->x_base=object->o_owner->x_base ;
-       object->y_base=object->o_owner->y_base ;
-       object->z_base=object->o_owner->z_base ;
-
-       object->a_azim=object->o_owner->a_azim ;
-       object->a_elev=object->o_owner->a_elev ;
-       object->a_roll=object->o_owner->a_roll ;
 
 /*------------------------------------------------------ Трассировка */
 
@@ -1086,7 +1113,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               time_c=0. ;
               time_s=0. ;
 
-         object->vCalculateStart(0) ;
+         object->vCalculateStart(0.) ;
 
     do {                                                            /* CIRCLE.1 - Цикл трассировки */
            if(this->kernel->stop)  break ;                          /* Если внешнее прерывание поиска */
@@ -1103,7 +1130,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          status=object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
                 object->vCalculateShow() ;
 
-                object->iShowTrace_() ;                             /* Отображение траектории */
+                object->iShowTrace_("SHOW_TRACE") ;                 /* Отображение траектории */
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
    for(i=0 ; i<object->Features_cnt ; i++) {
      object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
@@ -1130,6 +1157,292 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               sprintf(text, "Трассировкa завершена за %lf секунд", time_c) ;
            SEND_ERROR(text) ;
                   }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции SPAWN                   */
+/*								    */
+/*       SPAWN <Имя> <Ёмкость залпа> <Периодичность запуска>        */
+
+  int  RSS_Module_RocketLego::cSpawn(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  char *pars[_PARS_MAX] ;
+                  char *name ;
+                double  spawn_max ;
+                double  spawn_period ;
+                double  time_0 ;        /* Стартовое время расчета */ 
+                double  time_1 ;        /* Текущее время */ 
+                double  time_c ;        /* Абсолютное время расчета */ 
+                double  time_s ;        /* Последнее время отрисовки */ 
+                double  time_w ;        /* Время ожидания */ 
+                double  time_z ;        /* Время очередного запуска */ 
+ RSS_Object_RocketLego *object ;
+            RSS_Object *clone ;
+                   int  break_mark[1000] ;
+                   int  break_cnt ;
+                  char  text[1024] ;
+                  char *end ;
+                   int  quit_flag ;
+                   int  status ;
+                   int  n ;
+                   int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+                     spawn_max   =0. ;
+                     spawn_period=0. ;
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          quit_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'q')!=NULL ||
+                   strchr(cmd, 'Q')!=NULL   )  quit_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+           if( pars[1]==NULL ||
+              *pars[1]==  0    ) {
+                                    SEND_ERROR("Не задана ёмкость залпа") ;
+                                                           return(-1) ;
+                                 }
+           if( pars[2]==NULL ||
+              *pars[2]==  0    ) {
+                                    SEND_ERROR("Не задана периодичность пуска") ;
+                                                           return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+
+                spawn_max=strtoul(pars[1], &end, 10) ;
+           if(*end!=0) {
+                           SEND_ERROR("Некорректное значение ёмкости залпа") ;
+                                            return(-1) ;
+                       }
+
+                spawn_period=strtod(pars[2], &end) ;
+           if(*end!=0) {
+                           SEND_ERROR("Некорректное значение периодичности пуска") ;
+                                            return(-1) ;
+                       }
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: SPAWN <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------------ Контроль носителя */
+
+       object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
+    if(object->o_owner==NULL)  return(-1) ;
+
+/*---------------------------------------- Очистка предыдущего залпа */
+
+                   object->iClearSpawn() ;
+
+              memset(break_mark, 0, sizeof(break_mark)) ;
+                     break_cnt=0 ;
+
+/*------------------------------------------------------ Трассировка */
+
+              time_0=this->kernel->vGetTime() ;
+              time_c=0. ;
+              time_s=0. ;
+              time_z=0. ;
+
+    do {                                                            /* CIRCLE.1 - Цикл трассировки */
+           if(this->kernel->stop)  break ;                          /* Если внешнее прерывание поиска */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Отработка времени */
+              time_c+=RSS_Kernel::calc_time_step ;
+              time_1=this->kernel->vGetTime() ;
+
+//         if(time_1-time_0>trace_time)  break ;                    /* Если время трассировки закончилось */
+
+              time_w=time_c-(time_1-time_0) ;
+
+           if(time_w>=0)  Sleep(time_w*1000) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
+#define  CLONE(k)  ((RSS_Object_RocketLego *)object->mSpawn[k])
+
+       for(n=0 ; n<object->mSpawn_cnt ; n++) if(!break_mark[n]) {
+
+            status=CLONE(n)->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
+         if(status) {
+                       break_mark[n]=1 ;
+                       break_cnt++ ;
+                    }
+
+                  CLONE(n)->vCalculateShow() ;
+
+                  CLONE(n)->iShowTrace_("SHOW_TRACE") ;             /* Отображение траектории */
+
+         for(i=0 ; i<CLONE(n)->Features_cnt ; i++) {                /* Отображение объекта */
+           CLONE(n)->Features[i]->vBodyBasePoint(NULL, CLONE(n)->x_base, 
+                                                       CLONE(n)->y_base, 
+                                                       CLONE(n)->z_base ) ;
+           CLONE(n)->Features[i]->vBodyAngles   (NULL, CLONE(n)->a_azim, 
+                                                       CLONE(n)->a_elev, 
+                                                       CLONE(n)->a_roll ) ;
+                                                   }
+                                                                } 
+
+#undef  CLONE
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - Пуск */
+       while(spawn_max>object->mSpawn_cnt &&
+              time_z  <  time_c             ) {
+
+                clone=object->vCopy(NULL) ;
+
+                clone->vCalculateStart(time_z) ;
+                clone->vCalculate     (time_z, time_c, NULL, 0) ;
+                clone->vCalculateShow () ;
+
+               object->mSpawn=(RSS_Object **)
+                                realloc(object->mSpawn, sizeof(*object->mSpawn)*(object->mSpawn_cnt+1)) ;
+
+               object->mSpawn[object->mSpawn_cnt]=clone ;
+                              object->mSpawn_cnt++ ;
+
+                       time_z+=spawn_period ;
+                                              }
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
+          time_1=this->kernel->vGetTime() ;
+       if(time_1-time_s>=this->kernel->show_time_step) {
+
+                 time_s=time_1 ;
+
+              this->kernel->vShow(NULL) ;
+                                                       }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+       if(object->mSpawn_cnt==spawn_max &&
+          object->mSpawn_cnt==break_cnt   )  break ;  
+
+       } while(1) ;                                                 /* END CIRCLE.1 - Цикл трассировки */
+
+   if(!quit_flag) {
+              sprintf(text, "Трассировкa завершена за %lf секунд", time_c) ;
+           SEND_ERROR(text) ;
+                  }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции STAT                    */
+/*								    */
+/*       STAT/D <Имя>                                               */
+
+  int  RSS_Module_RocketLego::cStat(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  char *pars[_PARS_MAX] ;
+                  char *name ;
+ RSS_Object_RocketLego *object ;
+                  char *end ;
+                   int  drops_view ;
+                   int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          drops_view=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'd')!=NULL ||
+                   strchr(cmd, 'D')!=NULL   )  drops_view=1 ;
+
+                           cmd=end+1 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: STAT <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------- Проверка наличия залпа */
+
+      if(object->mSpawn_cnt==0) {
+                      SEND_ERROR("Объект не содержит результатов команды SPAWN") ;
+                                     return(-1) ;
+                                }
+/*------------------------- Распределение точек падения/срабатывания */
+
+    if(drops_view) {
+
+       DialogBoxIndirectParam(GetModuleHandle(NULL),
+                              (LPCDLGTEMPLATE)Resource("IDD_DROPS_VIEW", RT_DIALOG),
+                                GetActiveWindow(), Object_RocketLego_Drops_dialog, (LPARAM)object) ;
+                   }
 /*-------------------------------------------------------------------*/
 
 #undef   _PARS_MAX
@@ -1283,15 +1596,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      unit_engine =NULL ;
      unit_model  =NULL ;
 
-       x_base    =   0. ;
-       y_base    =   0. ;
-       z_base    =   0. ;
-       a_azim    =   0. ;
-       a_elev    =   0. ;
-       a_roll    =   0. ;
-       x_velocity=   0. ;
-       y_velocity=   0. ;
-       z_velocity=   0. ;
+       mSpawn    =NULL ;
+       mSpawn_cnt= 0  ;
+
+       x_base    = 0. ;
+       y_base    = 0. ;
+       z_base    = 0. ;
+       a_azim    = 0. ;
+       a_elev    = 0. ;
+       a_roll    = 0. ;
+       x_velocity= 0. ;
+       y_velocity= 0. ;
+       z_velocity= 0. ;
 
   memset(owner,  0, sizeof(owner )) ;
        o_owner =NULL ;   
@@ -1301,6 +1617,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       mTrace_max  =  0 ; 
       mTrace_color=RGB(0, 0, 127) ;
       mTrace_dlist=  0 ;  
+
+      hDropsViewWnd=NULL ;
 }
 
 
@@ -1327,6 +1645,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  i ;
 
 
+           iClearSpawn() ;
+
+       iSaveTracePoint("CLEAR") ;
+           iShowTrace_("CLEAR_TRACE") ;
+
   if(this->mTrace!=NULL) {
                              free(this->mTrace) ;
                                   this->mTrace    =NULL ;
@@ -1351,6 +1674,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*	      Освобождение ресурсов моделирования залпа             */
+
+  void   RSS_Object_RocketLego::iClearSpawn(void)
+
+{
+  int  i ;
+
+
+  if(this->mSpawn!=NULL) {
+    for(i=0 ; i<this->mSpawn_cnt ; i++) {
+                                           delete (RSS_Object_RocketLego *)this->mSpawn[i] ;
+                                        }
+
+                             free(this->mSpawn) ;
+                                  this->mSpawn    =NULL ;
+                                  this->mSpawn_cnt=  0 ;
+                         }
+}
+
+
+/********************************************************************/
+/*								    */
 /*                        Копировать объект		            */
 
     class RSS_Object *RSS_Object_RocketLego::vCopy(char *name)
@@ -1358,6 +1703,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
         RSS_Model_data  create_data ;
  RSS_Object_RocketLego *object ;
+       RSS_Feature_Hit *hit_1 ;
+       RSS_Feature_Hit *hit_2 ;
               RSS_Unit *unit ;
                    int  i ;
 
@@ -1381,6 +1728,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  
             strcpy(object->owner,  this->owner) ;
                    object->o_owner=this->o_owner ;
+
+/*---------------------------------------------- Копирование свойств */
+
+    for(i=0 ; i<this->Features_cnt ; i++)
+      if(!stricmp(this->Features[i]->Type, "Hit"))
+             hit_1=(RSS_Feature_Hit *)this->Features[i] ;
+
+    for(i=0 ; i<object->Features_cnt ; i++)
+      if(!stricmp(object->Features[i]->Type, "Hit"))
+             hit_2=(RSS_Feature_Hit *)object->Features[i] ;
+
+           hit_2->hit_range =hit_1->hit_range ;
+           hit_2->any_target=hit_1->any_target ;
+           hit_2->any_weapon=hit_1->any_weapon ;
 
 /*----------------------------------------- Копирование лего-модулей */
 
@@ -1586,7 +1947,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
          this->iSaveTracePoint("ADD") ;                             /* Сохранение точки траектории */  
 
-         this->iShowTrace_() ;                                      /* Отображение траектории */
+         this->iShowTrace_("SHOW_TRACE") ;                          /* Отображение траектории */
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
      this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
@@ -1653,7 +2014,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*           Отображение траектории с передачей контекста           */
 
-  void  RSS_Object_RocketLego::iShowTrace_(void)
+  void  RSS_Object_RocketLego::iShowTrace_(char *action)
 
 {
     strcpy(Context->action, "SHOW_TRACE") ;
@@ -1668,12 +2029,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                     Отображение траектории                        */
 
-  void  RSS_Object_RocketLego::iShowTrace(void)
+  void  RSS_Object_RocketLego::iShowTrace(char *action)
 
 {
        int  status ;
        int  i ;
 
+/*-------------------------------------- Удаление дисплейного списка */
+
+  if(!stricmp(action, "CLEAR_TRACE")) {
+
+     if(this->mTrace_dlist)                                         /* Освобождаем дисплейный список */                                       
+             RSS_Kernel::display.ReleaseList(this->mTrace_dlist) ;
+
+                                               return ;
+                                      }
 /*-------------------------------- Резервирование дисплейного списка */
 
      if(mTrace_dlist==0) {
@@ -1769,7 +2139,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Transit_RocketLego::vExecute(void)
 
 {
-   if(!stricmp(action, "SHOW_TRACE"))  ((RSS_Object_RocketLego *)object)->iShowTrace() ;
+   if(!stricmp(action, "SHOW_TRACE" ))  ((RSS_Object_RocketLego *)object)->iShowTrace(action) ;
+   if(!stricmp(action, "CLEAR_TRACE"))  ((RSS_Object_RocketLego *)object)->iShowTrace(action) ;
 
    return(0) ;
 }
