@@ -141,7 +141,8 @@
 
     case WM_PAINT:   {
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Извлечение данных */
-     InvalidateRect(hWnd, NULL, false) ;
+                        InvalidateRect(hWnd, NULL, false) ;
+
         if(data==NULL) {
                           ValidateRect(hWnd,  NULL) ;
                               break ;
@@ -663,17 +664,17 @@
 	      step  = UDi_range_step(X_MAX-X_MIN) ;
              pixel  =(X_MAX-X_MIN)/metrics->x_size ;
              X_MIN += pixel ;
-	     X_MIN -= fmod(X_MIN, step) ;
+	     X_MIN -= fmod(fabs(X_MIN), step) ;
              X_MAX -= pixel ;
-	     X_MAX += step-fmod(X_MAX, step) ;
+	     X_MAX += step-fmod(fabs(X_MAX), step) ;
              X_STEP = step ; 
                 
 	      step  = UDi_range_step(Y_MAX-Y_MIN) ;
              pixel  =(Y_MAX-Y_MIN)/metrics->y_size ;
              Y_MIN += pixel ;
-	     Y_MIN -= fmod(Y_MIN, step) ;
+	     Y_MIN -= fmod(fabs(Y_MIN), step) ;
              Y_MAX -= pixel ;
-	     Y_MAX += step-fmod(Y_MAX, step) ;
+	     Y_MAX += step-fmod(fabs(Y_MAX), step) ;
              Y_STEP = step ; 
 				    }                               /* CONTINUE.3 */ 
 /*--------------------------------------- Масштабирование диапазонов */
@@ -903,7 +904,7 @@
 	       step=data_decl->x_grid_step ;                        /* Определяем шаг по оси X */
 
        for(value=data_decl->x_grid_0 ;
-           value<data_decl->x_max-step/4. ; value+=step) {          /* CIRCLE.2 - Идем по узлам сетки */
+           value<data_decl->x_max-step/4. ; value+=step) {          /* CIRCLE - Идем по узлам сетки в плюс */
 
           if(value<data_decl->x_min)  continue ;
 
@@ -915,12 +916,27 @@
 		 x_value[x_value_cnt].pos  =UDg_xpos_w(hDC, value) ;
 		         x_value_cnt++ ;
 				       }
-							 }          /* CONTINUE.2 */
+							 }          /* CONTINUE */
+
+       for(value=data_decl->x_grid_0 ;
+           value>data_decl->x_min-step/4. ; value-=step) {          /* CIRCLE - Идем по узлам сетки в минус */
+
+          if(value>data_decl->x_max)  continue ;
+
+		UDg_moveto_w(hDC, value, data_decl->y_min) ;        /* Рисуем линию сетки */
+		UDg_lineto_w(hDC, value, data_decl->y_max) ;
+
+	   if(x_value_cnt<_VALUES_MAX) {
+		 x_value[x_value_cnt].value=                value ;
+		 x_value[x_value_cnt].pos  =UDg_xpos_w(hDC, value) ;
+		         x_value_cnt++ ;
+				       }
+							 }          /* CONTINUE */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - Отработка по Y */
-	       step=data_decl->y_grid_step ;                        /* Определяем шаг по оси X */
+	       step=data_decl->y_grid_step ;                        /* Определяем шаг по оси Y */
 
        for(value=data_decl->y_grid_0 ;
-           value<data_decl->y_max-step/4. ; value+=step) {          /* CIRCLE.3 - Идем по узлам сетки */
+           value<data_decl->y_max-step/4. ; value+=step) {          /* CIRCLE - Идем по узлам сетки в плюс */
 
           if(value<data_decl->y_min)  continue ;
 
@@ -932,7 +948,22 @@
 		 y_value[y_value_cnt].pos  =UDg_ypos_w(hDC, value) ;
 		         y_value_cnt++ ;
 				       }
-							 }          /* CONTINUE.3 */
+							 }          /* CONTINUE */
+
+       for(value=data_decl->y_grid_0 ;
+           value>data_decl->y_min-step/4. ; value-=step) {          /* CIRCLE - Идем по узлам сетки минус */
+
+          if(value>data_decl->y_max)  continue ;
+
+		UDg_moveto_w(hDC, data_decl->x_min, value) ;        /* Рисуем линию сетки */
+		UDg_lineto_w(hDC, data_decl->x_max, value) ;
+
+	   if(y_value_cnt<_VALUES_MAX) {
+		 y_value[y_value_cnt].value=                value ;
+		 y_value[y_value_cnt].pos  =UDg_ypos_w(hDC, value) ;
+		         y_value_cnt++ ;
+				       }
+							 }          /* CONTINUE */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 				       break ;
 				               }
@@ -1034,11 +1065,20 @@
      hPen     =         CreatePen(data_decl->line_style, 0,         /* Подготовка пера */ 
                                   data_decl->color         ) ;      
      hPen_prev=(HPEN)SelectObject(hDC, hPen) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка точек */
+     if(data_decl->type==_UD_POINT_DATA) {
+
+	 for(j=0 ; j<data_decl->data_cnt ; j++)
+              UDg_marker_w(hDC, data[j].x, data[j].y, 2) ;
+                                         }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка графика */
+     else                                {
+
 		       UDg_moveto_w(hDC, data[0].x, data[0].y) ;
 
 	 for(j=1 ; j<data_decl->data_cnt ; j++)
 		       UDg_lineto_w(hDC, data[j].x, data[j].y) ;
+                                         }
 /*- - - - - - - - - - - - - - - - - - - - -  Откат установок графики */
              SelectObject(hDC, hPen_prev) ;
              DeleteObject(hPen) ;

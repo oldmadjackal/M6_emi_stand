@@ -201,6 +201,26 @@
 
 /*********************************************************************/
 /*                                                                   */
+/*                   Отрисовка маркера точки                         */
+
+  int  UDg_marker_w(HDC  hDC, double  x, double  y, int  size)
+
+{
+  int  x_pxl ;
+  int  y_pxl ;
+
+             
+           x_pxl=UDg_xpos_w(hDC, x) ;
+           y_pxl=UDg_ypos_w(hDC, y) ;
+
+     Rectangle(hDC, x_pxl-size, y_pxl-size, x_pxl+size, y_pxl+size) ;
+
+  return(0) ;
+}
+
+
+/*********************************************************************/
+/*                                                                   */
 /*                   Отрисовка полигона                              */
 
   int  UDg_polygon_w(HDC  hDC, UD_point_w *points, int  points_cnt)

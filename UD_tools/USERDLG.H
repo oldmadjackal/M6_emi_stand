@@ -193,6 +193,7 @@ typedef  int (CALLBACK *UD_CALLBACK)(int, int, void *) ;
 			  int  type ;              /* Тип массив данных:  */
 #define                         _UD_MONO_DATA   0  /*   Монотонные данные */
 #define                         _UD_PHASE_DATA  1  /*   Фазовые данные    */
+#define                         _UD_POINT_DATA  2  /*   Только точки      */
 			 void *data ;              /* Поток данных */
 			  int  data_cnt ;          /* Счетчик данных */
 
@@ -376,6 +377,7 @@ typedef  struct {  double  x ;
       int  UDg_setpixel_w (HDC, double, double, COLORREF) ;  /* Отрисовка точки */ 
       int  UDg_moveto_w   (HDC, double, double) ;            /* Перенос пера в точку */ 
       int  UDg_lineto_w   (HDC, double, double) ;            /* Отрисовка линии в точку */ 
+      int  UDg_marker_w   (HDC, double, double, int) ;       /* Отрисовка маркера точки */ 
       int  UDg_polygon_w  (HDC, UD_point_w *, int) ;         /* Отрисовка многоугольника */ 
 
 /*------------------------------------------------------ Обработчики */
