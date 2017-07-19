@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*	МОДУЛЬ УПРАВЛЕНИЯ ОБНАРУЖЕНИЕМ ПЕРЕСЕЧЕНИЯ ОБЪЕКТОВ	    */
+/*	МОДУЛЬ УПРАВЛЕНИЯ ОБНАРУЖЕНИЕМ ПОРАЖЕНИЯ ОБЪЕКТОВ	    */
 /*								    */
 /********************************************************************/
 
@@ -25,12 +25,14 @@
      virtual         int  vExecuteCmd   (const char *) ;    /* Выполнить команду */
 
     public:
-                     int  cHelp         (char *) ;          /* Инструкция Help */ 
-                     int  cRadius       (char *) ;          /* Инструкция Radius */ 
+                     int  cHelp         (char *) ;          /* Инструкция Help */
+                     int  cRadius       (char *) ;          /* Инструкция Radius */
+                     int  cCategory     (char *) ;          /* Инструкция Category */
 
     public:
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
-     virtual RSS_Feature *vCreateFeature(RSS_Object *) ;    /* Создать свойство */
+     virtual RSS_Feature *vCreateFeature(RSS_Object *,      /* Создать свойство */
+                                         RSS_Feature *) ;
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
      virtual        void  vReadSave     (std::string *) ;   /* Считать данные из строки */
 
@@ -78,7 +80,7 @@
                     double  z_abs ;
                 }  RSS_Feature_Hit_Vertex ;
 
-#define  _VERTEX_PER_FACET_MAX   16
+#define  _VERTEX_PER_FACET_MAX   32
 
  typedef struct {                                            /* Описание грани */
 
@@ -122,7 +124,7 @@
                                 int  list_idx ;               /* Индекс дисплейного списка */
                 }  RSS_Feature_Hit_Body ;
 
-/*--------------------------- Описание класса свойства "Пересечение" */
+/*----------------------------- Описание класса свойства "Поражение" */
 
   class F_HIT_API RSS_Feature_Hit : public RSS_Feature {
 
@@ -135,17 +137,21 @@
                 RSS_Feature_Hit_Dim   overall ;                     /* Габарит объекта */
                              double   hit_range ;                   /* Радиус поражения */
 
+                                int   any_target ;                  /* Произвольно поражаемая цель */
+                                int   any_weapon ;                  /* Произвольно поражающее оружие */
+
                                char   target[128] ;                 /* Объект-цель */
 
                           RSS_Point   track_s ;                     /* Собственное положение текущее */
                           RSS_Point   track_s_prv ;                 /* Собственное положение предыдущее */
-                          RSS_Point   track_t_prv ;                 /* Положение цели предыдущее */
                                 int   track_flag ;                  /* Флаг возможности проверки */
 
     public:
             virtual void  vReadSave     (char *, std::string *,     /* Считать данные из строки */
                                                         char * ) ;
             virtual void  vGetInfo      (std::string *) ;           /* Выдать информацию о свойстве */
+            virtual  int  vResetCheck   (void *) ;                  /* Сброс контекста проверки непротиворечивости свойства */  
+            virtual  int  vPreCheck     (void *) ;                  /* Подготовка к проверке непротиворечивости свойства */  
             virtual  int  vCheck        (void *,                    /* Проверка непротиворечивости свойства */  
                                          RSS_Objects_List *) ;
             virtual void  vBodyDelete   (char *) ;                  /* Удалить тело */

@@ -87,12 +87,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   struct RSS_Module_Hit_instr  RSS_Module_Hit_InstrList[]={
 
- { "help",    "?",  "#HELP   - список доступных команд", 
-                     NULL,
-                    &RSS_Module_Hit::cHelp       },
- { "radius",  "r",  "#RADIUS (R) - радиус поражения", 
-                     NULL,
-                    &RSS_Module_Hit::cRadius     },
+ { "help",     "?",  "#HELP   - список доступных команд", 
+                      NULL,
+                     &RSS_Module_Hit::cHelp       },
+ { "radius",   "r",  "#RADIUS (R) - радиус поражения", 
+                      NULL,
+                     &RSS_Module_Hit::cRadius     },
+ { "category", "c",  "#CATEGORY (C) - категория объекта", 
+                     " CATEGORY/T <Имя>\n"
+                     "   Классифицировать обьект как произвольно поражаемую цель\n"
+                     " CATEGORY/W <Имя>\n"
+                     "   Классифицировать обьект как средство произвольного поражения\n"
+                     " CATEGORY/WT <Имя>\n"
+                     "   Классифицировать обьект как средство произвольного поражения являющееся одновременно и произвольно поражаемой целью\n",
+                     &RSS_Module_Hit::cCategory     },
  {  NULL }
                                                               } ;
 
@@ -101,6 +109,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*		     Общие члены класса             		     */
 
     struct RSS_Module_Hit_instr *RSS_Module_Hit::mInstrList=NULL ;
+
 
 /*********************************************************************/
 /*								     */
@@ -151,12 +160,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*		        Создать свойство                	     */
 
-    RSS_Feature *RSS_Module_Hit::vCreateFeature(RSS_Object *object)
+    RSS_Feature *RSS_Module_Hit::vCreateFeature(RSS_Object *object, RSS_Feature *feature_ext)
 
 {
   RSS_Feature *feature ;
 
-         feature        =new RSS_Feature_Hit ;
+
+    if(feature_ext!=NULL)  feature= feature_ext ;
+    else                   feature=new RSS_Feature_Hit ;
+
          feature->Object=object ;
 
   return(feature) ;
@@ -225,9 +237,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*--------------------------------------------- Выделение инструкции */
 
        instr=end ;                                                  /* Выделяем слово с названием команды */
-         end=strchr(instr, ' ') ;
-      if(end!=NULL) {  *end=0 ;  end++ ;  }
-      else              end="" ;
+
+     for(end=instr ; *end!= 0  &&
+                     *end!=' ' &&
+                     *end!='>' &&
+                     *end!='/'    ; end++) ;
+
+      if(*end!= 0 &&
+         *end!=' '  )  memmove(end+1, end, strlen(end)+1) ;
+
+      if(*end!=0) {  *end=0 ;  end++ ;  }
+      else            end="" ;
 
    for(i=0 ; mInstrList[i].name_full!=NULL ; i++)                   /* Ищем команду в списке */
      if(!stricmp(instr, mInstrList[i].name_full) ||
@@ -382,7 +402,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                      name=pars[0] ;
 
-/*------------------------------------------- Поиск объекта по имени */ 
+/*------------------------------------------- Поиск объекта по имени */
 
     if(name==NULL) {                                                /* Если имя не задано... */
                       SEND_ERROR("Не задано имя объекта. \n"
@@ -431,6 +451,106 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
 /********************************************************************/
+/*								    */
+/*		      Реализация инструкции CATEGORY                */
+/*								    */
+/*        CATEGORY    <Имя>                                         */
+/*        CATEGORY/T  <Имя>                                         */
+/*        CATEGORY/W  <Имя>                                         */
+/*        CATEGORY/TW <Имя>                                         */
+
+  int  RSS_Module_Hit::cCategory(char *cmd)
+
+{
+#define   _PARS_MAX   4
+
+               char *pars[_PARS_MAX] ;
+               char *name ;
+         RSS_Object *object ;
+                int  target_flag ;
+                int  weapon_flag ;
+               char  text[1024] ;
+               char *end ;
+                int  i ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      target_flag=0 ;
+                      weapon_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 't')!=NULL ||
+                   strchr(cmd, 'T')!=NULL   )  target_flag=1 ;
+                if(strchr(cmd, 'w')!=NULL ||
+                   strchr(cmd, 'W')!=NULL   )  weapon_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Поиск объекта по имени */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: CATEGORY <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, name)) {
+                                         object=OBJECTS[i] ;
+                                                 break ;
+                                              }
+
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
+                           sprintf(text, "Объекта с именем '%s' "
+                                         "НЕ существует", name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                       }
+/*--------------------------------------------- Назначение категории */
+
+   for(i=0 ; i<object->Features_cnt ; i++)
+     if(!stricmp(object->Features[i]->Type, "Hit")) {
+          ((RSS_Feature_Hit *)(object->Features[i]))->any_target=target_flag ;
+          ((RSS_Feature_Hit *)(object->Features[i]))->any_weapon=weapon_flag ;
+                                                    }
+/*-------------------------------------------------------------------*/
+
+#undef    OBJECTS
+#undef    OBJECTS_CNT
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
 /********************************************************************/
 /**							           **/
 /**           ОПИСАНИЕ КЛАССА ПОРАЖАЮЩИХ СВОЙСТВ ОБЪЕКТА           **/
@@ -451,7 +571,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      Bodies    =NULL ;
      Bodies_cnt=  0 ;
 
-      hit_range=  0. ;
+     hit_range =  0. ;
+     any_target=  0 ;
+     any_weapon=  0 ;
 
    memset(target, 0, sizeof(target)) ;
 
@@ -743,7 +865,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void RSS_Feature_Hit::vGetInfo(std::string *text)
 
 {
-        *text="Hit: Yes\r\n" ;
+        if(any_target && any_weapon)  *text="Hit: Weapon/Target\r\n" ;
+   else if(any_target              )  *text="Hit: Target\r\n" ;
+   else if(any_weapon              )  *text="Hit: Weapon\r\n" ;
+   else                               *text="Hit: Ignore\r\n" ;
 }
 
 
@@ -831,11 +956,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Bodies[n_body].Matrix_flag=0 ;
        Bodies[n_body].recalc     =1 ;
 
-   if(n_body==0) {
-                     track_s.x=x ;
-                     track_s.y=y ;
-                     track_s.z=z ;
-                 }
 /*-------------------------------------------------------------------*/
 }
 
@@ -874,11 +994,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Bodies[n_body].Matrix_flag=  0 ;
        Bodies[n_body].recalc     =  1 ;
 
-   if(n_body==0) {
-                     track_s.azim=azim ;
-                     track_s.elev=elev ;
-                     track_s.roll=roll ;
-                 }
 /*-------------------------------------------------------------------*/
 }
 
@@ -891,7 +1006,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                       double  matrix[4][4] )
 {
    int  n_body ;
-
 
 /*-------------------------------------- Идентификация тела по имени */
 
@@ -1018,6 +1132,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*       Сброс контекста проверки непротиворечивости свойства       */  
+
+    int RSS_Feature_Hit::vResetCheck(void *data)
+
+{
+   track_s    .mark=0 ;
+   track_s_prv.mark=0 ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*       Подготовка к проверке непротиворечивости свойства          */  
+
+    int RSS_Feature_Hit::vPreCheck(void *data)
+
+{
+      if(this->any_weapon==0 &&                                     /* Если объект не будет проверяться по Hit-свойству */
+         this->any_target==0 &&
+         this->target[0] ==0   )  return(0) ;
+
+      if(track_s.mark)  track_s_prv=track_s ;
+
+         this->RecalcPoints() ;
+
+              track_s.mark=1 ;
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                Проверка непротиворечивости свойства              */  
 
     int RSS_Feature_Hit::vCheck(void *data, RSS_Objects_List *checked)
@@ -1028,7 +1177,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         int  m ;            /* Индекс свойства "Пересечение" в списке свойств */
         int  hit_flag ;
         int  i ;
-        int  j ;
 
 #define  OBJECTS_CNT                     RSS_Kernel::kernel_objects_cnt
 #define  OBJECTS                         RSS_Kernel::kernel_objects
@@ -1036,11 +1184,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Входной контроль  */
 
-        if(this->target[0]==0)  return(0) ;                         /* Если цель не назначена... */
+      if(this->any_weapon==0 &&                                     /* Если цель не назначена... */
+         this->target[0] ==0   )  return(0) ;
 
-/*------------------------------------ Обсчет изменения конфигурации */
-
-                this->RecalcPoints() ;
+      if(this->track_s_prv.mark==0)  return(0)  ;                   /* Если стартовая точка трассировки... */
 
 /*------------------------------------------------- Обсчет поражения */
 
@@ -1050,18 +1197,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            object=OBJECTS[n] ;
 
-      if(strcmp(object->Name, this->target))  continue ;            /* Проверяем пересечение только с заданной целью */
+     if(this->target[0]!=0)                                         /* Если пересечение только с заданной целью... */
+      if(strcmp(object->Name, this->target))  continue ;            
 
     for(m=0 ; m<object->Features_cnt ; m++)                         /* Проверяем, связано ли с данным объектом         */
       if(!strcmp(object->Features[m]->Type, this->Type ))  break ;  /*  свойство "Пересечение", если нет - обходим его */
 
-      if(m==object->Features_cnt)  return(0) ;                      /* Если объект-цель не обладает своиством Hit... */
+      if(m==object->Features_cnt)  continue ;                       /* Если объект-цель не обладает своиством Hit... */
 
-                        HIT->RecalcPoints() ;                       /* Если надо - пересчитываем точки другого объекта */
+     if(HIT->track_s_prv.mark==0)  continue  ;                      /* Если стартовая точка трассировки для цели... */
 
-      if(!track_flag)  break ;                                      /* Если стартовая точка трассировки */
+     if(HIT->Bodies_cnt==0)  continue ;                             /* Если свойство Hit - пустое */
 
-      if(!iOverallTest(HIT))  break ;                               /* Если габариты объектов не пересекаются... */
+     if(this->target[0]==0)                                         /* Если пересечение с произвольной целью и это не цель */
+      if(HIT->any_target==0)  continue ;
+     
+      if(!iOverallTest(HIT))  continue ;                            /* Если габариты объектов не пересекаются... */
 /*- - - - - - - - - - - - - - - - - - - - - - Контроль поражения тел */
      for(i=0 ; i< HIT->Bodies_cnt ; i++) {                          /* CIRCLE.2 - Перебор тел цели  */
 
@@ -1074,12 +1225,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                           break ;
                                   }                                 /* CONTINUE.1 */
-/*----------------------- Переход на следующую иттерацию трассировки */
-
-      track_s_prv=     track_s ;
-      track_t_prv=HIT->track_s ;
-
-      track_flag = 1 ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1098,6 +1243,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int RSS_Feature_Hit::iOverallTest(RSS_Feature_Hit *trgt)
 {
    double  s_min, s_max ;
+   double  d_min, d_max ;
    double  t_min, t_max ;
 
                                                s_min =this->track_s    .x ;
@@ -1106,14 +1252,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                s_max =this->track_s    .x ;  }
 
                                                t_min =trgt->track_s    .x ;
-                                               t_max =this->track_t_prv.x ;
-  if(trgt->track_s.x > this->track_s_prv.x) {  t_min =this->track_t_prv.x ;
+                                               t_max =trgt->track_s_prv.x ;
+  if(trgt->track_s.x > this->track_s_prv.x) {  t_min =trgt->track_s_prv.x ;
                                                t_max =trgt->track_s    .x ;  }
 
-                                               s_min-=this->hit_range ;
-                                               s_max+=this->hit_range ;
-                                               t_min+=trgt->overall.x_min ;
-                                               t_max+=trgt->overall.x_max ;
+                                               s_min-= this->hit_range ;
+                                               s_max+= this->hit_range ;
+                                               t_min+=(trgt->overall.x_min-trgt->track_s.x) ;
+                                               t_max+=(trgt->overall.x_max-trgt->track_s.x) ;
  
   if(s_min>t_max || s_max<t_min)  return(0) ;     
 
@@ -1123,14 +1269,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                s_max =this->track_s    .y ;  }
 
                                                t_min =trgt->track_s    .y ;
-                                               t_max =this->track_t_prv.y ;
-  if(trgt->track_s.y > this->track_s_prv.y) {  t_min =this->track_t_prv.y ;
+                                               t_max =trgt->track_s_prv.y ;
+  if(trgt->track_s.y > this->track_s_prv.y) {  t_min =trgt->track_s_prv.y ;
                                                t_max =trgt->track_s    .y ;  }
 
-                                               s_min-=this->hit_range ;
-                                               s_max+=this->hit_range ;
-                                               t_min+=trgt->overall.y_min ;
-                                               t_max+=trgt->overall.y_max ;
+                                               s_min-= this->hit_range ;
+                                               s_max+= this->hit_range ;
+                                               t_min+=(trgt->overall.y_min-trgt->track_s.y) ;
+                                               t_max+=(trgt->overall.y_max-trgt->track_s.y) ;
  
   if(s_min>t_max || s_max<t_min)  return(0) ;     
 
@@ -1140,14 +1286,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                s_max =this->track_s    .z ;  }
 
                                                t_min =trgt->track_s    .z ;
-                                               t_max =this->track_t_prv.z ;
-  if(trgt->track_s.z > this->track_s_prv.z) {  t_min =this->track_t_prv.z ;
+                                               t_max =trgt->track_s_prv.z ;
+  if(trgt->track_s.z > this->track_s_prv.z) {  t_min =trgt->track_s_prv.z ;
                                                t_max =trgt->track_s    .z ;  }
 
-                                               s_min-=this->hit_range ;
-                                               s_max+=this->hit_range ;
-                                               t_min+=trgt->overall.z_min ;
-                                               t_max+=trgt->overall.z_max ;
+                                               s_min-= this->hit_range ;
+                                               s_max+= this->hit_range ;
+                                               t_min+=(trgt->overall.z_min-trgt->track_s.z) ;
+                                               t_max+=(trgt->overall.z_max-trgt->track_s.z) ;
  
   if(s_min>t_max || s_max<t_min)  return(0) ;     
 
@@ -1656,13 +1802,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            B[i].recalc=0 ;
         overall_recalc=1 ;
 /*- - - - - - - - - - - - - - - - - - Рассчет матрицы преобразования */
+   if(i==0) {
+                track_s.x   =B[i].x_base ;
+                track_s.y   =B[i].y_base ;
+                track_s.z   =B[i].z_base ;
+                track_s.azim=B[i].a_azim ;
+                track_s.elev=B[i].a_elev ;
+                track_s.roll=B[i].a_roll ;
+            }
+/*- - - - - - - - - - - - - - - - - - Рассчет матрицы преобразования */
        if(B[i].Matrix_flag) {                                       /* Если задана матрица... */
                 Summary.LoadArray(4, 4, (double *)B[i].Matrix) ;
                             }
        else                 {                                       /* Если заданы компоненты */
                 Summary.LoadE      (4, 4) ;
-//                Local.Load4d_base(B[i].x_base, B[i].y_base, B[i].z_base) ;
-//              Summary.LoadMul    (&Summary, &Local) ;
+                  Local.Load4d_base(B[i].x_base, B[i].y_base, B[i].z_base) ;
+                Summary.LoadMul    (&Summary, &Local) ;
                   Local.Load4d_azim(-B[i].a_azim) ;
                 Summary.LoadMul    (&Summary, &Local) ;
                   Local.Load4d_elev(-B[i].a_elev) ;
