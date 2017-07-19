@@ -92,12 +92,30 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
                     &RSS_Module_WarHeadSimple::cHelp   },
- { "info",    "i",  "#INFO - выдать информацию по объекту",
+ { "info",    "i",  "#INFO - выдать информацию по компоненту",
                     " INFO <Имя> \n"
                     "   Выдать основную информацию по объекту в главное окно\n"
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_WarHeadSimple::cInfo },
+ { "pars",    "p",  "#PARS - задать параметры компонента в диалоговом режиме",
+                    " PARS <Имя> \n"
+                    "   Задать параметры компонента в диалоговом режиме\n",
+                    &RSS_Module_WarHeadSimple::cPars },
+ { "tripping","t",  "#TRIPPING - задать настройки исполнительного механизма",
+                    " TRIPPING/А <Имя> <Высота срабатывания>\n"
+                    "   Установить высоту срабатывания\n"
+                    " TRIPPING/T <Имя> <Время срабатывания>\n"
+                    "   Установить время срабатывания\n",
+                    &RSS_Module_WarHeadSimple::cTripping },
+ { "grenade", "g",  "#GRENADE - задать характеристики ОФ-снаряжения",
+                    " GRENADE <Имя> <Радиус поражения> <Радиус вспышки>\n"
+                    "   Задать характеристики БЧ в ОФ-снаряжении\n",
+                    &RSS_Module_WarHeadSimple::cGrenade },
+ { "stripe",  "s",  "#STRIPE - задать характеристики кассетной БЧ с линейным выбросом",
+                    " STRIPE <Имя> <Суб-боеприпас> <Число суб-боеприпасов> <Шаг выброса>\n"
+                    "   Задать характеристики кассетной БЧ с линейным выбросом\n",
+                    &RSS_Module_WarHeadSimple::cStripe },
  {  NULL }
                                                             } ;
 
@@ -169,7 +187,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(unit->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit) ;
+        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit, NULL) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -210,8 +228,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "WARHEAD"
-#define  _SECTION_SHRT_NAME   "WH"
+#define  _SECTION_FULL_NAME   "WARHEADSIMPLE"
+#define  _SECTION_SHRT_NAME   "WARHEADSIMPLE"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -396,6 +414,402 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции PARS                    */
+/*								    */
+/*     PARS <Имя комонента>                                         */
+
+  int  RSS_Module_WarHeadSimple::cPars(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                    char *pars[_PARS_MAX] ;
+                    char *name ;
+  RSS_Unit_WarHeadSimple *unit ;
+                     int  status ;
+                    char *end ;
+                     int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+           if( pars[0]==NULL ||
+              *pars[0]==  0    ) {
+                                     SEND_ERROR("Не задан компонент") ;
+                                         return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонентa. \n"
+                                      "Например: PARS <Имя_компонентa> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_WarHeadSimple *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*--------------------------------------- Переход в диалоговый режим */
+
+        status=DialogBoxIndirectParam( GetModuleHandle(NULL),
+                                      (LPCDLGTEMPLATE)Resource("IDD_PARS", RT_DIALOG),
+                                       GetActiveWindow(), 
+                                       Unit_WarHeadSimple_Pars_dialog, 
+                                      (LPARAM)unit                    ) ;
+          return(status) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции TRIPPING                */
+/*								    */
+/*      TRIPPING/A <Имя> <Высота срабатывания>                      */
+/*      TRIPPING/T <Имя> <Время срабатывания>                       */
+
+  int  RSS_Module_WarHeadSimple::cTripping(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                    char  *pars[_PARS_MAX] ;
+                    char  *name ;
+                    char **xyz ;
+                  double   coord[_COORD_MAX] ;
+                     int   coord_cnt ;
+  RSS_Unit_WarHeadSimple  *unit ;
+                     int   a_flag ;            /* Флаг срабатывания по высоте */
+                     int   t_flag ;            /* Флаг срабатывания по времени */
+                    char   *error ;
+                    char   *end ;
+                     int    i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          a_flag=0 ;
+                          t_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'a')!=NULL ||
+                   strchr(cmd, 'A')!=NULL   )  a_flag=1 ;
+                if(strchr(cmd, 't')!=NULL ||
+                   strchr(cmd, 'T')!=NULL   )  t_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонента. \n"
+                                      "Например: TRIPPING <Имя_компонентa> ...") ;
+                                         return(-1) ;
+                         }
+
+       unit=(RSS_Unit_WarHeadSimple *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*--------------------------------------- Контроль вида срабатывания */
+
+    if(a_flag==0 &&
+       t_flag==0   ) {
+                        SEND_ERROR("Не задан вид срабатывания. \n"
+                                   "Необходимо использовать TRIPPING/A или TRIPPING/T") ;
+                                         return(-1) ;
+                     }
+
+    if(a_flag==1 &&
+       t_flag==1   ) {
+                        SEND_ERROR("Допустимо задание только одного вида срабатывания. \n"
+                                   "Необходимо использовать TRIPPING/A или TRIPPING/T") ;
+                                         return(-1) ;
+                     }
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение параметра") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указан параметр срабатывания" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись значений */
+
+   if(a_flag) {
+                 unit->tripping_type    =_BY_ALTITUDE ;
+                 unit->tripping_altitude= coord[0] ;
+              }
+
+   if(t_flag) {
+                 unit->tripping_type    =_BY_TIME ;
+                 unit->tripping_time    = coord[0] ;
+              }
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции GRENADE                 */
+/*								    */
+/*      GRENADE <Имя> <Радиус поражения> <Радиус вспышки>           */
+
+  int  RSS_Module_WarHeadSimple::cGrenade(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                    char  *pars[_PARS_MAX] ;
+                    char  *name ;
+                    char **xyz ;
+                  double   coord[_COORD_MAX] ;
+                     int   coord_cnt ;
+  RSS_Unit_WarHeadSimple  *unit ;
+                    char   *error ;
+                    char   *end ;
+                     int    i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонента. \n"
+                                      "Например: GRENADE <Имя_компонентa> ...") ;
+                                         return(-1) ;
+                         }
+
+       unit=(RSS_Unit_WarHeadSimple *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение параметра") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                       error= NULL ;
+      if(coord_cnt<2)  error="Не указаны параметры БЧ" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись значений */
+
+                 unit-> load_type  =_GRENADE_TYPE ;
+                 unit->  hit_range = coord[0] ;
+                 unit->blast_radius= coord[1] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции STRIPE                  */
+/*								    */
+/*   STRIPE <Имя> <Суб-боеприпас> ...                               */
+/*                  ... <Число суб-боеприпасов> <Шаг выброса>       */
+
+  int  RSS_Module_WarHeadSimple::cStripe(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                    char  *pars[_PARS_MAX] ;
+                    char  *name ;
+                    char  *sub_name ;
+                    char **xyz ;
+                  double   coord[_COORD_MAX] ;
+                     int   coord_cnt ;
+  RSS_Unit_WarHeadSimple  *unit ;
+              RSS_Object  *sub_object ;
+                    char   text[1024] ;
+                    char  *error ; 
+                    char  *end ;
+                     int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                 sub_name= pars[1] ;
+                      xyz=&pars[2] ;   
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонента. \n"
+                                      "Например: STRIPE <Имя_компонентa> ...") ;
+                                         return(-1) ;
+                         }
+
+       unit=(RSS_Unit_WarHeadSimple *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------ Проверка суб-боеприпаса */
+
+    if(sub_name   ==NULL ||
+       sub_name[0]==  0    ) {                                      /* Если имя суб-боеприпаса не задано... */
+                           SEND_ERROR("Не задано имя суб-боеприпаса. \n"
+                                      "Например: STRIPE <Имя компонентa> <Имя суб-боеприпаса> ...") ;
+                                         return(-1) ;
+                             }
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, sub_name)) {  sub_object=OBJECTS[i] ;
+                                                              break ;         }
+
+         if(i>=OBJECTS_CNT) {
+                                sprintf(text, "Объект '%s' не найден ", sub_name) ;
+                             SEND_ERROR(text) ;
+                                  return(NULL) ;
+                            }
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение параметра") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                       error= NULL ;
+      if(coord_cnt<2)  error="Не указаны параметры БЧ" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись значений */
+
+                 unit->load_type  =_STRIPE_TYPE ;
+         strncpy(unit-> sub_unit, sub_name, sizeof(unit->sub_unit)-1) ;
+                 unit-> sub_object= sub_object ;
+                 unit-> sub_count = coord[0] ;
+                 unit-> sub_step  = coord[1] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*	   Поиск обьекта типа WarHeadSimple по имени                */
 
   RSS_Unit *RSS_Module_WarHeadSimple::FindUnit(char *name)
@@ -492,6 +906,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
+     tripping_type    =_BY_ALTITUDE ;
+     tripping_altitude= 0. ;
+     tripping_time    = 0. ;
+
+         load_type    =_GRENADE_TYPE ;
+          hit_range   = 0. ;
+        blast_radius  = 5. ;
+
+          sub_unit[0] = 0 ;
+          sub_object  = NULL ;
+          sub_count   = 0 ;
+          sub_step    = 0. ;
 }
 
 
@@ -547,6 +973,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_WarHeadSimple *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
+             unit->tripping_type    =this->tripping_type ;
+             unit->tripping_altitude=this->tripping_altitude ;
+             unit->tripping_time    =this->tripping_time ;
+             unit->    load_type    =this->    load_type ;
+             unit->     hit_range   =this->     hit_range ;
+             unit->   blast_radius  =this->   blast_radius ;
+      strcpy(unit->     sub_unit,    this->     sub_unit) ;   
+             unit->     sub_object  =this->     sub_object ;
+             unit->     sub_count   =this->     sub_count ;
+             unit->     sub_step    =this->     sub_step ;
+
 /*-------------------------------------------------------------------*/
 
    return(unit) ;
@@ -578,6 +1015,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_WarHeadSimple::vCalculateStart(double  t)
 {
+        blast=0 ;
+   start_time=t ;
+
   return(0) ;
 }
 
@@ -588,26 +1028,103 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_WarHeadSimple::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
+       char  text[1024] ;
+       char  sub_name[128] ;
+     double  k ;
+     double  s, dx, dy, dz ;
+     double  x_drop, y_drop, z_drop ;
+        int  i ;
 
+/*------------------------------------------------- Входной контроль */
+
+   if(blast)  return(1) ;
+
+/*----------------------------------------------- Приведение времени */
+
+          t1-=this->start_time ;
+          t2-=this->start_time ;
+
+/*----------------------------------------- Определение срабатывания */
+/*- - - - - - - - - - - - - - - - - - - - - - Срабатывание по высоте */
+  if(this->tripping_type==_BY_ALTITUDE)
    if(t2>5.) 
-    if(this->Owner->y_base<=0.) {
+    if(this->Owner->y_base<this->tripping_altitude) {
 
-             if(callback!=NULL) {
-                                   strcat(callback, "STOP ") ;
-                                   strcat(callback, this->Owner->Name) ;
-                                   strcat(callback, ";") ;
+                                        blast=1 ;
+
+                                     k=(this->tripping_altitude-y)/(this->Owner->y_base-y) ;
+                   this->Owner->x_base=x+k*(this->Owner->x_base-x) ;
+                   this->Owner->z_base=z+k*(this->Owner->z_base-z) ;
+                   this->Owner->y_base=     this->tripping_altitude ;
+                                                     }
+/*- - - - - - - - - - - - - - - - - - - - -  Срабатывание по времени */
+  if(this->tripping_type==_BY_TIME)
+   if(this->tripping_time> t1 &&
+      this->tripping_time<=t2   ) {
+                                        blast=1 ;
+                                  }
+/*------------------------------------------- Отработка срабатывания */
+
+  if(blast) {
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ОФ */
+   if(load_type==_GRENADE_TYPE) {
+
+     if(callback!=NULL) {
+                           sprintf(text, "STOP %s;"
+                                         "EXEC BLAST CR blast_%s %lf %lf %s;"
+                                         "START blast_%s;",
+                                   this->Owner->Name,
+                                   this->Owner->Name, this->hit_range, this->blast_radius, this->Owner->Name,
+                                   this->Owner->Name
+                                  ) ;
+                           strncat(callback, text, cb_size) ;
+                        }
                                 }
+/*- - - - - - - - - - - - - - - - - - - - -  Последовательный выброс */
+   if(load_type== _STRIPE_TYPE) {
 
-                               this->Owner->x_base=x+(this->Owner->x_base-x)*y/fabs(this->Owner->y_base-y) ;
-                               this->Owner->z_base=z+(this->Owner->z_base-z)*y/fabs(this->Owner->y_base-y) ;
-                               this->Owner->y_base= 0. ;
+     if(callback!=NULL) {
+                           sprintf(text, "STOP %s;"
+                                         "EXEC SCENE VISIBLE %s 0;",
+                                          this->Owner->Name, this->Owner->Name) ;
+                           strncat(callback, text, cb_size) ;
 
+          if(this->sub_object!=NULL) {
+
+                       s=sqrt((this->Owner->x_base-x)*(this->Owner->x_base-x)+
+                              (this->Owner->y_base-y)*(this->Owner->y_base-y)+
+                              (this->Owner->z_base-z)*(this->Owner->z_base-z) ) ;
+                      dx=this->sub_step*(this->Owner->x_base-x)/s ;
+                      dy=this->sub_step*(this->Owner->y_base-y)/s ;
+                      dz=this->sub_step*(this->Owner->z_base-z)/s ;
+
+            for(i=0 ; i<this->sub_count ; i++) {
+                           sprintf(sub_name, "%s_sub_%d", this->Owner->Name, i+1) ;
+
+                                    x_drop=this->Owner->x_base+dx*i ;
+                                    y_drop=this->Owner->y_base+dy*i ;
+                                    z_drop=this->Owner->z_base+dz*i ;
+
+                           sprintf(text, "EXEC %s COPY %s %s %lf %lf %f;"
+                                         "START %s;",
+                                          this->sub_object->Module->identification, this->sub_unit, sub_name, x_drop, y_drop, z_drop,
+                                                   sub_name
+                                  ) ;
+                           strncat(callback, text, cb_size) ;
+                                               }
+                                   }
+                        }
+                                }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                        return(1) ;
-                                }
+                 }
+/*------------------------------------------------- Фиксация "следа" */
 
         x=this->Owner->x_base ;
         y=this->Owner->y_base ;
         z=this->Owner->z_base ;
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }

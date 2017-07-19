@@ -16,7 +16,25 @@
   class U_WARHEAD_SIMPLE_API RSS_Unit_WarHeadSimple : public RSS_Unit_WarHead {
 
     public:
-                     double  x, y, z ;                         /* Последнир проаналазированные координаты */
+                     double  x, y, z ;                         /* Последние проаналазированные координаты */
+                        int  blast ;                           /* Флаг отработки срабатывания */  
+
+                        int  tripping_type ;                   /* Вид срабатывания исполняющего механизма */
+#define                        _BY_ALTITUDE   0
+#define                        _BY_TIME       1
+                     double  tripping_altitude ;               /* Высота срабатывания */
+                     double  tripping_time ;                   /* Время срабатывания */
+                     time_t  start_time ;                      /* Время запуска */
+
+                        int  load_type ;                       /* Вид снаряжения */
+#define                        _GRENADE_TYPE   0
+#define                         _STRIPE_TYPE   1
+                     double  hit_range ;                       /* Радиус поражения */
+                     double  blast_radius ;                    /* Радиус вспышки взрыва */
+                       char  sub_unit[128] ;                   /* Название шаблона суб-боеприпаса */
+                 RSS_Object *sub_object ;                      /* Объект суб-боеприпаса */
+                        int  sub_count ;                       /* Количество суб-боеприпасов */
+                     double  sub_step ;                        /* Шаг выброса суб-боеприпасов */
 
     public:
          virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
@@ -50,6 +68,10 @@
     public:
                      int  cHelp         (char *) ;                           /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
+                     int  cPars         (char *) ;                           /* Инструкция PARS */ 
+                     int  cTripping     (char *) ;                           /* Инструкция TRIPPING */ 
+                     int  cGrenade      (char *) ;                           /* Инструкция GRENADE */ 
+                     int  cStripe       (char *) ;                           /* Инструкция STRIPE */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 
@@ -74,4 +96,5 @@
 /* Файл  U_WarHeadSimple.cpp */
 
 /* Файл  U_WarHeadSimple_dialog.cpp */
-    BOOL CALLBACK  Unit_WarHeadSimple_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Unit_WarHeadSimple_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Unit_WarHeadSimple_Pars_dialog(HWND, UINT, WPARAM, LPARAM) ;
