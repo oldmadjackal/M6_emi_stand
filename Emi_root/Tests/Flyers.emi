@@ -31,9 +31,9 @@ f1 base 0 50 -800
 f1 v 20
 
 f1 unit ew ewunit
-f1.ew range 100 1000
-f1.ew velocity 100
-f1.ew event MIS_CROSS
+f1$ew range 100 1000
+f1$ew velocity 100
+f1$ew event MIS_CROSS
 
 flyer cr f2 летун-1 15 2 28 2 5
 f2 base 20 60 -850
@@ -42,6 +42,11 @@ f2 v 20
 flyer cr f3 летун-1 15 2 28 2 5
 f3 base 200 200 -100
 f3 v 30
+
+f3 unit ew ewunit
+f3$ew range 50 1000
+f3$ew velocity 80
+f3$ew event NONE
 
 missile cr r1 ракета-1 0.2 3
 hit radius r1 10
@@ -72,30 +77,27 @@ r4 owner f3
 r4 target f2
 
 zoom 1200
-eye 0 300 400
-eye>5
-;lookat f1
-;lookat
-
-;f1 angle 180 0 0
-;f1 a>> 5
 
 f1 program tests\right_90.pgm
 f1 event MIS_CROSS right_90
-hit category/t f1
 
 f2 program tests\hited.pgm
 f2 event HITED hited
-hit category/t f2
 
 f3 program tests\right_90.pgm
 f3 program tests\right_to_launch.pgm
 f3 event MIS_CROSS right_90
 f3 event ATTACK right_to_launch
-hit category/t f3
 
 la m4
-eye -500 560 600
+eye -250 400 275
+eye>5
+!save l
+
+f1$ew show
+f3$ew show
 
 battle program tests\battle_1.battle
-battle run
+;battle run
+
+rocket-lego cr r ракета-1 0.2 3

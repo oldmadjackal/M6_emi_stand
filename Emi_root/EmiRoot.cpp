@@ -449,7 +449,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-            SETs(IDC_COMMAND, "@Tests\\Grad.emi") ;
+            SETs(IDC_COMMAND, "@Tests\\grad.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -806,7 +806,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             char *u_name ;               /* Имя компонента */
       RSS_Object *object ;
       RSS_Object *unit ;
-             int  postfix_flag ;         /* Флаг обработки потфиксной команды */
+             int  postfix_flag ;         /* Флаг обработки постфиксной команды */
             HWND  hDlg ;
              int  status ;
             char  cmd_buff[1024] ;
@@ -1085,8 +1085,8 @@ typedef  struct {
 
      for(next=command ; *next ; next++) {
        if(*next==';')            break ;
-       if(*next=='%') {  postfix_flag=1 ;
-                                 break ;  }
+//     if(*next=='%') {  postfix_flag=1 ;
+//                               break ;  }
                                         }
 
       if(*next==0   )  next=NULL ;
@@ -1519,7 +1519,9 @@ typedef  struct {
                         &RSS_Module_Main::cShowScene  },
  { "kill",      "k",     "# KILL - удалить объект",
                          " KILL[/Q] <Имя>\n"
-                         "   Удаляет именованный обьект из системы",
+                         "   Удаляет именованный обьект"
+                         " KILL[/Q] <Префикс>*\n"
+                         "   Удаляет все обьекты, имя которых начинается с заданного фрагмента",
                          &RSS_Module_Main::cKill },
  { "all",       "all",   "# ALL - выдать список объектов",
                           NULL,
@@ -1860,8 +1862,10 @@ typedef  struct {
 
 {
    int   quiet_flag ;      /* Флаг режима "молчания" */
+   int   batch_flag ;      /* Флаг пакетной операции (без обновления экрана) */
   char *name ;
   char *end ;
+   int  prefix_flag ;
    int  i ;
    int  j ;
 
@@ -1871,6 +1875,7 @@ typedef  struct {
 /*-------------------------------------- Дешифровка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
                       quiet_flag=0 ;
+                      batch_flag=0 ;
 
        if(*cmd=='/') {
  
@@ -1885,6 +1890,8 @@ typedef  struct {
 
                 if(strchr(cmd, 'q')!=NULL ||
                    strchr(cmd, 'Q')!=NULL   )  quiet_flag=1 ;
+                if(strchr(cmd, 'b')!=NULL ||
+                   strchr(cmd, 'B')!=NULL   )  batch_flag=1 ;
 
                            cmd=end+1 ;
                      }
@@ -1899,7 +1906,8 @@ typedef  struct {
                    }
 /*------------------------------------------- Удаление всех объектов */
 
-    if(!stricmp(name, "ALL")) {
+    if(!stricmp(name, "ALL") ||
+       !stricmp(name, "*"  )   ) {
 
        for(i=0 ; i<OBJECTS_CNT ; i++) {
                                          OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
@@ -1910,28 +1918,53 @@ typedef  struct {
 
                                    this->kernel->vShow("REFRESH") ;
                                          return(0) ;
-                              }
-/*------------------------------------------- Поиск обьекта по имени */
+                                 }
+/*-------------------------------------------- Анализ на "звездочку" */
 
-       for(i=0 ; i<OBJECTS_CNT ; i++)
-         if(!stricmp(OBJECTS[i]->Name, name))  break ;
+                        prefix_flag=0 ;
 
-    if(i==OBJECTS_CNT) {                                            /* Если имя не задано... */
-        if(!quiet_flag)  SEND_ERROR("Объекта с таким именем НЕ существует") ;
-                             return(-1) ;
-                       }
-/*------------------------------------------------- Удаление обьекта */
+       end=strchr(name, '%') ;
+    if(end!=NULL) {
+                        prefix_flag=1 ;
+                               *end=0 ;
+                  }
 
+/*----------------------------------- Собственно удаление обьекта/ов */
+
+   do {
+/*- - - - - - - - - - - - - - - - - - - - - - Поиск обьекта по имени */
+     if(prefix_flag) {
+
+         for(i=0 ; i<OBJECTS_CNT ; i++)
+            if(!memicmp(OBJECTS[i]->Name, name, strlen(name)))  break ;
+
+            if(i==OBJECTS_CNT)  break ;
+                     }
+     else            {
+
+         for(i=0 ; i<OBJECTS_CNT ; i++)
+            if(!stricmp(OBJECTS[i]->Name, name))  break ;
+
+            if(i==OBJECTS_CNT) {                                    /* Если имя не задано... */
+                 if(!quiet_flag)  SEND_ERROR("Объекта с таким именем НЕ существует") ;
+                                  return(-1) ;
+                               }
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - Удаление обьекта */
                                          OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
                                  delete  OBJECTS[i] ;
 
        for(j=i+1 ; j<OBJECTS_CNT ; j++)  OBJECTS[j-1]=OBJECTS[j] ;  /* Поджатие списка объектов */
 
                      OBJECTS_CNT-- ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - Удаление обьекта */
+       if(!prefix_flag)  break ;
+
+      } while(1) ;
 
 /*---------------------------------------------- Обновление картинки */
 
-                       this->kernel->vShow("REFRESH") ;
+      if(!batch_flag)  this->kernel->vShow("REFRESH") ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1985,6 +2018,7 @@ typedef  struct {
            double   inverse ;
               int   xyz_flag ;          /* Флаг режима одной координаты */
               int   xyz_idx ;
+              int   quiet_flag ;        /* Флаг отображения изменений */
               int   delta_flag ;        /* Флаг режима приращений */
               int   arrow_flag ;        /* Флаг стрелочного режима */
              char  *arrows ;
@@ -2007,6 +2041,7 @@ typedef  struct {
                         xyz_flag=0 ;
                       delta_flag=0 ;
                       arrow_flag=0 ;
+                      quiet_flag=0 ;
 
        if(*cmd=='/' ||
           *cmd=='+'   ) {
@@ -2028,6 +2063,9 @@ typedef  struct {
                    strchr(cmd, 'Y')!=NULL   )    xyz_flag='Y' ;
            else if(strchr(cmd, 'z')!=NULL ||
                    strchr(cmd, 'Z')!=NULL   )    xyz_flag='Z' ;
+
+                if(strchr(cmd, 'q')!=NULL ||
+                   strchr(cmd, 'Q')!=NULL   )  quiet_flag= 1 ;
 
                            cmd=end+1 ;
                         }
@@ -2154,7 +2192,7 @@ typedef  struct {
                }
 /*------------------------------------------------------ Перерисовка */
 
-            EmiRoot_redraw("Main") ;
+    if(quiet_flag==0)  EmiRoot_redraw("Main") ;
 
 /*-------------------------------------------------------------------*/
 
@@ -2365,6 +2403,7 @@ typedef  struct {
 
 {
               int   delta_flag ;        /* Флаг режима приращений */
+              int   quiet_flag ;        /* Флаг отображения изменений */
            double   par ;
            double   zoom ;
              char  *end ;
@@ -2372,23 +2411,33 @@ typedef  struct {
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
-      if(*cmd=='-' ||
-         *cmd=='+'   ) {
+                                     delta_flag=0 ;
+                                     quiet_flag=0 ;     
+
+     if(strstr(cmd, "/q")!=NULL ||
+        strstr(cmd, "/Q")!=NULL   ) {
+                                       quiet_flag=1 ;
+
+               end=strchr(cmd, ' ') ;
+            if(end!=NULL)  cmd=end+1 ;
+                                    }
+
+     if(*cmd=='-' ||
+        *cmd=='+'   ) {
                           if(*cmd=='+')  par=1./1.5 ;
                           if(*cmd=='-')  par=   1.5 ;
 
                                 delta_flag=1 ;
-                       }
+                      }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
-     else              {
+     else             {
+
             par=strtod(cmd, &end) ;
          if(par<=0. || *end!=0 ) {  
                        SEND_ERROR("Некорректное значение") ;
                                        return(-1) ;
                                  }
-
-                                delta_flag=0 ;
-                       } 
+                      } 
 /*-------------------------------------- Получение параметров камеры */
 
        status=EmiRoot_zoom("Main", "Get", &zoom) ;
@@ -2413,9 +2462,9 @@ typedef  struct {
                }
 /*------------------------------------------------------ Перерисовка */
 
-                   this->vShow("ZOOM") ;
+                          this->vShow("ZOOM") ;
 
-                    EmiRoot_redraw("Main") ;
+    if(quiet_flag==0)  EmiRoot_redraw("Main") ;
 
 /*-------------------------------------------------------------------*/
 
@@ -2433,14 +2482,28 @@ typedef  struct {
   int  RSS_Module_Main::cLookAt(char *cmd) 
 
 {
+     int   quiet_flag ;        /* Флаг отображения изменений */
+    char  *end ;
+
+/*---------------------------------------------------- Анализ ключей */
+
+                                     quiet_flag=0 ;     
+
+     if(strstr(cmd, "/q")!=NULL ||
+        strstr(cmd, "/Q")!=NULL   ) {
+                                       quiet_flag=1 ;
+
+               end=strchr(cmd, ' ') ;
+            if(end!=NULL)  cmd=end+1 ;
+                                    }
 
 /*-------------------------------------------------- Пропись на окно */
 
-                    EmiRoot_lookat("Main", "Set", cmd) ;
+                        EmiRoot_lookat("Main", "Set", cmd) ;
 
 /*------------------------------------------------------ Перерисовка */
 
-                    EmiRoot_redraw("Main") ;
+     if(quiet_flag==0)  EmiRoot_redraw("Main") ;
 
 /*-------------------------------------------------------------------*/
 

@@ -1,0 +1,4 @@
+PROGRAM hited_tank
+OBJECT flyer
+T=0 V=0 DA=30
+T=60
