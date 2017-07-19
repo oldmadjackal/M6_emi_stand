@@ -104,7 +104,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "mass",      "m",  "#MASS - задание массы НУР (без двигателя)", 
                        NULL,
                       &RSS_Module_ModelSimple::cMass   },
- { "slide",     "sw", "#SLIDE - задание длины направляющей", 
+ { "slide",     "sl", "#SLIDE - задание длины направляющей", 
                        NULL,
                       &RSS_Module_ModelSimple::cSlide  },
  { "deviation", "dv", "#DEVIATION - задание отклонений параметров от нормы", 
@@ -186,7 +186,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      sizeof(unit->Features[0])) ;
 
    for(i=0 ; i<this->feature_modules_cnt ; i++)
-        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit) ;
+        unit->Features[i]=this->feature_modules[i]->vCreateFeature(unit, NULL) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -966,6 +966,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------------------ Расчет отклонений */
 
     this->Owner->a_azim+=this->Module->gGaussianValue(0., this->s_azim) ;
+    this->Owner->a_elev+=this->Module->gGaussianValue(0., this->s_elev) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -987,6 +988,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       double  t_s ;
       double  a ;
       double  f ;
+      double  g ;
       double  dt ;
       double  dVy ;
       double  dVn ;
@@ -1008,7 +1010,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------- Определение угла тяги */
 
-                 t_s=sqrt(2.*slideway/f) ;                          /* Движение по направляющей полагаем с постоянным ускорением */
+              if(f>0)  t_s=sqrt(2.*slideway/f) ;                    /* Движение по направляющей полагаем с постоянным ускорением */
+              else     t_s= 0 ;
 
               if(t1== 0 ) {                                         /* Старт */
                              Ky=sin(parent->a_elev*_GRD_TO_RAD) ;
@@ -1024,8 +1027,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                           }
 /*--------------------------- Расчет траектории в плоскости стрельбы */
 
+      if(t1== 0 || 
+         t1< t_s  ) g=0. ;
+      else          g=9.8 ;
 
-            a = f*Ky-9.8 ;                                          /* Вертикальная компонента */ 
+           a = f*Ky-g ;                                             /* Вертикальная компонента */ 
            dVy=dt*a ;
            dH =Vy*dt+0.5*a*dt*dt ;
 
