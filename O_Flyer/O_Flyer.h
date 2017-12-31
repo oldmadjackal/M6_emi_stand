@@ -85,7 +85,9 @@
                       char  model_path[FILENAME_MAX] ;        /* Файл модели */
 
                     double  v_abs ;                           /* Нормальная скорость */
+                    double  v_abs_stack ;
                     double  g_ctrl ;                          /* Нормальная траекторная перегрузка */
+                    double  g_ctrl_stack ;
 
 #define   _EVENTS_MAX  10
      RSS_Object_FlyerEvent  events[_EVENTS_MAX] ;             /* Список событий */
@@ -120,6 +122,8 @@
 
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
+               virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
+               virtual void  vPop           (void) ;            /* Восстановить состояние объекта */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
                virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */

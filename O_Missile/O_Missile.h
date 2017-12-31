@@ -70,6 +70,8 @@
 
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
+               virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
+               virtual void  vPop           (void) ;            /* Восстановить состояние объекта */
                virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
                virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */

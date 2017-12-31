@@ -970,6 +970,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_EWunit::vCalculateStart(double  t)
 {
+      event_time=0. ;
+      event_send=0 ;
+
   return(0) ;
 }
 

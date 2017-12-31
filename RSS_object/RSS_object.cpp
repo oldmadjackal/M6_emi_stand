@@ -87,7 +87,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Features    =NULL ;
        Features_cnt=  0 ;
 
-        ErrorEnable=1 ;
+       battle_state= 0 ; 
+
+        ErrorEnable= 1 ;
 }
 
 

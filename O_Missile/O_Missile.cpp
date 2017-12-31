@@ -1794,6 +1794,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
+     battle_state= 0 ;
+
       x_base    =   0. ;
       y_base    =   0. ;
       z_base    =   0. ;
@@ -1861,6 +1863,54 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 this->Features    =NULL ;
                 this->Features_cnt=  0 ;
                            }
+}
+
+
+/********************************************************************/
+/*								    */
+/*                    Сохранить состояние объекта                   */
+/*                    Восстановить состояние объекта                */
+
+    void  RSS_Object_Missile::vPush(void)
+
+{
+     x_base_stack    =x_base ;
+     y_base_stack    =y_base ;
+     z_base_stack    =z_base ;
+
+     a_azim_stack    =a_azim ;
+     a_elev_stack    =a_elev ;
+     a_roll_stack    =a_roll ;
+
+     x_velocity_stack=x_velocity ;
+     y_velocity_stack=y_velocity ;
+     z_velocity_stack=z_velocity ;
+}
+
+
+    void  RSS_Object_Missile::vPop(void)
+
+{
+     x_base    =x_base_stack ;
+     y_base    =y_base_stack ;
+     z_base    =z_base_stack ;
+
+     a_azim    =a_azim_stack ;
+     a_elev    =a_elev_stack ;
+     a_roll    =a_roll_stack ;
+
+     x_velocity=x_velocity_stack ;
+     y_velocity=y_velocity_stack ;
+     z_velocity=z_velocity_stack ;
+
+  if(this->mTrace!=NULL) {
+                             free(this->mTrace) ;
+                                  this->mTrace    =NULL ;
+                                  this->mTrace_cnt=  0 ;  
+                                  this->mTrace_max=  0 ;  
+
+                                      iShowTrace_() ;
+                         }
 }
 
 
@@ -2229,6 +2279,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*--------------------------------------------- Отрисовка траектории */
 
+    if(mTrace_cnt>0) {
                                         i=0 ;
 
              glColor4d(GetRValue(mTrace[i].color)/256., 
@@ -2256,8 +2307,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                      }
 
-                 glEnd();
+                         glEnd();
 
+                     }
 /*----------------------------- Восстановление контекста отображения */
 
              glEndList() ;                                          /* Закрытие группы */

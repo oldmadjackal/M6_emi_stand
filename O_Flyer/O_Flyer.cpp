@@ -2512,6 +2512,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
+     battle_state= 0 ;
+
       x_base    = 0. ;
       y_base    = 0. ;
       z_base    = 0. ;
@@ -2591,6 +2593,60 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 this->Features    =NULL ;
                 this->Features_cnt=  0 ;
                            }
+}
+
+
+/********************************************************************/
+/*								    */
+/*                    Сохранить состояние объекта                   */
+/*                    Восстановить состояние объекта                */
+
+    void  RSS_Object_Flyer::vPush(void)
+
+{
+     x_base_stack    =x_base ;
+     y_base_stack    =y_base ;
+     z_base_stack    =z_base ;
+
+     a_azim_stack    =a_azim ;
+     a_elev_stack    =a_elev ;
+     a_roll_stack    =a_roll ;
+
+     x_velocity_stack=x_velocity ;
+     y_velocity_stack=y_velocity ;
+     z_velocity_stack=z_velocity ;
+
+     v_abs_stack     =v_abs ;
+     g_ctrl_stack    =g_ctrl ;
+}
+
+
+    void  RSS_Object_Flyer::vPop(void)
+
+{
+     x_base    =x_base_stack ;
+     y_base    =y_base_stack ;
+     z_base    =z_base_stack ;
+
+     a_azim    =a_azim_stack ;
+     a_elev    =a_elev_stack ;
+     a_roll    =a_roll_stack ;
+
+     x_velocity=x_velocity_stack ;
+     y_velocity=y_velocity_stack ;
+     z_velocity=z_velocity_stack ;
+
+     v_abs     =v_abs_stack ;
+     g_ctrl    =g_ctrl_stack ;
+
+  if(this->mTrace!=NULL) {
+                             free(this->mTrace) ;
+                                  this->mTrace    =NULL ;
+                                  this->mTrace_cnt=  0 ;  
+                                  this->mTrace_max=  0 ;  
+
+                                      iShowTrace_() ;
+                         }
 }
 
 
@@ -2702,6 +2758,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                           x_base+=x_velocity*(t2-t1) ;
                           y_base+=y_velocity*(t2-t1) ;
                           z_base+=z_velocity*(t2-t1) ;
+
+                  if(m_ctrl!=NULL) {
+                                      delete m_ctrl ;
+                                             m_ctrl=NULL ;
+                                   }
                        }
 /*-------------------------------------------- Постоянная перегрузка */
 
@@ -2937,9 +2998,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(p_frame>=program->frames_cnt)  return(0) ;
 
+/*----------------------- Пересчет абсолютного времени в программное */
+
+                 t1-=p_start ;
+                 t2-=p_start ;
+
 /*---------------------------------------------------- Инициализация */
 
        if(p_frame==0) {
+                          t_prv= t1 ;
                           x_prv=this->x_base ;
                           y_prv=this->y_base ;
                           z_prv=this->z_base ;
@@ -2949,11 +3016,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                           v_prv=this->v_abs ;
                           g_prv=this->g_ctrl ;
                       }
-/*----------------------- Пересчет абсолютного времени в программное */
-
-                 t1-=p_start ;
-                 t2-=p_start ;
-
 /*--------------------------------------- Обработка кадров программы */
 
              v_flag=0 ;
