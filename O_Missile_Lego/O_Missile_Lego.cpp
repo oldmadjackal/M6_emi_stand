@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "НУР-ЛЕГО"  		    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ ОБЪЕКТОМ "РАКЕТА-ЛЕГО"  	    */
 /*								    */
 /********************************************************************/
 
@@ -30,7 +30,7 @@
 #include "..\F_Hit\F_Hit.h"
 #include "..\Ud_tools\UserDlg.h"
 
-#include "O_Rocket_Lego.h"
+#include "O_Missile_Lego.h"
 #pragma warning(disable : 4996)
 
 #define  SEND_ERROR(text)    SendMessage(RSS_Kernel::kernel_wnd, WM_USER,  \
@@ -58,21 +58,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_RocketLego  ProgramModule ;
+     static   RSS_Module_MissileLego  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- O_ROCKET_LEGO_API char *Identify(void)
+ O_MISSILE_LEGO_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- O_ROCKET_LEGO_API RSS_Kernel *GetEntry(void)
+ O_MISSILE_LEGO_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -90,47 +90,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_RocketLego_instr  RSS_Module_RocketLego_InstrList[]={
+  struct RSS_Module_MissileLego_instr  RSS_Module_MissileLego_InstrList[]={
 
  { "help",     "?", "#HELP   - список доступных команд", 
                      NULL,
-                    &RSS_Module_RocketLego::cHelp   },
+                    &RSS_Module_MissileLego::cHelp   },
  { "create",  "cr", "#CREATE - создать объект",
                     " CREATE <Имя> [<Модель> [<Список параметров>]]\n"
                     "   Создает именованный обьект по параметризованной модели",
-                    &RSS_Module_RocketLego::cCreate },
+                    &RSS_Module_MissileLego::cCreate },
  { "info",     "i", "#INFO - выдать информацию по объекту",
                     " INFO <Имя> \n"
                     "   Выдать основную нформацию по объекту в главное окно\n"
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
-                    &RSS_Module_RocketLego::cInfo },
+                    &RSS_Module_MissileLego::cInfo },
  { "copy",    "cp", "#COPY - копировать объект",
                     " COPY <Имя образца> <Имя нового объекта>\n"
                     "   Копировать объект",
-                    &RSS_Module_RocketLego::cCopy },
+                    &RSS_Module_MissileLego::cCopy },
  { "owner",    "o", "#OWNER - назначить носитель ракеты",
                     " OWNER <Имя> <Носитель>\n"
                     "   Назначить объект - носитель ракеты",
-                    &RSS_Module_RocketLego::cOwner },
+                    &RSS_Module_MissileLego::cOwner },
  { "lego",     "l", "#LEGO - назначить компонент в составе объекта",
                     " LEGO <Имя>\n"
                     "   просмотреть список компонентов, назначить компонент в диалоговом режиме\n"
                     " LEGO <Имя объекта> <Имя компонента> <Тип компонента>\n"
                     "   добавить компонент в состав объекта",
-                    &RSS_Module_RocketLego::cLego },
+                    &RSS_Module_MissileLego::cLego },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n",
-                    &RSS_Module_RocketLego::cTrace },
+                    &RSS_Module_MissileLego::cTrace },
  { "spawn",   "sp", "#SPAWN - залповый пуск с использованием шаблона объекта",
                     " SPAWN <Имя> <Число пусков> <Периодичность пусков>\n"
                     "   Залповый пуск с использованием шаблона объекта\n",
-                    &RSS_Module_RocketLego::cSpawn },
- { "stat",    "st", "#STAT - отображение статистики по результатам залпового пуска",
-                    " STAT/D <Имя>\n"
-                    "   Статистика точек падения/срабатывания\n",
-                    &RSS_Module_RocketLego::cStat },
+                    &RSS_Module_MissileLego::cSpawn },
  {  NULL }
                                                             } ;
 
@@ -138,14 +134,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_RocketLego_instr *RSS_Module_RocketLego::mInstrList=NULL ;
+    struct RSS_Module_MissileLego_instr *RSS_Module_MissileLego::mInstrList=NULL ;
 
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_RocketLego::RSS_Module_RocketLego(void)
+     RSS_Module_MissileLego::RSS_Module_MissileLego(void)
 
 {
   static  WNDCLASS  View_wnd ;
@@ -154,16 +150,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------------- Инициализация */
 
 	   keyword="EmiStand" ;
-    identification="Rocket-Lego" ;
+    identification="Missile-Lego" ;
           category="Object" ;
 
-        mInstrList=RSS_Module_RocketLego_InstrList ;
+        mInstrList=RSS_Module_MissileLego_InstrList ;
 
 /*--------------------------- Регистрация класса окна UD_Show_view2D */
 
   if(View_wnd.hInstance==NULL) {
 
-	View_wnd.lpszClassName="O_RocketLego_view_class" ;
+	View_wnd.lpszClassName="O_MissileLego_view_class" ;
 	View_wnd.hInstance    = GetModuleHandle(NULL) ;
 	View_wnd.lpfnWndProc  = UD_diagram_2D_prc ;
 	View_wnd.hCursor      = LoadCursor(NULL, IDC_ARROW) ;
@@ -174,7 +170,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	View_wnd.hIcon        =  NULL ;
 
     if(!RegisterClass(&View_wnd)) {
-              sprintf(text, "O_RocketLego_view_class register error %d", GetLastError()) ;
+              sprintf(text, "O_MissileLego_view_class register error %d", GetLastError()) ;
            SEND_ERROR(text) ;
                     return ;
                                   }
@@ -188,7 +184,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_RocketLego::~RSS_Module_RocketLego(void)
+    RSS_Module_MissileLego::~RSS_Module_MissileLego(void)
 
 {
 }
@@ -198,14 +194,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  RSS_Object *RSS_Module_RocketLego::vCreateObject(RSS_Model_data *data)
+  RSS_Object *RSS_Module_MissileLego::vCreateObject(RSS_Model_data *data)
 
 {
-  RSS_Object_RocketLego *object ;
-                   char  models_list[4096] ;
-                   char *end ;
-                    int  i ;
-                    int  j ;
+  RSS_Object_MissileLego *object ;
+                    char  models_list[4096] ;
+                    char *end ;
+                     int  i ;
+                     int  j ;
 
 #define   OBJECTS       this->kernel->kernel_objects 
 #define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
@@ -216,13 +212,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*--------------------------------------------------- Проверка имени */
 
 //    if(data->name[0]==0) {                                           /* Если имя НЕ задано */
-//              SEND_ERROR("Секция ROCKET LEGO: Не задано имя объекта") ;
+//              SEND_ERROR("Секция MISSILE LEGO: Не задано имя объекта") ;
 //                                return(NULL) ;
 //                         }
 
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, data->name)) {
-              SEND_ERROR("Секция ROCKET LEGO: Объект с таким именем уже существует") ;
+              SEND_ERROR("Секция MISSILE LEGO: Объект с таким именем уже существует") ;
                                 return(NULL) ;
                                                     }
 /*-------------------------------------- Считывание описания обьекта */
@@ -230,7 +226,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(data->path[0]==0) {
 
     if(data->model[0]==0) {                                         /* Если модель НЕ задано */
-              SEND_ERROR("Секция ROCKET LEGO: Не задана модель объекта") ;
+              SEND_ERROR("Секция MISSILE LEGO: Не задана модель объекта") ;
                                 return(NULL) ;
                           }
 
@@ -244,7 +240,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        }
 
            if(*end==0) {
-              SEND_ERROR("Секция ROCKET LEGO: Неизвестная модель тела") ;
+              SEND_ERROR("Секция MISSILE LEGO: Неизвестная модель тела") ;
                                 return(NULL) ;
                        }
 
@@ -265,14 +261,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           (data->pars[i].text [0]!=0 &&
            data->pars[i].value[0]==0   )   ) {
 
-              SEND_ERROR("Секция ROCKET LEGO: Несоответствие числа параметров модели") ;
+              SEND_ERROR("Секция MISSILE LEGO: Несоответствие числа параметров модели") ;
                                 return(NULL) ;
                                              }
 /*------------------------------------------------- Создание обьекта */
 
-       object=new RSS_Object_RocketLego ;
+       object=new RSS_Object_MissileLego ;
     if(object==NULL) {
-              SEND_ERROR("Секция ROCKET LEGO: Недостаточно памяти для создания объекта") ;
+              SEND_ERROR("Секция MISSILE LEGO: Недостаточно памяти для создания объекта") ;
                         return(NULL) ;
                      }
 
@@ -286,7 +282,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция ROCKET LEGO: Переполнение памяти") ;
+                         SEND_ERROR("Секция MISSILE LEGO: Переполнение памяти") ;
                                             return(NULL) ;
                       }
 
@@ -300,7 +296,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            PAR=(struct RSS_Parameter *)
                  realloc(PAR, (PAR_CNT+1)*sizeof(*PAR)) ;
         if(PAR==NULL) {
-                         SEND_ERROR("Секция ROCKET LEGO: Переполнение памяти") ;
+                         SEND_ERROR("Секция MISSILE LEGO: Переполнение памяти") ;
                                             return(NULL) ;
                       }
 
@@ -326,7 +322,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           object->Features[j]->vBodyPars(NULL, PAR) ;
           object->Features[j]->vReadSave(data->sections[i].title, 
-                                         data->sections[i].decl, "RocketLego.Body") ;
+                                         data->sections[i].decl, "MissileLego.Body") ;
                                              }
 
                                          data->sections[i].title[0]= 0 ;
@@ -341,7 +337,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
     if(OBJECTS==NULL) {
-              SEND_ERROR("Секция ROCKET LEGO: Переполнение памяти") ;
+              SEND_ERROR("Секция MISSILE LEGO: Переполнение памяти") ;
                                 return(NULL) ;
                       }
 
@@ -367,7 +363,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Получить параметр       		    */
 
-     int  RSS_Module_RocketLego::vGetParameter(char *name, char *value)
+     int  RSS_Module_MissileLego::vGetParameter(char *name, char *value)
 
 {
 /*-------------------------------------------------- Описание модуля */
@@ -386,7 +382,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_RocketLego::vExecuteCmd(const char *cmd)
+  int  RSS_Module_MissileLego::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -396,8 +392,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "ROCKET-LEGO"
-#define  _SECTION_SHRT_NAME   "ROCKET-LEGO"
+#define  _SECTION_FULL_NAME   "MISSILE-LEGO"
+#define  _SECTION_SHRT_NAME   "MISSILE-LEGO"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -423,7 +419,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object RocketLego:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object MissileLego:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -463,7 +459,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция ROCKET LEGO: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция MISSILE LEGO: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -481,24 +477,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Считать данные из строки		    */
 
-    void  RSS_Module_RocketLego::vReadSave(std::string *data)
+    void  RSS_Module_MissileLego::vReadSave(std::string *data)
 
 {
-                  char *buff ;
-                   int  buff_size ;
-        RSS_Model_data  create_data ;
- RSS_Object_RocketLego *object ;
-                  char  name[128] ;
-                  char *entry ;
-                  char *end ;
-                   int  i ;
+                   char *buff ;
+                    int  buff_size ;
+         RSS_Model_data  create_data ;
+ RSS_Object_MissileLego *object ;
+                   char  name[128] ;
+                   char *entry ;
+                   char *end ;
+                    int  i ;
 
 /*----------------------------------------------- Контроль заголовка */
 
-   if(memicmp(data->c_str(), "#BEGIN MODULE ROCKET LEGO\n", 
-                      strlen("#BEGIN MODULE ROCKET LEGO\n")) &&
-      memicmp(data->c_str(), "#BEGIN OBJECT ROCKET LEGO\n", 
-                      strlen("#BEGIN OBJECT ROCKET LEGO\n"))   )  return ;
+   if(memicmp(data->c_str(), "#BEGIN MODULE MISSILE LEGO\n", 
+                      strlen("#BEGIN MODULE MISSILE LEGO\n")) &&
+      memicmp(data->c_str(), "#BEGIN OBJECT MISSILE LEGO\n", 
+                      strlen("#BEGIN OBJECT MISSILE LEGO\n"))   )  return ;
 
 /*------------------------------------------------ Извлечение данных */
 
@@ -509,8 +505,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Создание объекта */
 
-   if(!memicmp(buff, "#BEGIN OBJECT ROCKET LEGO\n", 
-              strlen("#BEGIN OBJECT ROCKET LEGO\n"))) {                 /* IF.1 */
+   if(!memicmp(buff, "#BEGIN OBJECT MISSILE LEGO\n", 
+              strlen("#BEGIN OBJECT MISSILE LEGO\n"))) {            /* IF.1 */
 /*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
               memset(&create_data, 0, sizeof(create_data)) ;
 
@@ -538,7 +534,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        } 
 /*- - - - - - - - - - - - - - - Проверка повторного создания объекта */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Создание объекта */
-                object=(RSS_Object_RocketLego *)vCreateObject(&create_data) ;
+                object=(RSS_Object_MissileLego *)vCreateObject(&create_data) ;
              if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
        entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
@@ -570,14 +566,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Module_RocketLego::vWriteSave(std::string *text)
+    void  RSS_Module_MissileLego::vWriteSave(std::string *text)
 
 {
   std::string  buff ;
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN MODULE ROCKET LEGO\n" ;
+     *text="#BEGIN MODULE MISSILE LEGO\n" ;
 
 /*------------------------------------------------ Концовка описания */
 
@@ -591,12 +587,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_RocketLego::cHelp(char *cmd)
+  int  RSS_Module_MissileLego::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Object_RocketLego_Help_dialog) ;
+			   GetActiveWindow(), Object_MissileLego_Help_dialog) ;
 
    return(0) ;
 }
@@ -608,7 +604,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      CREATE <Имя> [<Модель> [<Список параметров>]]               */
 
-  int  RSS_Module_RocketLego::cCreate(char *cmd)
+  int  RSS_Module_MissileLego::cCreate(char *cmd)
 
 {
  RSS_Model_data  data ;
@@ -673,7 +669,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                     (LPCDLGTEMPLATE)Resource("IDD_CREATE", RT_DIALOG),
 			             GetActiveWindow(), 
-                                     Object_RocketLego_Create_dialog, 
+                                     Object_MissileLego_Create_dialog, 
                                     (LPARAM)&data                     ) ;
    if(status)  return(status) ;
 
@@ -692,17 +688,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_RocketLego::cInfo(char *cmd)
+  int  RSS_Module_MissileLego::cInfo(char *cmd)
 
 {
-                  char  *name ;
- RSS_Object_RocketLego  *object ;
-                   int   all_flag ;   /* Флаг режима полной информации */
-                  char  *end ;
-           std::string   info ;
-           std::string   f_info ;
-                  char   text[4096] ;
-                   int   i ;
+                   char  *name ;
+ RSS_Object_MissileLego  *object ;
+                    int   all_flag ;   /* Флаг режима полной информации */
+                   char  *end ;
+            std::string   info ;
+            std::string   f_info ;
+                   char   text[4096] ;
+                    int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
@@ -733,7 +729,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;           /* Ищем объект по имени */
+       object=(RSS_Object_MissileLego *)FindObject(name, 1) ;       /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
@@ -793,18 +789,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*       COPY <Имя образца> <Имя нового объекта>                    */
 
-  int  RSS_Module_RocketLego::cCopy(char *cmd)
+  int  RSS_Module_MissileLego::cCopy(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
-                  char  *pars[_PARS_MAX] ;
-                  char  *name ;
-                  char  *copy ;
- RSS_Object_RocketLego  *rocket ;
-            RSS_Object  *object ;
-                  char  *end ;
-                   int   i ;
+                   char  *pars[_PARS_MAX] ;
+                   char  *name ;
+                   char  *copy ;
+ RSS_Object_MissileLego  *missile ;
+             RSS_Object  *object ;
+                   char  *end ;
+                    int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
@@ -829,8 +825,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       rocket=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект-цель по имени */
-    if(rocket==NULL)  return(-1) ;
+       missile=(RSS_Object_MissileLego *)FindObject(name, 1) ;      /* Ищем объект-цель по имени */
+    if(missile==NULL)  return(-1) ;
 
 /*------------------------------------------ Контроль имени носителя */
 
@@ -847,7 +843,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //                   }
 /*---------------------------------------------- Копирование объекта */
 
-            object=rocket->vCopy(copy) ;
+            object=missile->vCopy(copy) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -863,18 +859,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*       OWNER <Имя> <Носитель>                                     */
 
-  int  RSS_Module_RocketLego::cOwner(char *cmd)
+  int  RSS_Module_MissileLego::cOwner(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
-                  char  *pars[_PARS_MAX] ;
-                  char  *name ;
-                  char  *owner ;
- RSS_Object_RocketLego  *rocket ;
-            RSS_Object  *object ;
-                  char  *end ;
-                   int   i ;
+                   char  *pars[_PARS_MAX] ;
+                   char  *name ;
+                   char  *owner ;
+ RSS_Object_MissileLego  *missile ;
+             RSS_Object  *object ;
+                   char  *end ;
+                    int   i ;
 
 /*---------------------------------------- Разборка командной строки */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
@@ -899,8 +895,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       rocket=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект-цель по имени */
-    if(rocket==NULL)  return(-1) ;
+       missile=(RSS_Object_MissileLego *)FindObject(name, 1) ;      /* Ищем объект-цель по имени */
+    if(missile==NULL)  return(-1) ;
 
 /*------------------------------------------ Контроль имени носителя */
 
@@ -915,7 +911,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Пропись носителя */
 
-          strcpy(rocket->owner, owner) ;
+          strcpy(missile->owner, owner) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -932,21 +928,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*     LEGO <Имя объекта>                                           */
 /*     LEGO <Имя объекта> <Имя компонента> <Тип компонента>         */
 
-  int  RSS_Module_RocketLego::cLego(char *cmd)
+  int  RSS_Module_MissileLego::cLego(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
-                  char *pars[_PARS_MAX] ;
-                  char *name ;
-                  char *unit_name ;
-                  char *unit_type ;
- RSS_Object_RocketLego *object ;
-            RSS_Object *unit ;
-                   int  status ;
-                  char  error[1024] ;
-                  char *end ;
-                   int  i ;
+                   char *pars[_PARS_MAX] ;
+                   char *name ;
+                   char *unit_name ;
+                   char *unit_type ;
+ RSS_Object_MissileLego *object ;
+             RSS_Object *unit ;
+                    int  status ;
+                   char  error[1024] ;
+                   char *end ;
+                    int  i ;
 
 /*---------------------------------------- Разборка командной строки */
 
@@ -979,7 +975,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
+       object=(RSS_Object_MissileLego *)FindObject(name, 1) ;       /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*--------------------------------------- Переход в диалоговый режим */
@@ -990,7 +986,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                       (LPCDLGTEMPLATE)Resource("IDD_LEGO", RT_DIALOG),
                                        GetActiveWindow(), 
-                                       Object_RocketLego_Lego_dialog, 
+                                       Object_MissileLego_Lego_dialog, 
                                       (LPARAM)object               ) ;
          return(status) ;
 
@@ -998,9 +994,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------- Создание и регистрация компонента */
 
    if(stricmp(unit_name, "warhead") &&
+      stricmp(unit_name, "homing" ) &&
       stricmp(unit_name, "engine" ) &&
+      stricmp(unit_name, "control") &&
       stricmp(unit_name, "model"  )   ) {
-              SEND_ERROR("Допустимы следующие имена lego-компонентов: WARHEAD, ENGINE и MODEL") ;
+              SEND_ERROR("Допустимы следующие имена lego-компонентов: WARHEAD, HOMING, ENGINE, CONTROL и MODEL") ;
                      return(-1) ;
                                         }
 
@@ -1023,25 +1021,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
 
-  int  RSS_Module_RocketLego::cTrace(char *cmd)
+  int  RSS_Module_MissileLego::cTrace(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
-                  char *pars[_PARS_MAX] ;
-                  char *name ;
-                double  trace_time ;
-                double  time_0 ;        /* Стартовое время расчета */ 
-                double  time_1 ;        /* Текущее время */ 
-                double  time_c ;        /* Абсолютное время расчета */ 
-                double  time_s ;        /* Последнее время отрисовки */ 
-                double  time_w ;        /* Время ожидания */ 
- RSS_Object_RocketLego *object ;
-                  char  text[1024] ;
-                  char *end ;
-                   int  quit_flag ;
-                   int  status ;
-                   int  i ;
+                   char *pars[_PARS_MAX] ;
+                   char *name ;
+                 double  trace_time ;
+                 double  time_0 ;        /* Стартовое время расчета */ 
+                 double  time_1 ;        /* Текущее время */ 
+                 double  time_c ;        /* Абсолютное время расчета */ 
+                 double  time_s ;        /* Последнее время отрисовки */ 
+                 double  time_w ;        /* Время ожидания */ 
+ RSS_Object_MissileLego *object ;
+                   char  text[1024] ;
+                   char *end ;
+                    int  quit_flag ;
+                    int  status ;
+                    int  i ;
 
 /*---------------------------------------- Разборка командной строки */
 
@@ -1099,7 +1097,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
+       object=(RSS_Object_MissileLego *)FindObject(name, 1) ;       /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------ Контроль носителя */
@@ -1171,31 +1169,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*       SPAWN <Имя> <Ёмкость залпа> <Периодичность запуска>        */
 
-  int  RSS_Module_RocketLego::cSpawn(char *cmd)
+  int  RSS_Module_MissileLego::cSpawn(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
-                  char *pars[_PARS_MAX] ;
-                  char *name ;
-                double  spawn_max ;
-                double  spawn_period ;
-                double  time_0 ;        /* Стартовое время расчета */ 
-                double  time_1 ;        /* Текущее время */ 
-                double  time_c ;        /* Абсолютное время расчета */ 
-                double  time_s ;        /* Последнее время отрисовки */ 
-                double  time_w ;        /* Время ожидания */ 
-                double  time_z ;        /* Время очередного запуска */ 
- RSS_Object_RocketLego *object ;
-            RSS_Object *clone ;
-                   int  break_mark[1000] ;
-                   int  break_cnt ;
-                  char  text[1024] ;
-                  char *end ;
-                   int  quit_flag ;
-                   int  status ;
-                   int  n ;
-                   int  i ;
+                   char *pars[_PARS_MAX] ;
+                   char *name ;
+                 double  spawn_max ;
+                 double  spawn_period ;
+                 double  time_0 ;        /* Стартовое время расчета */ 
+                 double  time_1 ;        /* Текущее время */ 
+                 double  time_c ;        /* Абсолютное время расчета */ 
+                 double  time_s ;        /* Последнее время отрисовки */ 
+                 double  time_w ;        /* Время ожидания */ 
+                 double  time_z ;        /* Время очередного запуска */ 
+ RSS_Object_MissileLego *object ;
+             RSS_Object *clone ;
+                    int  break_mark[1000] ;
+                    int  break_cnt ;
+                   char  text[1024] ;
+                   char *end ;
+                    int  quit_flag ;
+                    int  status ;
+                    int  n ;
+                    int  i ;
 
 /*---------------------------------------- Разборка командной строки */
 
@@ -1263,7 +1261,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
+       object=(RSS_Object_MissileLego *)FindObject(name, 1) ;       /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------ Контроль носителя */
@@ -1297,7 +1295,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-#define  CLONE(k)  ((RSS_Object_RocketLego *)object->mSpawn[k])
+#define  CLONE(k)  ((RSS_Object_MissileLego *)object->mSpawn[k])
 
        for(n=0 ; n<object->mSpawn_cnt ; n++) if(!break_mark[n]) {
 
@@ -1368,94 +1366,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции STAT                    */
-/*								    */
-/*       STAT/D <Имя>                                               */
+/*             Поиск обьекта типа MISSILE LEGO по имени             */
 
-  int  RSS_Module_RocketLego::cStat(char *cmd)
-
-{
-#define   _PARS_MAX  10
-
-                  char *pars[_PARS_MAX] ;
-                  char *name ;
- RSS_Object_RocketLego *object ;
-                  char *end ;
-                   int  drops_view ;
-                   int  i ;
-
-/*---------------------------------------- Разборка командной строки */
-
-/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
-                          drops_view=0 ;
-
-       if(*cmd=='/') {
- 
-                if(*cmd=='/')  cmd++ ;
-
-                   end=strchr(cmd, ' ') ;
-                if(end==NULL) {
-                       SEND_ERROR("Некорректный формат команды") ;
-                                       return(-1) ;
-                              }
-                  *end=0 ;
-
-                if(strchr(cmd, 'd')!=NULL ||
-                   strchr(cmd, 'D')!=NULL   )  drops_view=1 ;
-
-                           cmd=end+1 ;
-                     }
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-      
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-                     name=pars[0] ;
-
-/*------------------------------------------- Контроль имени объекта */
-
-    if(name==NULL) {                                                /* Если имя не задано... */
-                      SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: STAT <Имя_объекта> ...") ;
-                                     return(-1) ;
-                   }
-
-       object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
-    if(object==NULL)  return(-1) ;
-
-/*------------------------------------------- Проверка наличия залпа */
-
-      if(object->mSpawn_cnt==0) {
-                      SEND_ERROR("Объект не содержит результатов команды SPAWN") ;
-                                     return(-1) ;
-                                }
-/*------------------------- Распределение точек падения/срабатывания */
-
-    if(drops_view) {
-
-       DialogBoxIndirectParam(GetModuleHandle(NULL),
-                              (LPCDLGTEMPLATE)Resource("IDD_DROPS_VIEW", RT_DIALOG),
-                                GetActiveWindow(), Object_RocketLego_Drops_dialog, (LPARAM)object) ;
-                   }
-/*-------------------------------------------------------------------*/
-
-#undef   _PARS_MAX
-
-   return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*             Поиск обьекта типа ROCKET LEGO по имени              */
-
-  RSS_Object *RSS_Module_RocketLego::FindObject(char *name, int  check_type)
+  RSS_Object *RSS_Module_MissileLego::FindObject(char *name, int  check_type)
 
 {
      char   text[1024] ;
@@ -1478,11 +1391,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Контроль типа объекта */ 
 
     if(check_type)
-     if(strcmp(OBJECTS[i]->Type, "Rocket-Lego")) {
+     if(strcmp(OBJECTS[i]->Type, "Missile-Lego")) {
 
-           SEND_ERROR("Объект не является объектом типа ROCKET LEGO") ;
+           SEND_ERROR("Объект не является объектом типа MISSILE LEGO") ;
                             return(NULL) ;
-                                             }
+                                                  }
 /*-------------------------------------------------------------------*/ 
 
    return(OBJECTS[i]) ;
@@ -1497,7 +1410,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*                                                                   */
 /*                 Добавление компонента к объекту                   */
 
-  class RSS_Unit *RSS_Module_RocketLego::AddUnit(RSS_Object_RocketLego *object, char *unit_name, char *unit_type, char *error)
+  class RSS_Unit *RSS_Module_MissileLego::AddUnit(RSS_Object_MissileLego *object, char *unit_name, char *unit_type, char *error)
 
 {
    RSS_Kernel *unit_module ;
@@ -1507,7 +1420,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------- Контроль имени компонента */
 
   if(stricmp(unit_name, "warhead") &&
+     stricmp(unit_name, "homing" ) &&
      stricmp(unit_name, "engine" ) &&
+     stricmp(unit_name, "control") &&
      stricmp(unit_name, "model"  )   ) {                            /* Кроме имен lego-компонентов */
 
    for(i=0 ; i<object->Units.List_cnt ; i++)
@@ -1551,8 +1466,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                         object->unit_warhead=(RSS_Unit_WarHead *)unit ;
                                      }
   else
+  if(!stricmp(unit_name, "homing" )) {
+                                        object->unit_homing=(RSS_Unit_Homing *)unit ;
+                                     }
+  else
   if(!stricmp(unit_name, "engine" )) {
                                         object->unit_engine=(RSS_Unit_Engine *)unit ;
+                                     }
+  else
+  if(!stricmp(unit_name, "control")) {
+                                        object->unit_control=(RSS_Unit_Control *)unit ;
                                      }
   else
   if(!stricmp(unit_name, "model"  )) {
@@ -1570,7 +1493,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "НУР-ЛЕГО"	           **/
+/**		  ОПИСАНИЕ КЛАССА ОБЪЕКТА "РАКЕТА-ЛЕГО"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -1579,21 +1502,23 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Object_RocketLego::RSS_Object_RocketLego(void)
+     RSS_Object_MissileLego::RSS_Object_MissileLego(void)
 
 {
-   strcpy(Type, "Rocket-Lego") ;
+   strcpy(Type, "Missile-Lego") ;
 
           Module=&ProgramModule ;
 
-    Context        =new RSS_Transit_RocketLego ;
+    Context        =new RSS_Transit_MissileLego ;
     Context->object=this ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
      unit_warhead=NULL ;
+     unit_homing =NULL ;
      unit_engine =NULL ;
+     unit_control=NULL ;
      unit_model  =NULL ;
 
        mSpawn    =NULL ;
@@ -1628,7 +1553,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Object_RocketLego::~RSS_Object_RocketLego(void)
+    RSS_Object_MissileLego::~RSS_Object_MissileLego(void)
 
 {
       vFree() ;
@@ -1641,7 +1566,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Object_RocketLego::vFree(void)
+  void   RSS_Object_MissileLego::vFree(void)
 
 {
   int  i ;
@@ -1678,7 +1603,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*	      Освобождение ресурсов моделирования залпа             */
 
-  void   RSS_Object_RocketLego::iClearSpawn(void)
+  void   RSS_Object_MissileLego::iClearSpawn(void)
 
 {
   int  i ;
@@ -1686,7 +1611,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   if(this->mSpawn!=NULL) {
     for(i=0 ; i<this->mSpawn_cnt ; i++) {
-                                           delete (RSS_Object_RocketLego *)this->mSpawn[i] ;
+                                           delete (RSS_Object_MissileLego *)this->mSpawn[i] ;
                                         }
 
                              free(this->mSpawn) ;
@@ -1700,15 +1625,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объект		            */
 
-    class RSS_Object *RSS_Object_RocketLego::vCopy(char *name)
+    class RSS_Object *RSS_Object_MissileLego::vCopy(char *name)
 
 {
-        RSS_Model_data  create_data ;
- RSS_Object_RocketLego *object ;
-       RSS_Feature_Hit *hit_1 ;
-       RSS_Feature_Hit *hit_2 ;
-              RSS_Unit *unit ;
-                   int  i ;
+         RSS_Model_data  create_data ;
+ RSS_Object_MissileLego *object ;
+        RSS_Feature_Hit *hit_1 ;
+        RSS_Feature_Hit *hit_2 ;
+               RSS_Unit *unit ;
+                    int  i ;
 
 /*------------------------------------- Копирование базового объекта */
 
@@ -1725,7 +1650,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  create_data.pars[i].text [0]=0 ;
                  create_data.pars[i].value[0]=0 ;
 
-       object=(RSS_Object_RocketLego *)this->Module->vCreateObject(&create_data) ;
+       object=(RSS_Object_MissileLego *)this->Module->vCreateObject(&create_data) ;
     if(object==NULL)  return(NULL) ;
  
             strcpy(object->owner,  this->owner) ;
@@ -1757,12 +1682,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  object->unit_warhead=(RSS_Unit_WarHead *)unit ;
                  object->Units.Add(unit, "") ;
                                    }
+      if(this->unit_homing !=NULL) {
+                         unit=(RSS_Unit *)this->unit_homing->vCopy(NULL) ;
+                  strcpy(unit->Name, "homing") ;
+                         unit->Owner=object ;
+
+                 object->unit_homing=(RSS_Unit_Homing *)unit ;
+                 object->Units.Add(unit, "") ;
+                                   }
       if(this->unit_engine !=NULL) {
                          unit=(RSS_Unit *)this->unit_engine->vCopy(NULL) ;
                   strcpy(unit->Name, "engine") ;
                          unit->Owner=object ;
 
                  object->unit_engine=(RSS_Unit_Engine *)unit ;
+                 object->Units.Add(unit, "") ;
+                                   }
+      if(this->unit_control!=NULL) {
+                         unit=(RSS_Unit *)this->unit_control->vCopy(NULL) ;
+                  strcpy(unit->Name, "control") ;
+                         unit->Owner=object ;
+
+                 object->unit_control=(RSS_Unit_Control *)unit ;
                  object->Units.Add(unit, "") ;
                                    }
       if(this->unit_model  !=NULL) {
@@ -1783,7 +1724,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Записать данные в строку		    */
 
-    void  RSS_Object_RocketLego::vWriteSave(std::string *text)
+    void  RSS_Object_MissileLego::vWriteSave(std::string *text)
 
 {
   char  field[1024] ;
@@ -1791,7 +1732,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------------- Заголовок описания */
 
-     *text="#BEGIN OBJECT ROCKET LEGO\n" ;
+     *text="#BEGIN OBJECT MISSILE LEGO\n" ;
 
 /*----------------------------------------------------------- Данные */
 
@@ -1820,7 +1761,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Специальные действия                      */
 
-     int  RSS_Object_RocketLego::vSpecial(char *oper, void *data)
+     int  RSS_Object_MissileLego::vSpecial(char *oper, void *data)
 {
   return(-1) ;
 }
@@ -1830,12 +1771,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Object_RocketLego::vCalculateStart(double t)
+     int  RSS_Object_MissileLego::vCalculateStart(double t)
 {
    int  i ; 
 
-#define   OBJECTS       RSS_Kernel::kernel->kernel_objects
-#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
 /*-------------------------------------- Привязка к объекту-носителю */
 
@@ -1852,27 +1793,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   if(this->o_owner!=NULL) {
 
-      this->x_base    =this->o_owner->x_base ;
-      this->y_base    =this->o_owner->y_base ;
-      this->z_base    =this->o_owner->z_base ;
+      this->x_base=this->o_owner->x_base ;
+      this->y_base=this->o_owner->y_base ;
+      this->z_base=this->o_owner->z_base ;
 
-      this->a_azim    =this->o_owner->a_azim ;
-      this->a_elev    =this->o_owner->a_elev ;
-      this->a_roll    =this->o_owner->a_roll ;
-
-      this->x_velocity=this->o_owner->x_velocity ;
-      this->y_velocity=this->o_owner->y_velocity ;
-      this->z_velocity=this->o_owner->z_velocity ;
+      this->a_azim=this->o_owner->a_azim ;
+      this->a_elev=this->o_owner->a_elev ;
+      this->a_roll=this->o_owner->a_roll ;
                           }
 /*-------------------------------------------- Обработка компонентов */
 
       if(this->unit_engine !=NULL)  this->unit_engine ->vCalculateStart(t) ;
       if(this->unit_warhead!=NULL)  this->unit_warhead->vCalculateStart(t) ;
+      if(this->unit_homing !=NULL)  this->unit_homing ->vCalculateStart(t) ;
+      if(this->unit_control!=NULL)  this->unit_control->vCalculateStart(t) ;
       if(this->unit_model  !=NULL)  this->unit_model  ->vCalculateStart(t) ;
 
     for(i=0 ; i<this->Units.List_cnt ; i++)                         /* Кроме LEGO-компонентов */
       if(stricmp(this->Units.List[i].object->Name, "engine" ) &&
          stricmp(this->Units.List[i].object->Name, "warhead") &&
+         stricmp(this->Units.List[i].object->Name, "homing" ) &&
+         stricmp(this->Units.List[i].object->Name, "control") &&
          stricmp(this->Units.List[i].object->Name, "model"  )   )
                    this->Units.List[i].object->vCalculateStart(t) ;
 
@@ -1893,7 +1834,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Object_RocketLego::vCalculate(double t1, double t2, char *callback, int cb_size)
+     int  RSS_Object_MissileLego::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
   RSS_Unit_Engine_Thrust  thrust[10] ;
                      int  thrust_cnt ;
@@ -1948,7 +1889,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_RocketLego::vCalculateShow(void)
+     int  RSS_Object_MissileLego::vCalculateShow(void)
 {
    int i ;
 
@@ -1974,7 +1915,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                   Сохранение точки траектории                     */
 
-  int  RSS_Object_RocketLego::iSaveTracePoint(char *action)
+  int  RSS_Object_MissileLego::iSaveTracePoint(char *action)
 
 {
 /*------------------------------------------------- Сброс траектории */
@@ -1988,11 +1929,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(mTrace_cnt==mTrace_max) {
 
           mTrace_max+= 1000 ;
-          mTrace     =(RSS_Object_RocketLegoTrace *)
-                            realloc(mTrace, mTrace_max*sizeof(RSS_Object_RocketLegoTrace)) ;
+          mTrace     =(RSS_Object_MissileLegoTrace *)
+                            realloc(mTrace, mTrace_max*sizeof(RSS_Object_MissileLegoTrace)) ;
 
        if(mTrace==NULL) {
-                   SEND_ERROR("ROCKET-LEGO.iSaveTracePoint@"
+                   SEND_ERROR("MISSILE-LEGO.iSaveTracePoint@"
                               "Memory over for trajectory") ;
                                   return(-1) ;
                         }
@@ -2022,7 +1963,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*           Отображение траектории с передачей контекста           */
 
-  void  RSS_Object_RocketLego::iShowTrace_(char *action)
+  void  RSS_Object_MissileLego::iShowTrace_(char *action)
 
 {
     strcpy(Context->action, "SHOW_TRACE") ;
@@ -2037,7 +1978,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*                     Отображение траектории                        */
 
-  void  RSS_Object_RocketLego::iShowTrace(char *action)
+  void  RSS_Object_MissileLego::iShowTrace(char *action)
 
 {
        int  status ;
@@ -2124,7 +2065,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
 
-     RSS_Transit_RocketLego::RSS_Transit_RocketLego(void)
+     RSS_Transit_MissileLego::RSS_Transit_MissileLego(void)
 
 {
 }
@@ -2134,7 +2075,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
 
-    RSS_Transit_RocketLego::~RSS_Transit_RocketLego(void)
+    RSS_Transit_MissileLego::~RSS_Transit_MissileLego(void)
 
 {
 }
@@ -2144,11 +2085,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*	              Исполнение действия                           */
 
-    int  RSS_Transit_RocketLego::vExecute(void)
+    int  RSS_Transit_MissileLego::vExecute(void)
 
 {
-   if(!stricmp(action, "SHOW_TRACE" ))  ((RSS_Object_RocketLego *)object)->iShowTrace(action) ;
-   if(!stricmp(action, "CLEAR_TRACE"))  ((RSS_Object_RocketLego *)object)->iShowTrace(action) ;
+   if(!stricmp(action, "SHOW_TRACE" ))  ((RSS_Object_MissileLego *)object)->iShowTrace(action) ;
+   if(!stricmp(action, "CLEAR_TRACE"))  ((RSS_Object_MissileLego *)object)->iShowTrace(action) ;
 
    return(0) ;
 }

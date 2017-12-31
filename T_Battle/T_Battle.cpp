@@ -18,9 +18,12 @@
 #include <math.h>
 #include <sys\stat.h>
 
+#include "..\Matrix\Matrix.h"
+
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
+#include "..\F_Hit\F_Hit.h"
 
 #include "T_Battle.h"
 
@@ -106,7 +109,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        " PROGRAM <Имя файла>\n",
                        &RSS_Module_Battle::cProgram },
  { "run",        "r",  "#RUN (R) - запуск исполнения сценария боя", 
-                        NULL,
+                       " PROGRAM [<Число повторов>]\n",
                        &RSS_Module_Battle::cRun },
  {  NULL }
                                                               } ;
@@ -131,6 +134,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                int  RSS_Module_Battle::mVariables_cnt   =  0 ;
                               HWND  RSS_Module_Battle::mVariables_Window=NULL ;
 
+                               int  RSS_Module_Battle::mHit_cnt ;
 
 
 /********************************************************************/
@@ -418,6 +422,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                       SEND_ERROR("Список объектов сценария слишком велик") ;
                                      return(-1) ;
                                    }
+
+         if(OBJECTS[i]->battle_state!=_SPAWN_STATE) {               /* Если объект не создан в процессе боя... */
+                   OBJECTS[i]->battle_state=_ACTIVE_STATE ;
+                   OBJECTS[i]->vPush() ;
+                                                    }
 
                mObjects[mObjects_cnt].object=OBJECTS[i] ;
                         mObjects_cnt++ ;
@@ -818,6 +827,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  double  time_c ;              /* Абсолютное время расчета */ 
                  double  time_s ;              /* Последнее время отрисовки */ 
                  double  time_w ;              /* Время ожидания */ 
+                    int  preObjects_cnt ;
+                    int  attempt_cnt ;
+                    int  attempt ;
+                    int  hit_sum ;
+                 double  hit_avg ;
                    char *end ;
                    char  name[1024] ;
                    char  text[1024] ;
@@ -853,12 +867,58 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       if( pars[i]    !=NULL && 
          (pars[i])[0]==  0    )  pars[i]=NULL ;
 
+                                attempt_cnt=0 ;
+            if(pars[0]!=NULL )  attempt_cnt=strtoul(pars[0], &end, 10) ;
+
+            if(attempt_cnt==0)  attempt_cnt=1 ;
+
 /*-------------------------------------------- Подготовка исполнения */
 
      if(callback==NULL)  callback=(char *)calloc(1, _CALLBACK_SIZE) ;
 
-                 this->mSpawns_cnt   =0 ;
-                 this->mVariables_cnt=0 ;
+/*----------------------------------------------------- Цикл попыток */
+ 
+           preObjects_cnt=this->mObjects_cnt ;
+
+                  hit_sum= 0. ;
+
+   for(attempt=0 ; attempt<attempt_cnt ; attempt++) {               /* LOOP.0 */
+
+                       RSS_Kernel::battle=1 ;
+
+/*--------------------------------- Инициализация контекста объектов */
+
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt
+
+     if(attempt>0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++) {
+
+         if(OBJECTS[i]->battle_state==_ACTIVE_STATE)  OBJECTS[i]->vPop() ;
+
+         if(OBJECTS[i]->battle_state== _SPAWN_STATE) {
+
+                                         OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
+                                 delete  OBJECTS[i] ;
+
+             for(j=i+1 ; j<OBJECTS_CNT ; j++)  OBJECTS[j-1]=OBJECTS[j] ;
+                           OBJECTS_CNT-- ;
+                                     i-- ;
+                                                     }
+                                      }
+
+                       this->kernel->vShow("REFRESH") ;
+                   }
+
+#undef    OBJECTS
+#undef    OBJECTS_CNT
+
+/*----------------------------------------------- Подготовка попытки */
+
+                 this->mObjects_cnt  =preObjects_cnt ;
+                 this->mSpawns_cnt   = 0 ;
+                 this->mVariables_cnt= 0 ;
 
       for(i=0 ; i<mObjects_cnt ; i++) {
 
@@ -870,6 +930,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                       }
 
                    exit_flag=0 ;
+
+/*----------------------------------- Подготовка счётчиков поражения */
+
+      RSS_Feature_Hit::hit_count=&this->mHit_cnt ;
+
+                                        mHit_cnt=0 ;
 
 /*------------------------------------ Исполнение начальных операций */
 
@@ -920,9 +986,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 
-      sprintf(text, "Real % 5.0lf\r\n" 
-                    "Calc % 5.0lf\r\n",
-                     time_1-time_0, time_c) ;
+                    hit_avg=((double)(hit_sum+mHit_cnt))/(attempt+1.) ;
+
+      sprintf(text, "Attempt % 5d\r\n" 
+                    "   Real % 5.0lf\r\n" 
+                    "   Calc % 5.0lf\r\n"
+                    "Hit.cur % 5d\r\n"
+                    "Hit.avg % 7.1lf\r\n",
+                     attempt+1, time_1-time_0, time_c, mHit_cnt, hit_avg) ;
 
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_SHOW_INFO, (LPARAM)text) ;
@@ -1010,6 +1081,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              sprintf(name, "%s_%d", S->object, S->cnt+1) ;
 
                 clone=S->templ->vCopy(name) ;
+                clone->battle_state=_SPAWN_STATE ;
 
                 clone->vResetFeatures(NULL) ;                       /* Инициализация свойств объекта */ 
 
@@ -1070,7 +1142,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      } while(!exit_flag) ;  
 
+                    hit_sum+=mHit_cnt ;
+                    hit_avg =((double)hit_sum)/(attempt+1.) ;
+
               this->kernel->vShow(NULL) ;                           /* Финальная отрисовка */
+
+/*----------------------------------------------------- Цикл попыток */ 
+                                                    }               /* END LOOP */
+
+                       RSS_Kernel::battle=0 ;
+
+    if(attempt_cnt==1)  SEND_ERROR("Бой завершен") ;
+    else                SEND_ERROR("Моделирование завершено") ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1122,7 +1205,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     if(!stricmp(frame->action, "EXIT" )) {
 
-                                 SEND_ERROR("Бой завершен") ;
                                      return(_EXIT_FRAME) ;
 
                                          }
@@ -1174,6 +1256,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                       SEND_ERROR("Список объектов сценария слишком велик") ;
                                        return(_EXIT_FRAME) ;
                                     }
+
+         if(object->battle_state!=_SPAWN_STATE) {                   /* Если объект не создан в процессе боя... */
+                   object->battle_state=_ACTIVE_STATE ;
+                   object->vPush() ;
+                                                }
 
                    object->vCalculateStart(t) ;
 

@@ -123,6 +123,45 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                    Сохранить состояние объекта                   */
+/*                    Восстановить состояние объекта                */
+
+    void  RSS_Object::vPush(void)
+
+{
+     x_base_stack    =x_base ;
+     y_base_stack    =y_base ;
+     z_base_stack    =z_base ;
+
+     a_azim_stack    =a_azim ;
+     a_elev_stack    =a_elev ;
+     a_roll_stack    =a_roll ;
+
+     x_velocity_stack=x_velocity ;
+     y_velocity_stack=y_velocity ;
+     z_velocity_stack=z_velocity ;
+}
+
+
+    void  RSS_Object::vPop(void)
+
+{
+     x_base    =x_base_stack ;
+     y_base    =y_base_stack ;
+     z_base    =z_base_stack ;
+
+     a_azim    =a_azim_stack ;
+     a_elev    =a_elev_stack ;
+     a_roll    =a_roll_stack ;
+
+     x_velocity=x_velocity_stack ;
+     y_velocity=y_velocity_stack ;
+     z_velocity=z_velocity_stack ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		  Вкл./Выкл. сообщений об ошибках		    */
 
     void  RSS_Object::vErrorMessage(int  on_off)

@@ -82,6 +82,7 @@
                     static         int  mVariables_cnt ;   
                     static        HWND  mVariables_Window ;
 
+                    static         int  mHit_cnt ;                /* Число поражённых объектов */
      
 
                                   char  mContextAction[64] ;      /* Действие 'контекстной' операции */

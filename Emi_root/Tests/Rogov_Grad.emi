@@ -1,0 +1,151 @@
+#step 0.
+
+#file tests\keys.keys
+
+marker cr m1 cross red
+m1 base 400 0 0
+marker cr m2 cross red
+m2 base -400 0 0
+marker cr m3 cross green
+m3 base 0 0 0
+marker cr m4 cross green
+m4 base 0 0 0
+marker cr m5 cross blue
+m5 base 0 0 11000
+marker cr m6 cross blue
+m6 base 0 0 10400
+
+;------------------------- Бак-гроунд
+
+body cr b1 плоскость 2000 2000
+sc color b1 green
+b1 angle/e 90
+b1 base -1000 0 1000 
+
+body cr b2 плоскость 2000 4000
+sc color b2 green
+b2 angle/e 90
+b2 base -1000 0 13000 
+
+zoom 1200
+eye 0 300 400
+eye>5
+
+la m4
+eye -250 400 275
+eye>5
+!save l
+
+;------------------------- Град - SADARM
+flyer cr grad1 БМ-21
+
+sadarm cr sb sadarm
+sb velocity 10
+sb scan/a 100
+sb scan/t 30
+sb scan/r 10
+sb scan/v  5
+scene visible sb 0
+
+rocket-lego cr rs ракета-1 0.2 3
+rs lego engine EngineSimple
+rs lego warhead WarHeadSimple
+rs lego model ModelSimple
+rs.engine p tests/grad.dat
+rs.model mass 67
+rs.model slide 3
+rs.model dv/a 0.4
+rs.model dv/e 1.0
+;rs.warhead tripping/t 39
+rs.warhead tripping/a 200
+rs.warhead stripe sb 2 20
+rs owner m4
+scene visible rs 0
+
+grad1 base 10 0 0
+m4 base 10 0 -7.5
+m4 angle/a 0
+m4 angle/e 39.0
+
+;------------------------- Танки
+flyer cr t1 танк
+flyer cr t2 танк
+flyer cr t3 танк
+flyer cr t4 танк
+flyer cr t5 танк
+flyer cr t6 танк
+flyer cr t7 танк
+flyer cr t8 танк
+flyer cr t9 танк
+t1 base 0 0 11000
+t2 base 0 0 11050
+t3 base 0 0 11100
+t4 base 0 0 11150
+t5 base 0 0 11200
+t6 base 0 0 11250
+t7 base 0 0 11300
+t8 base 0 0 11350
+t9 base 0 0 11400
+t1 angle/a -180
+t2 angle/a -180
+t3 angle/a -180
+t4 angle/a -180
+t5 angle/a -180
+t6 angle/a -180
+t7 angle/a -180
+t8 angle/a -180
+t9 angle/a -180
+t1 v 10
+t2 v 10
+t3 v 10
+t4 v 10
+t5 v 10
+t6 v 10
+t7 v 10
+t8 v 10
+t9 v 10
+t1 path 0
+t2 path 0
+t3 path 0
+t4 path 0
+t5 path 0
+t6 path 0
+t7 path 0
+t8 path 0
+t9 path 0
+t1 program tests\hited_tank.pgm
+t2 program tests\hited_tank.pgm
+t3 program tests\hited_tank.pgm
+t4 program tests\hited_tank.pgm
+t5 program tests\hited_tank.pgm
+t6 program tests\hited_tank.pgm
+t7 program tests\hited_tank.pgm
+t8 program tests\hited_tank.pgm
+t9 program tests\hited_tank.pgm
+t1 event HITED hited_tank
+t2 event HITED hited_tank
+t3 event HITED hited_tank
+t4 event HITED hited_tank
+t5 event HITED hited_tank
+t6 event HITED hited_tank
+t7 event HITED hited_tank
+t8 event HITED hited_tank
+t9 event HITED hited_tank
+hit category/t t1
+hit category/t t2
+hit category/t t3
+hit category/t t4
+hit category/t t5
+hit category/t t6
+hit category/t t7
+hit category/t t8
+hit category/t t9
+
+show
+
+;------------------------- Бой
+
+battle program tests\Rogov_Grad.battle
+
+zoom 3000
+la m1

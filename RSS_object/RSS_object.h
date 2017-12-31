@@ -108,21 +108,34 @@
   class RSS_OBJECT_API RSS_Object {
 
        public:
-                       char   Name[128] ;      /* Имя обьекта */
-                       char   Type[128] ;      /* Тип обьекта */
-                       char   Decl[1024] ;     /* Описание обьекта */
+                       char  Name[128] ;       /* Имя обьекта */
+                       char  Type[128] ;       /* Тип обьекта */
+                       char  Decl[1024] ;      /* Описание обьекта */
+
+                        int  battle_state ;    /* Род объекта в бою */
+#define                       _ACTIVE_STATE  1
+#define                        _SPAWN_STATE  2
 
                      double  x_base ;          /* Координаты базовой точки */
                      double  y_base ;
                      double  z_base ;
+                     double  x_base_stack ;
+                     double  y_base_stack ;
+                     double  z_base_stack ;
 
                      double  a_azim ;          /* Углы ориентации */
                      double  a_elev ;
                      double  a_roll ;
+                     double  a_azim_stack ;
+                     double  a_elev_stack ;
+                     double  a_roll_stack ;
 
                      double  x_velocity ;      /* Вектор скорости */
                      double  y_velocity ;
                      double  z_velocity ;
+                     double  x_velocity_stack ;
+                     double  y_velocity_stack ;
+                     double  z_velocity_stack ;
 
        struct RSS_Parameter  *Parameters ;     /* Список параметров */
                         int   Parameters_cnt ;
@@ -140,6 +153,8 @@
        public:
 
    virtual class RSS_Object *vCopy           (char *) ;             /* Копировать объект */
+   virtual             void  vPush           (void)  ;              /* Сохранить состояние объекта */
+   virtual             void  vPop            (void)  ;              /* Восстановить состояние объекта */
 
    virtual             void  vErrorMessage   (int) ;                /* Вкл./Выкл. сообщений об ошибках */
 

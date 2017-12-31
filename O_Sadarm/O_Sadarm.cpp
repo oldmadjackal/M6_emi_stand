@@ -853,7 +853,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    }
 /*---------------------------------------------- Копирование объекта */
 
-            object=sadarm->vCopy(copy) ;
+       object=sadarm->vCopy(copy) ;
+    if(object==NULL)  return(-1) ;
 
 /*------------------------------------------ Установка базовой точки */
 
@@ -1446,6 +1447,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
+ battle_state   =  0 ; 
+
       x_base    =  0. ;
       y_base    =  0. ;
       z_base    =  0. ;
@@ -1542,6 +1545,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object->scan_tilt    =this->scan_tilt ;
        object->scan_rotation=this->scan_rotation ;
        object->scan_view    =this->scan_view ;
+
+   if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
 
 /*---------------------------------------------- Копирование свойств */
 
@@ -1985,6 +1990,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          sadarm->hit_point.z=object->z_base ; 
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
+
+       if(!HIT->hit_done)                                           /* Модифицируем общий счётчик поражения */
+        if(hit_count!=NULL) (*hit_count)++ ;
+
+                          HIT->hit_done=1 ; 
+
                        hit_flag=1 ;
                           break ;
                                          }                          /* CONTINUE.2 */

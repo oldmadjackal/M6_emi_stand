@@ -129,6 +129,10 @@
   class F_HIT_API RSS_Feature_Hit : public RSS_Feature {
 
     public:       
+                      static    int  *hit_count ;                   /* Счетчик поражения */
+                                int   hit_done ;                    /* Признак поражения */
+
+    public:       
                RSS_Feature_Hit_Body  *Bodies ;                      /* Список тел */
                                 int   Bodies_cnt ;
 

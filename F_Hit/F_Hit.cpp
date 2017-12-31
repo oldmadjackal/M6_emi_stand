@@ -558,6 +558,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 
+/********************************************************************/
+/*								    */
+/*		       Статические переменные			    */
+
+         int *RSS_Feature_Hit::hit_count=NULL ;
+
 
 /********************************************************************/
 /*								    */
@@ -567,6 +573,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
    strcpy(Type, "Hit") ;
+
+     hit_done  =  0 ;
 
      Bodies    =NULL ;
      Bodies_cnt=  0 ;
@@ -1137,6 +1145,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int RSS_Feature_Hit::vResetCheck(void *data)
 
 {
+           hit_done=0 ;
+
    track_s    .mark=0 ;
    track_s_prv.mark=0 ;
 
@@ -1219,13 +1229,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //       if(!iFacetsTest(HIT->Bodies[i] ))  continue;     
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
+
+       if(!HIT->hit_done)                                           /* Модифицируем общий счётчик поражения */
+        if(hit_count!=NULL) (*hit_count)++ ;
+
+                          HIT->hit_done=1 ; 
+
                        hit_flag=1 ;
                           break ;
                                          }                          /* CONTINUE.2 */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                           break ;
                                   }                                 /* CONTINUE.1 */
-
 /*-------------------------------------------------------------------*/
 
 #undef   OBJECTS_CNT

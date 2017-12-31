@@ -449,7 +449,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-            SETs(IDC_COMMAND, "@Tests\\grad.emi") ;
+            SETs(IDC_COMMAND, "@Tests\\rogov_bla.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -1520,7 +1520,7 @@ typedef  struct {
  { "kill",      "k",     "# KILL - удалить объект",
                          " KILL[/Q] <Имя>\n"
                          "   Удаляет именованный обьект"
-                         " KILL[/Q] <Префикс>*\n"
+                         " KILL[/Q] <Префикс>%\n"
                          "   Удаляет все обьекты, имя которых начинается с заданного фрагмента",
                          &RSS_Module_Main::cKill },
  { "all",       "all",   "# ALL - выдать список объектов",

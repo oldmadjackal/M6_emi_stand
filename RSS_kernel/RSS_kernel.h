@@ -130,6 +130,7 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
     static         HWND   active_wnd ;	            /* Активное oкно */
     static    HINSTANCE   kernel_inst ;	            /* Идентификатор модуля ядра */
 
+    static          int   battle ;                  /* Флаг режима моделирования боя */
     static          int   stop ;                    /* Флаг остановки исполнения */
     static          int   next ;                    /* Флаг исполнения очередного шага */
 #define                    _RSS_KERNEL_NEXT_STEP  1

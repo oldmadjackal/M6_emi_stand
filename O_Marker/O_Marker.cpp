@@ -1129,19 +1129,23 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     Context        =new RSS_Transit_Marker ;
     Context->object=this ;
 
-   Parameters    =NULL ;
-   Parameters_cnt=  0 ;
+       Parameters    =NULL ;
+       Parameters_cnt=  0 ;
 
-           x_base=0 ;
-           y_base=0 ;
-           z_base=0 ;
+           x_base    =0 ;
+           y_base    =0 ;
+           z_base    =0 ;
 
-           a_azim=0 ;
-           a_elev=0 ;
-           a_roll=0 ;
+           a_azim    =0 ;
+           a_elev    =0 ;
+           a_roll    =0 ;
 
-       dlist1_idx=0 ;
-       dlist2_idx=0 ;
+           x_velocity=0 ;
+           y_velocity=0 ;
+           z_velocity=0 ;
+
+           dlist1_idx=0 ;
+           dlist2_idx=0 ;
 }
 
 
