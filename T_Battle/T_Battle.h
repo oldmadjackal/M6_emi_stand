@@ -107,6 +107,7 @@
                      int  cList         (char *, RSS_IFace *) ;   /* Инструкция LIST */
                      int  cProgram      (char *, RSS_IFace *) ;   /* Инструкция PROGRAM */
                      int  cRun          (char *, RSS_IFace *) ;   /* Инструкция RUN */
+                     int  cReset        (char *, RSS_IFace *) ;   /* Инструкция RESET */
 
                      int  iFrameExecute (FRAME *, double, int) ;  /* Реализация инструкций сервисной задачи */
 

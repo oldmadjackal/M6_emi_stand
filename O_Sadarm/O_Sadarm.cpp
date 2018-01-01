@@ -1638,6 +1638,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Sadarm::vCalculateStart(double  t)
 {
+     this->a_azim=this->Module->gGaussianValue(0., 360.) ;
+
   return(0) ;
 }
 

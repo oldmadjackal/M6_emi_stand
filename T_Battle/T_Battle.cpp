@@ -96,7 +96,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",       "?",  "#HELP (?) - список доступных команд", 
                         NULL,
                        &RSS_Module_Battle::cHelp   },
- { "clear",      "c",  "#CLEAR (C) - очистить контекст сценария боя", 
+ { "clear",      "c",  "#CLEAR (C) - очистить контекст сценария боя и восстановить исходное положение", 
                         NULL,
                        &RSS_Module_Battle::cClear  },
  { "add",        "a",  "#ADD (A) - добавление объекта в сценарий боя", 
@@ -109,7 +109,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        " PROGRAM <Имя файла>\n",
                        &RSS_Module_Battle::cProgram },
  { "run",        "r",  "#RUN (R) - запуск исполнения сценария боя", 
-                       " PROGRAM [<Число повторов>]\n",
+                       " RUN [<Число повторов>]\n",
                        &RSS_Module_Battle::cRun },
  {  NULL }
                                                               } ;
@@ -451,10 +451,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  RSS_Module_Battle::cClear(char *cmd, RSS_IFace *iface)
 
 {
+  int  i ;
+  int  j ;
+
+/*--------------------------------- Инициализация контекста объектов */
+
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt
+
+       for(i=0 ; i<OBJECTS_CNT ; i++) {
+
+         if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
+
+                                OBJECTS[i]->vPop() ;
+                                OBJECTS[i]->vCalculateShow() ;
+                                                     }
+         if(OBJECTS[i]->battle_state== _SPAWN_STATE) {
+
+                                         OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
+                                 delete  OBJECTS[i] ;
+
+             for(j=i+1 ; j<OBJECTS_CNT ; j++)  OBJECTS[j-1]=OBJECTS[j] ;
+                           OBJECTS_CNT-- ;
+                                     i-- ;
+                                                     }
+                                      }
+
+#undef    OBJECTS
+#undef    OBJECTS_CNT
+
 /*------------------------------------------------ Очистка контекста */
 
            mObjects_cnt=0 ;
             mSpawns_cnt=0 ;
+
+/*------------------------------------------------------ Перерисовка */
+
+                       this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -895,8 +928,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        for(i=0 ; i<OBJECTS_CNT ; i++) {
 
-         if(OBJECTS[i]->battle_state==_ACTIVE_STATE)  OBJECTS[i]->vPop() ;
+         if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
 
+                                OBJECTS[i]->vPop() ;
+                                OBJECTS[i]->vCalculateShow() ;
+                                                     }
          if(OBJECTS[i]->battle_state== _SPAWN_STATE) {
 
                                          OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
