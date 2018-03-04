@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*		МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "СТАНЦИЯ РЭБ" 	    */
+/*		МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ПОИСКОВАЯ РЛС" 	    */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -19,7 +19,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "U_EWunit.h"
+#include "U_SearchRadar.h"
 
 #pragma warning(disable : 4996)
 
@@ -38,18 +38,18 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Unit_EWunit_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		                           WPARAM wParam, LPARAM lParam) 
+    BOOL CALLBACK  Unit_SearchRadar_Help_dialog(  HWND hDlg,     UINT Msg, 
+ 		                                WPARAM wParam, LPARAM lParam) 
 {
-  RSS_Module_EWunit  Module ;
-                int  elm ;         /* Идентификатор элемента диалога */
-                int  status ;
-                int  index ;
-                int  insert_flag ;
-               char *help ;
-               char  text[512] ;
-               char *end ;
-                int  i ;
+  RSS_Module_SearchRadar  Module ;
+                     int  elm ;         /* Идентификатор элемента диалога */
+                     int  status ;
+                     int  index ;
+                     int  insert_flag ;
+                    char *help ;
+                    char  text[512] ;
+                    char *end ;
+                     int  i ;
 
 /*------------------------------------------------- Большая разводка */
 
@@ -139,17 +139,17 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна ROUND             */
 
- typedef struct {  RSS_Unit_EWunit *data ;
-                              HWND  hDlg ; }  Indicator_context ;
+ typedef struct {  RSS_Unit_SearchRadar *data ;
+                                   HWND  hDlg ; }  Indicator_context ;
 
 
 #define  _IND_MAX  10
 
-   BOOL CALLBACK  Unit_EWunit_Show_dialog(  HWND  hDlg,     UINT  Msg, 
-                                          WPARAM  wParam, LPARAM  lParam) 
+   BOOL CALLBACK  Unit_SearchRadar_Show_dialog(  HWND  hDlg,     UINT  Msg, 
+                                               WPARAM  wParam, LPARAM  lParam) 
 {
   static Indicator_context   contexts[_IND_MAX] ;
-           RSS_Unit_EWunit  *context ;
+      RSS_Unit_SearchRadar  *context ;
                       HWND   hElem  ;
                        int   elm ;           /* Идентификатор элемента диалога */
                        int   status ;
@@ -171,7 +171,7 @@
 
     case WM_INITDIALOG: {
 
-                 context=(RSS_Unit_EWunit *)lParam ;
+                 context=(RSS_Unit_SearchRadar *)lParam ;
 /*- - - - - - - - - - - - - - - - - -  Контроль повторного контекста */
            for(i=0 ; i<_IND_MAX ; i++) 
              if(contexts[i].data==context) {
@@ -247,10 +247,10 @@
 /*                                                                   */
 /*            Элемент - индикатор круговых диаграмм                  */
 
- LRESULT CALLBACK  Unit_EWunit_Indicator_prc(
+ LRESULT CALLBACK  Unit_SearchRadar_Indicator_prc(
                                         HWND  hWnd,     UINT  Msg,
  			              WPARAM  wParam, LPARAM  lParam
-                                            )
+                                                 )
 {
                   HDC  hDC_wnd ;
                   HDC  hDC ;
@@ -262,11 +262,13 @@
                HBRUSH  Brush ;
                HBRUSH  Brush_prv ;
                  RECT  Rect ;
-      RSS_Unit_EWunit *data ;               /* Описание индикатора */
+ RSS_Unit_SearchRadar *data ;               /* Описание индикатора */
                  char  data_ptr[32] ;       /* Адрес описания, кодированный */
                   int  rad ;
                   int  x_c ;
                   int  y_c ;
+                  int  x_t ;
+                  int  y_t ;
                double  angle ;
                double  dx, dz ;
                double  step ;
@@ -282,7 +284,7 @@
         SendMessage(hWnd, WM_GETTEXT, (WPARAM)sizeof(data_ptr),
                                       (LPARAM)       data_ptr  ) ;
 
-           data=(RSS_Unit_EWunit *)Ptr_decode(data_ptr) ;
+           data=(RSS_Unit_SearchRadar *)Ptr_decode(data_ptr) ;
                                }
 /*--------------------------------------------------- Общая разводка */
 
@@ -325,40 +327,14 @@
 
                                SelectObject(hDC, Brush_prv) ;
                                DeleteObject(Brush) ;
-/*- - - - - - - - - - - - - - - - - - - Формирование диаграммы угроз */
-                                        step=_PI/72. ;
-
-           for(i=0 ; i<data->threats_cnt ; i++) {
-
-                                 color=RGB(255, 0, 0) ;
-
-                 dx=data->threats[i]->x_base-data->Owner->x_base ;
-                 dz=data->threats[i]->z_base-data->Owner->z_base ;
-
-              angle=1.5*_PI-(atan2(dx, dz)-data->Owner->a_azim*_GRD_TO_RAD) ;
-
-                           Pen    =           CreatePen(PS_SOLID, 0, color) ;
-                           Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
-                         Brush    =    CreateSolidBrush(color) ;
-                         Brush_prv=(HBRUSH)SelectObject(hDC, Brush) ;
-
-#pragma warning(disable : 4244)
-                                  Pie(hDC, x_c-rad, y_c-rad, 
-                                           x_c+rad, y_c+rad,
-                                           x_c+rad*cos(angle+step/2.),
-                                           y_c+rad*sin(angle+step/2.),
-                                           x_c+rad*cos(angle-step/2.),
-                                           y_c+rad*sin(angle-step/2.) ) ;
-#pragma warning(default : 4244)
-
-                                   SelectObject(hDC, Brush_prv) ;
-                                   SelectObject(hDC, Pen_prv) ;
-                                   DeleteObject(Brush) ;
-                                   DeleteObject(Pen) ;
-                                                }
 /*- - - - - - - - - - - - - - - - - - - -  Форматирование циферблата */
                Pen    =           CreatePen(PS_SOLID, 0, 0) ;
                Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+
+                         MoveToEx(hDC, x_c-2, y_c,   NULL) ;
+                           LineTo(hDC, x_c+3, y_c  ) ;
+                         MoveToEx(hDC, x_c,   y_c-2, NULL) ;
+                           LineTo(hDC, x_c,   y_c+3) ;
 
                          MoveToEx(hDC, x_c, y_c+rad+1, NULL) ;
                            LineTo(hDC, x_c, y_c+rad+6) ;
@@ -377,6 +353,33 @@
                                        y_c+(rad+2)*sin(angle), 0) ;
                                      }
 #pragma warning(default : 4244)
+/*- - - - - - - - - - - - - - - - - - - Формирование диаграммы угроз */
+                                        step=_PI/72. ;
+
+           for(i=0 ; i<data->threats_cnt ; i++) {
+
+                                 color=RGB(255, 0, 0) ;
+
+                 dx=data->threats[i]->x_base-data->Owner->x_base ;
+                 dz=data->threats[i]->z_base-data->Owner->z_base ;
+
+                x_t=x_c+dx*rad/data->range_max ;
+                y_t=y_c+dz*rad/data->range_max ;
+
+                           Pen    =           CreatePen(PS_SOLID, 0, color) ;
+                           Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+                         Brush    =    CreateSolidBrush(color) ;
+                         Brush_prv=(HBRUSH)SelectObject(hDC, Brush) ;
+
+#pragma warning(disable : 4244)
+                                  Rectangle(hDC, x_t-1, y_t-1, x_t+1, y_t+1) ;
+#pragma warning(default : 4244)
+
+                               SelectObject(hDC, Brush_prv) ;
+                               SelectObject(hDC, Pen_prv) ;
+                               DeleteObject(Brush) ;
+                               DeleteObject(Pen) ;
+                                                }
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Вывод диаграммы */
             BitBlt(hDC_wnd, 
                    Rect.left, Rect.top, 

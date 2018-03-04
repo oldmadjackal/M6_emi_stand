@@ -219,6 +219,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath="..\U_SearchRadar\U_SearchRadar.vcproj"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
