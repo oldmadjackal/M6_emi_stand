@@ -1,0 +1,4 @@
+LIBRARY C_Dcl
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA
