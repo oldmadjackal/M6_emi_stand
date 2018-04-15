@@ -12,6 +12,7 @@
 #include <math.h>
 
 #include "..\Emi_root\controls.h"
+#include "..\Matrix\Matrix.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
@@ -264,6 +265,11 @@
                  RECT  Rect ;
  RSS_Unit_SearchRadar *data ;               /* Описание индикатора */
                  char  data_ptr[32] ;       /* Адрес описания, кодированный */
+             Matrix2d  Sum_Matrix ;
+             Matrix2d  Oper_Matrix ;
+             Matrix2d  Point ;
+           RSS_Object *target ;
+           RSS_Object *center ;
                   int  rad ;
                   int  x_c ;
                   int  y_c ;
@@ -271,7 +277,6 @@
                   int  y_t ;
                double  angle ;
                double  dx, dz ;
-               double  step ;
                   int  i ;
 
 #define  _PI  3.1415926
@@ -354,18 +359,38 @@
                                      }
 #pragma warning(default : 4244)
 /*- - - - - - - - - - - - - - - - - - - Формирование диаграммы угроз */
-                                        step=_PI/72. ;
+
+                  center=data->Owner ;
+
+                    Sum_Matrix.LoadE      (4, 4) ;
+//                 Oper_Matrix.Load4d_roll(center->a_roll) ;
+//                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+//                 Oper_Matrix.Load4d_elev(center->a_elev) ;
+//                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                   Oper_Matrix.Load4d_azim( center->a_azim) ;
+                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                   Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 
            for(i=0 ; i<data->threats_cnt ; i++) {
 
-                                 color=RGB(255, 0, 0) ;
+                  target=data->threats[i] ;
 
-                 dx=data->threats[i]->x_base-data->Owner->x_base ;
-                 dz=data->threats[i]->z_base-data->Owner->z_base ;
+                      Point.LoadZero(4, 1) ;
+                      Point.SetCell (0, 0, target->x_base) ;
+                      Point.SetCell (1, 0, target->y_base) ;
+                      Point.SetCell (2, 0, target->z_base) ;
+                      Point.SetCell (3, 0,   1   ) ;
 
-                x_t=x_c+dx*rad/data->range_max ;
-                y_t=y_c+dz*rad/data->range_max ;
+                      Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */
 
+                 dx=Point.GetCell (0, 0) ; ;
+                 dz=Point.GetCell (2, 0) ; ;
+
+                x_t=x_c-dx*rad/data->range_max ;
+                y_t=y_c-dz*rad/data->range_max ;
+
+                         color    =                 RGB(255, 0, 0) ;
                            Pen    =           CreatePen(PS_SOLID, 0, color) ;
                            Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
                          Brush    =    CreateSolidBrush(color) ;

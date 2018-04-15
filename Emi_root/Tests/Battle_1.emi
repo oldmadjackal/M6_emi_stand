@@ -98,4 +98,4 @@ la m4
 eye -500 560 600
 
 battle program tests\battle_1.battle
-battle run
+;battle run

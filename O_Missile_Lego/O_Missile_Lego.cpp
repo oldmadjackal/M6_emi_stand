@@ -333,6 +333,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   if(data->name[0]!=0) {                                            /* Если имя задано... */
 
        strcpy(object->Name, data->name) ;
+              object->Module=this ;
 
        OBJECTS=(RSS_Object **)
                  realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;

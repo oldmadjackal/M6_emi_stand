@@ -1,0 +1,17 @@
+ T=0   start t1
+ T=0   start t2
+ T=0   start t3
+ T=0   start t4
+ T=0   start t5
+ T=0   start t6
+ T=0   start t7
+ T=0   start t8
+ T=0   start t9
+ T=0   start bla
+ T=0   exec la/q m5
+DT=0   exec eye/q -400 100 10000
+DT=0   exec zoom/q 200
+ T=4   exec eye/q -200 2300 9800
+DT=0   exec la/q bla
+DT=0   exec zoom/q 2000
+ T=1000 exit

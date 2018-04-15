@@ -356,6 +356,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        strcpy(object->Name,       data->name) ;
        strcpy(object->model_path, data->path) ;
+              object->Module=this ;
 
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;

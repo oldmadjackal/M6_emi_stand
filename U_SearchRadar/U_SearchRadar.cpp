@@ -741,15 +741,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  RSS_Module_SearchRadar::cShow(char *cmd)
 
 {
-                  char  *name ;
-  RSS_Unit_SearchRadar  *unit ;
-                  char  *end ;
+#define   _PARS_MAX  10
+
+                  char *pars[_PARS_MAX] ;
+                  char *name ;
+                  char *pos ;
+  RSS_Unit_SearchRadar *unit ;
+                  char *end ;
+                   int  i  ;
 
 /*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
-                  name=cmd ;
-                   end=strchr(name, ' ') ;
-                if(end!=NULL)  *end=0 ;
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                      pos=pars[1] ;   
+
+       if(pos==NULL)  pos="0" ;
 
 /*---------------------------------------- Контроль имени компонента */
 
@@ -984,6 +1000,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      int  RSS_Unit_SearchRadar::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
   RSS_Object *object ;
+    Matrix2d  Sum_Matrix ;
+    Matrix2d  Oper_Matrix ;
+    Matrix2d  Point ;
+  RSS_Object *center ;
       double  v_x, v_y, v_z ;
       double  d_x, d_y, d_z ;
       double  v ;
@@ -996,6 +1016,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 threats_cnt =0 ;
                   event_send=0 ;
+
+/*----------------------------------- Подготовка пересчёта координат */
+
+                  center=this->Owner ;
+
+             Sum_Matrix.LoadE      (4, 4) ;
+//          Oper_Matrix.Load4d_roll(center->a_roll) ;
+//           Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+//          Oper_Matrix.Load4d_elev(center->a_elev) ;
+//           Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+            Oper_Matrix.Load4d_azim( center->a_azim) ;
+             Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+            Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+             Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 
 /*--------------------------------------------- Перебор объектов боя */
 
@@ -1011,9 +1045,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
          v  =sqrt(v_x*v_x+v_y*v_y+v_z*v_z) ;
 
-         d_x=this->Owner->x_base-object->x_base ;                   /* Направление от объекта на носитель (не наоборот!) */
-         d_y=this->Owner->y_base-object->y_base ;
-         d_z=this->Owner->z_base-object->z_base ;
+                      Point.LoadZero(4, 1) ;
+                      Point.SetCell (0, 0, object->x_base) ;
+                      Point.SetCell (1, 0, object->y_base) ;
+                      Point.SetCell (2, 0, object->z_base) ;
+                      Point.SetCell (3, 0,   1   ) ;
+
+                      Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */
+
+         d_x=Point.GetCell (0, 0) ;
+         d_y=Point.GetCell (1, 0) ;
+         d_z=Point.GetCell (2, 0) ;
 
          d  =sqrt(d_x*d_x+d_y*d_y+d_z*d_z) ;
       if(d==0.)  continue ;                                         /* Если метка объекта и носителя совпадают... */
@@ -1112,6 +1154,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 {
   RSS_Unit_SearchRadar *unit ;
+              RECT  rect ;
+               int  x ; 
+               int  y ; 
+               int  w_x ; 
+               int  w_y ; 
 
 
        unit=(RSS_Unit_SearchRadar *)this->object ;
@@ -1123,7 +1170,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	                         NULL, Unit_SearchRadar_Show_dialog, 
                                        (LPARAM)object) ;
 
+                    GetWindowRect(unit->hWnd, &rect);
+                              w_x=rect.bottom-rect.top +1 ;
+                              w_y=rect.right -rect.left+1 ;
+
+                                 x= 0 ;
+                                 y= 0 ;
+         if(details[0]=='1') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='2') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='3') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= 0 ;                                       }
+         if(details[0]=='4') {   x= RSS_Kernel::display.x-w_x ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+         if(details[0]=='5') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='6') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='7') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='8') {   x= 0 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='9') {   x= 0 ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+
+
+                     SetWindowPos(unit->hWnd, NULL, x, y, 0, 0,
+                                   SWP_NOOWNERZORDER | SWP_NOSIZE);
                        ShowWindow(unit->hWnd, SW_SHOW) ;
+
+                         SetFocus(ProgramModule.kernel_wnd) ;
 
                                      }
 

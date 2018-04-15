@@ -281,8 +281,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                       }
 
               OBJECTS[OBJECTS_CNT]=object ;
-       strcpy(OBJECTS[OBJECTS_CNT]->Name, data->name) ;
                       OBJECTS_CNT++ ;
+
+             strcpy(object->Name, data->name) ;
+                    object->Module=this ;
+
 
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)data->name) ;

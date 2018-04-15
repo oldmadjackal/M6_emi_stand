@@ -741,15 +741,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  RSS_Module_EWunit::cShow(char *cmd)
 
 {
-               char  *name ;
-    RSS_Unit_EWunit  *unit ;
-               char  *end ;
+#define   _PARS_MAX  10
+
+               char *pars[_PARS_MAX] ;
+               char *name ;
+               char *pos ;
+    RSS_Unit_EWunit *unit ;
+               char *end ;
+                int  i  ;
 
 /*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
-                  name=cmd ;
-                   end=strchr(name, ' ') ;
-                if(end!=NULL)  *end=0 ;
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                      pos=pars[1] ;   
+
+       if(pos==NULL)  pos="0" ;
 
 /*---------------------------------------- Контроль имени компонента */
 
@@ -1113,7 +1129,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Transit_EWunit::vExecute(void)
 
 {
-  RSS_Unit_EWunit *unit ;
+   RSS_Unit_EWunit *unit ;
+              RECT  rect ;
+               int  x ; 
+               int  y ; 
+               int  w_x ; 
+               int  w_y ; 
 
 
        unit=(RSS_Unit_EWunit *)this->object ;
@@ -1125,7 +1146,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	                         NULL, Unit_EWunit_Show_dialog, 
                                        (LPARAM)object) ;
 
+                    GetWindowRect(unit->hWnd, &rect);
+                              w_x=rect.bottom-rect.top +1 ;
+                              w_y=rect.right -rect.left+1 ;
+
+                                 x= 0 ;
+                                 y= 0 ;
+         if(details[0]=='1') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='2') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='3') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= 0 ;                                       }
+         if(details[0]=='4') {   x= RSS_Kernel::display.x-w_x ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+         if(details[0]=='5') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='6') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='7') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='8') {   x= 0 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='9') {   x= 0 ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+
+
+                     SetWindowPos(unit->hWnd, NULL, x, y, 0, 0,
+                                   SWP_NOOWNERZORDER | SWP_NOSIZE);
                        ShowWindow(unit->hWnd, SW_SHOW) ;
+
+                         SetFocus(ProgramModule.kernel_wnd) ;
 
                                      }
 

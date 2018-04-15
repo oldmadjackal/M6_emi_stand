@@ -69,6 +69,7 @@
 
     public:
                       char  action[1024] ;
+                      char  details[1024] ;
                 RSS_Object *object ;
 
     public:

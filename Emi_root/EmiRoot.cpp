@@ -93,6 +93,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                      int       nCmdShow)
 {
    char  ClassName[512] ;
+    HDC  hDCScreen ;
     MSG  SysMessage ;
    char  text[512] ;
     int  i ;
@@ -133,6 +134,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
       RSS_Kernel::display.SetNextContext =EmiRoot_next_context ;
       RSS_Kernel::display.ShowContext    =EmiRoot_show_context ;
       RSS_Kernel::display.GetContextPar  =EmiRoot_get_context ;
+
+/*----------------------------------- Определение размерности экрана */
+
+                                          hDCScreen=GetDC(NULL); 
+
+      RSS_Kernel::display.x=GetDeviceCaps(hDCScreen, HORZRES) ;
+      RSS_Kernel::display.y=GetDeviceCaps(hDCScreen, VERTRES) ;
+                                ReleaseDC(NULL, hDCScreen)   ;
 
 /*---------------------------------------------------- Инициализация */
 

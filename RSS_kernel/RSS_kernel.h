@@ -67,6 +67,9 @@
 /*---------------------------------- Интерфейс к системе отображения */
 
     struct RSS_Display {
+                          int  x ;  
+                          int  y ;  
+
 		          int  (* GetList)        (int) ;     /* Резервирование дисплейного списка */
 		         void  (* ReleaseList)    (int) ;     /* Освобождение дисплейного списка */
 		          int  (* SetFirstContext)(char *) ;  /* Установить первый дисплейного контекст */
@@ -99,6 +102,12 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 
                  }  RSS_Memory ;
 
+/*----------------------------------------------- Кэширование файлов */
+
+ typedef  struct {
+                    char  path[FILENAME_MAX] ;
+                    char *data ;
+                 }  RSS_File ;
 
 /*------------------------------------- Интерфейс межмодульной связи */
 
@@ -152,6 +161,9 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
     static   RSS_Kernel **calculate_modules ;       /* Список вычислителей */
     static          int   calculate_modules_cnt ;
 
+    static     RSS_File  *files ;                   /* Список кэшированных файлов */
+    static          int   files_cnt ;
+
     static   RSS_Result **results ;                 /* Стек результатов работы модулей */
     static          int   results_cnt ;
 
@@ -196,6 +208,7 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
                    void  *Resource (const char *,       /* Регистрация ресурса */
 				    const char * ) ; 
 		    int	  Load     (const char *) ;     /* Загрузка используемых модулей */
+                   char  *FileCache(char *, char *) ;   /* Загрузка файла в память */
 		    int	  Free     (void) ;	        /* Освобождение используемых модулей */
 		    
    public:

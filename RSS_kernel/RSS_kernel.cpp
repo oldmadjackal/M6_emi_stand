@@ -7,7 +7,9 @@
 #include <time.h>
 #include <errno.h>
 #include <math.h>
+#include <sys\types.h> 
 #include <sys\timeb.h>
+#include <sys\stat.h>
 
 #include <windows.h>
 
@@ -56,6 +58,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
  RSS_KERNEL_API    RSS_Kernel **RSS_Kernel::calculate_modules    =NULL ; 
  RSS_KERNEL_API           int   RSS_Kernel::calculate_modules_cnt=  0 ; 
+
+ RSS_KERNEL_API      RSS_File  *RSS_Kernel::files                =NULL ; 
+ RSS_KERNEL_API           int   RSS_Kernel::files_cnt            =  0 ; 
 
  RSS_KERNEL_API    RSS_Result **RSS_Kernel::results              =NULL ; 
  RSS_KERNEL_API           int   RSS_Kernel::results_cnt          =  0 ;
@@ -265,6 +270,56 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 /*-------------------------------------------------------------------*/
 
   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Загрузка используемых модулей		    */
+
+   char *RSS_Kernel::FileCache(char *path, char *error)
+
+{
+      RSS_File  cache ;
+  struct _stat  attr ;
+          FILE *file ;
+           int  i ; 
+
+/*------------------------------------------ Проверяем наличие файла */
+
+     for(i=0 ; i<this->files_cnt ; i++)
+       if(!stricmp(this->files[i].path, path))  return(this->files[i].data) ;
+
+/*--------------------------------------------------- Загрузка файла */
+
+     if(_stat(path, &attr)) {
+               sprintf(error, "File open error %d : %s", errno, path) ;
+                                return(NULL) ;
+                            } 
+
+        strcpy(cache.path, path) ;
+               cache.data=(char *)calloc(1, attr.st_size) ;
+
+        file=fopen(path, "rb") ;
+     if(file==NULL) {
+                        sprintf(error, "File open error %d : %s", errno, path) ;
+                           return(NULL) ;
+                    }
+
+           fread(cache.data, 1, attr.st_size, file) ;
+          fclose(file) ;
+
+/*---------------------------------------- Добавление файла в список */
+
+      this->files=(RSS_File *)
+                    realloc(this->files, 
+                              sizeof(this->files[0])*(this->files_cnt+1)) ;
+
+      this->files[this->files_cnt]=cache ;
+
+/*-------------------------------------------------------------------*/
+
+  return(cache.data) ;
 }
 
 
