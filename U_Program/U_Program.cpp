@@ -672,6 +672,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      }
 /*---------------------------------------- Поиск компонента по имени */ 
 
+                    unit=NULL ;
+
        for(i=0 ; i<object->Units.List_cnt ; i++)
          if(!stricmp(object->Units.List[i].object->Name, u_name)) { 
                          unit=object->Units.List[i].object ;
@@ -854,29 +856,35 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              char  obj_name[128] ;
            double  dt ;
 
-    Dcl_decl *Program_dcl_Log      (Lang_DCL *,             Dcl_decl **, int) ;    /* Запись в лог */
-    Dcl_decl *Program_dcl_Turn     (Lang_DCL *,             Dcl_decl **, int) ;    /* Изменение направления движения */
-    Dcl_decl *Program_dcl_ToPoint  (Lang_DCL *,             Dcl_decl **, int) ;    /* Движение в точку */
-    Dcl_decl *Program_dcl_StateSave(Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Сохранение состояния объекта */
-    Dcl_decl *Program_dcl_StateRead(Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Считывание состояния объекта */
+    Dcl_decl *Program_dcl_Message    (Lang_DCL *,             Dcl_decl **, int) ;    /* Выдача сообщения на экран с ожиданием */
+    Dcl_decl *Program_dcl_Log        (Lang_DCL *,             Dcl_decl **, int) ;    /* Запись в лог */
+    Dcl_decl *Program_dcl_Turn       (Lang_DCL *,             Dcl_decl **, int) ;    /* Изменение направления движения */
+    Dcl_decl *Program_dcl_ToPoint    (Lang_DCL *,             Dcl_decl **, int) ;    /* Движение в точку */
+    Dcl_decl *Program_dcl_StateSave  (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Сохранение состояния объекта */
+    Dcl_decl *Program_dcl_StateRead  (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Считывание состояния объекта */
+    Dcl_decl *Program_dcl_GetTargets (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Получение списка наблюдаемых целей */
+    Dcl_decl *Program_dcl_DetectOrder(Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Выделение организованных построений */
 
     Dcl_decl  dcl_program_lib[]={
          {0, 0, 0, 0, "$PassiveData$", NULL, "program", 0, 0},
-	 {_DGT_VAL,  0,          0, 0, "$Time",              &t1,                    NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$TimeN",             &t2,                    NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$dTime",             &dt,                    NULL,   1,   1               },
-	 {_CHR_AREA, 0,          0, 0, "$ThisName",           obj_name,              NULL,   0, sizeof(obj_name  )},
-	 {_DGT_VAL,  0,          0, 0, "$ThisX",             &this->Owner->x_base,   NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$ThisY",             &this->Owner->y_base,   NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$ThisZ",             &this->Owner->z_base,   NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$ThisAzim",          &this->Owner->a_azim,   NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$ThisElev",          &this->Owner->a_elev,   NULL,   1,   1               },
-	 {_DGT_VAL,  0,          0, 0, "$ThisRoll",          &this->Owner->a_roll,   NULL,   1,   1               },
- 	 {_CHR_PTR, _DCL_CALL,   0, 0, "Log",         (void *)Program_dcl_Log,       "s",    0,   0               },
- 	 {_CHR_PTR, _DCL_CALL,   0, 0, "Turn",        (void *)Program_dcl_Turn,      "sv",   0,   0               },
- 	 {_CHR_PTR, _DCL_CALL,   0, 0, "ToPoint",     (void *)Program_dcl_ToPoint,   "vvv",  0,   0               },
- 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "StateSave",   (void *)Program_dcl_StateSave, "",     0,   0               },
- 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "StateRead",   (void *)Program_dcl_StateRead, "",     0,   0               },
+	 {_DGT_VAL,  0,          0, 0, "$Time",              &t1,                      NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$TimeN",             &t2,                      NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$dTime",             &dt,                      NULL,   1,   1               },
+	 {_CHR_AREA, 0,          0, 0, "$ThisName",           obj_name,                NULL,   0, sizeof(obj_name  )},
+	 {_DGT_VAL,  0,          0, 0, "$ThisX",             &this->Owner->x_base,     NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$ThisY",             &this->Owner->y_base,     NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$ThisZ",             &this->Owner->z_base,     NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$ThisAzim",          &this->Owner->a_azim,     NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$ThisElev",          &this->Owner->a_elev,     NULL,   1,   1               },
+	 {_DGT_VAL,  0,          0, 0, "$ThisRoll",          &this->Owner->a_roll,     NULL,   1,   1               },
+ 	 {_CHR_PTR, _DCL_CALL,   0, 0, "Message",     (void *)Program_dcl_Message,     "s",    0,   0               },
+ 	 {_CHR_PTR, _DCL_CALL,   0, 0, "Log",         (void *)Program_dcl_Log,         "s",    0,   0               },
+ 	 {_CHR_PTR, _DCL_CALL,   0, 0, "Turn",        (void *)Program_dcl_Turn,        "sv",   0,   0               },
+ 	 {_CHR_PTR, _DCL_CALL,   0, 0, "ToPoint",     (void *)Program_dcl_ToPoint,     "vvv",  0,   0               },
+ 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "StateSave",   (void *)Program_dcl_StateSave,   "",     0,   0               },
+ 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "StateRead",   (void *)Program_dcl_StateRead,   "",     0,   0               },
+ 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "GetTargets",  (void *)Program_dcl_GetTargets,  "s",    0,   0               },
+ 	 {_DGT_VAL, _DCL_METHOD, 0, 0, "DetectOrder", (void *)Program_dcl_DetectOrder, "av",   0,   0               },
 	 {0, 0, 0, 0, "", NULL, NULL, 0, 0}
                               } ;
 
@@ -949,7 +957,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_Program::vCalculateShow(void)
+     int  RSS_Unit_Program::vCalculateShow(double  t1, double  t2)
 {
 /*------------------------------------- Передача события на носитель */
 
@@ -1064,6 +1072,49 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*               Выдача отладочного сообщения с ожиданием           */
+
+  Dcl_decl *Program_dcl_Message(Lang_DCL  *dcl_kernel,
+                                Dcl_decl **pars, 
+                                     int   pars_cnt)
+{
+   char  text[1024] ;
+
+ static     char  chr_value[512] ;          /* Буфер строки */
+ static Dcl_decl  chr_return={ _CHR_PTR, 0,0,0,"", chr_value, NULL, 0, 512} ;
+
+#define  _LOG_MAX   100
+
+/*---------------------------------------------------- Инициализация */
+
+                 memset(chr_value, 0, sizeof(chr_value)) ;
+                        chr_return.size=0 ;
+
+/*-------------------------------------------- Извлечение параметров */
+
+       if(pars_cnt     !=1   ||                                     /* Проверяем число параметров */
+	  pars[0]->addr==NULL  ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                      return(&chr_return) ; 
+                                 }
+
+                    memset(text, 0, sizeof(text)) ;                 /* Извлекаем ссылку на файл */
+        if(pars[0]->size>=sizeof(text))
+                    memcpy(text, pars[0]->addr, sizeof(text)-1) ;
+        else        memcpy(text, pars[0]->addr, pars[0]->size) ;
+
+/*------------------------------------------------- Выдача сообщения */
+
+               SEND_ERROR(text) ;
+
+/*-------------------------------------------------------------------*/
+
+  return(&chr_return) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                   Занесение данных в отладочный лог              */
 
   Dcl_decl *Program_dcl_Log( Lang_DCL  *dcl_kernel,
@@ -1175,19 +1226,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                         Движение в точку                         */
 /*								    */
-/*   Параметры: X, Z, квант времени контроля                        */
+/*   Параметры: X, Z, квант времени, [параметры манёвра]            */
+/*                                                                  */
+/*  Параметры манёвра задают ограничение скорости поворота:         */
+/*      <Вид ограничения> <Величина ограничения>                    */
+/*                                                                  */
+/*      <Вид ограничения>: R - по радиусу, G - по перегрузке        */
+/*      <Величина ограничения>: радиус поворота в метрах,           */
+/*                              перегрузка в единицах g             */
 
   Dcl_decl *Program_dcl_ToPoint( Lang_DCL  *dcl_kernel,
                                  Dcl_decl **pars, 
                                       int   pars_cnt)
 {
-  double  x_target ;
-  double  z_target ;
-  double  dt ;
-  double  r ;
-  double  dr ;
-  double  angle ;
-    char  cmd[1024] ;
+     double  x_target ;
+     double  z_target ;
+     double  dt ;
+       char  limit_type[16] ;
+     double  g ;
+     double  rad ;
+     double  v ;
+     double  r ;
+     double  dr ;
+     double  angle ;
+     double  angle_diff ;
+     double  da ;
+     double  l ;
+  RSS_Point  target ;
+       char *target_pars ;
 
  static   double  dgt_value ;          /* Буфер числового значения */
  static Dcl_decl  dgt_return={ _DGT_VAL, 0,0,0,"", &dgt_value, NULL, 1, 1} ;
@@ -1201,38 +1267,118 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------- Извлечение параметров */
 
-       if(pars_cnt     !=3    ||                                    /* Проверяем число параметров */
-	  pars[0]->addr==NULL ||
+       if(pars_cnt!=3 &&                                            /* Проверяем число параметров */
+	  pars_cnt!=5   ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                      return(&dgt_return) ; 
+                          }
+
+       if(pars[0]->addr==NULL ||                                    /* Проверяем наличие основных параметров */
 	  pars[1]->addr==NULL ||
 	  pars[2]->addr==NULL   ) {
                                     dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
                                       return(&dgt_return) ; 
                                   }
 
+      if(pars_cnt==5)                                               /* Проверяем наличие параметров манёвра */
+       if(pars[3]->addr==NULL ||
+	  pars[4]->addr==NULL   ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                      return(&dgt_return) ; 
+                                  }
+         
+
           x_target=dcl_kernel->iDgt_get(pars[0]->addr, pars[0]->type) ;
           z_target=dcl_kernel->iDgt_get(pars[1]->addr, pars[1]->type) ;
                 dt=dcl_kernel->iDgt_get(pars[2]->addr, pars[2]->type) ;
 
+                         memset(limit_type, 0, sizeof(limit_type)) ;
+
+     if(pars_cnt==5) {
+
+        if(pars[0]->size>=sizeof(limit_type))
+                    memcpy(limit_type, pars[3]->addr, sizeof(limit_type)-1) ;
+        else        memcpy(limit_type, pars[3]->addr, pars[3]->size) ;
+
+               rad=dcl_kernel->iDgt_get(pars[4]->addr, pars[4]->type) ;
+                 g=rad ;
+                     }
+/*---------------------------------------------- Проверка параметров */
+
+                strupr(limit_type) ;
+
+     if(limit_type[0]!='R' &&
+        limit_type[0]!='G'   ) {
+                                  dcl_kernel->mError_code=_DCLE_USER_DEFINED ;
+                           strcpy(dcl_kernel->mError_details, "Unknown type of manoeuvre's limit. Must by R or G") ;
+                                    return(&dgt_return) ;
+                               }
+
+     if(limit_type[0]=='R' && rad<=0. ||
+        limit_type[0]=='G' &&   g<=0.   ) {
+                                  dcl_kernel->mError_code=_DCLE_USER_DEFINED ;
+                           strcpy(dcl_kernel->mError_details, "invalid limit of manoeuvre. Must by >0") ;
+                                    return(&dgt_return) ;
+                                          } 
 /*-------------------------------- Проверка достижения целевой точки */
 
         r=sqrt((x_target-EventObject->x_base)*(x_target-EventObject->x_base)+
                (z_target-EventObject->z_base)*(z_target-EventObject->z_base) ) ;
 
-       dr=dt*sqrt(EventObject->x_velocity*EventObject->x_velocity+
-                  EventObject->z_velocity*EventObject->z_velocity ) ;
+        v=sqrt(EventObject->x_velocity*EventObject->x_velocity+
+               EventObject->z_velocity*EventObject->z_velocity ) ;
+       dr=dt*v ;
 
     if(dr>r) {
                         dgt_value=1. ;
                 return(&dgt_return) ;
              }
+/*----------------------------------------- Рассчёт радиуса поворота */
+
+    if(limit_type[0]=='G') {
+
+        rad=(EventObject->x_velocity*EventObject->x_velocity+
+             EventObject->z_velocity*EventObject->z_velocity )/(10.*g) ;
+
+                           }
 /*----------------------------------- Изменение направления движения */
 
           angle=_RAD_TO_GRD*atan2(x_target-EventObject->x_base, 
-                                  z_target-EventObject->z_base) ;
+                                  z_target-EventObject->z_base ) ;
+/*- - - - - - - - - - - - - - - - - - - - - - С ограничением манёвра */
+   if(limit_type[0]!=0) {
+                                        da =_RAD_TO_GRD*dt*v/rad ;
 
-                                sprintf(cmd, "%s angle/a %s %lf",
-                                              EventObject->Type, EventObject->Name, angle) ;
-       EventObject->Module->vExecuteCmd(cmd) ;
+                                angle_diff =angle-EventObject->a_azim ;
+       while(angle_diff> 180.)  angle_diff-=360. ;
+       while(angle_diff<-180.)  angle_diff+=360. ;
+
+       if(fabs(angle_diff)<da) {
+                                     da=fabs(angle_diff) ;
+                                    rad=dt*v/(_GRD_TO_RAD*da) ;
+                               }
+
+       if(da<5.) {
+                   l=dt*v ;
+                 }
+       else      {
+                    l=rad*sin(_GRD_TO_RAD*(da))/sin(_GRD_TO_RAD*(90.-da/2.)) ;
+                 } 
+
+       if(angle_diff<0.)  da=-da ;
+
+                            target.x   =EventObject->x_base+l*sin(_GRD_TO_RAD*(EventObject->a_azim+da/2.)) ;
+                            target.z   =EventObject->z_base+l*cos(_GRD_TO_RAD*(EventObject->a_azim+da/2.)) ;
+                            target.azim=EventObject->a_azim+da ;
+                            target_pars="XZA" ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - "Мгновенный" поворот */
+   else                 {
+                            target.azim=angle ;
+                            target_pars="A" ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - Задание целевого положения */
+          EventObject->vCalculateDirect(&target, target_pars) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1250,12 +1396,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                         int   pars_cnt)
 
 {
+                char  slot_name[1024] ;
   Dcl_complex_record *record ;
                  int  type ;          /* Основной тип переменной */
                 char  tmp[1024] ;
+                char *ptr ;
+                char *end ;
                  int  i ;
                  int  k ;
 
+        static  char *slot ;
         static  char *buff ;
 #define                _BUFF_SIZE  64000
 
@@ -1264,18 +1414,33 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*---------------------------------------------------- Инициализация */
 
-     if(buff==NULL)  buff=(char *)calloc(1, _BUFF_SIZE) ;
-     if(buff==NULL) {
-                       dcl_kernel->mError_code=_DCLE_USER_DEFINED ;
-                strcpy(dcl_kernel->mError_details, "Memory over") ;
-                            return(&dgt_return) ;
-                    }
+     if(buff==NULL   )  buff=(char *)calloc(1, _BUFF_SIZE) ;
+     if(slot==NULL   )  slot=(char *)calloc(1, _BUFF_SIZE) ;
+     if(buff==NULL ||
+        slot==NULL   ) {
+                         dcl_kernel->mError_code=_DCLE_USER_DEFINED ;
+                  strcpy(dcl_kernel->mError_details, "Memory over") ;
+                               return(&dgt_return) ;
+                       }
    
                               dgt_value=0 ;
 
+/*-------------------------------------------- Извлечение параметров */
+
+           strcpy(slot_name, "Unknown") ;
+
+       if(pars_cnt     == 1   &&                                    /* Проверяем число параметров */
+	  pars[0]->addr!=NULL   ) {
+
+                    memset(slot_name, 0, sizeof(slot_name)) ;       /* Извлекаем имя слота данных */
+        if(pars[0]->size>=sizeof(slot_name))
+                    memcpy(slot_name, pars[0]->addr, sizeof(slot_name)-1) ;
+        else        memcpy(slot_name, pars[0]->addr, pars[0]->size) ;
+
+                                  }
 /*-------------------------------------------------- Упаковка данных */
 
-                          *buff=0 ;
+          sprintf(slot, "SLOT %s{\n", slot_name) ;
 
      for(record=(Dcl_complex_record *)source->addr,                 /* LOOP - Перебираем записи */
                         i=0 ; i<source->buff ; i++, 
@@ -1286,20 +1451,39 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                type=t_base(record->elems[k].type) ;                 /* Извлекаем тип элемента */ 
             if(type==_CHR_AREA ||                                   /* Если строчная переменная */
                type==_CHR_PTR    ) {
-                                      strcat(buff, (char *)record->elems[k].addr) ;
+                                      strcat(slot, (char *)record->elems[k].addr) ;
                                    }
             else                   {                                /* Если числовая переменная */
 
                        dcl_kernel->iNumToStr(&record->elems[k], tmp) ;
-                                      strcat(buff, tmp) ;
+                                      strcat(slot, tmp) ;
                                    }
 
-                                      strcat(buff, ";") ;
+                                      strcat(slot, ";") ;
  
                                                }                    /* ENDLOOP - Перебираем элементы */
 
-                                      strcat(buff, "\n") ;          /* Переводим строку */ 
+                                      strcat(slot, "\n") ;          /* Переводим строку */ 
                                                            }
+
+          strcat(slot, "}\n") ;
+
+/*------------------------------------------------ Считывание данных */
+
+     if(EventUnit->state!=NULL)  strcpy(buff, EventUnit->state) ;
+     else                        strcpy(buff, "") ;
+
+/*---------------------------------------------- Замена слота данных */
+
+         sprintf(tmp, "SLOT %s{\n", slot_name) ;
+
+      ptr=strstr(buff, tmp) ;
+   if(ptr!=NULL) {
+         end=strchr(ptr, '}') ;
+            memmove(ptr, end+1, strlen(end+1)+1) ;
+                 }
+
+          strcat(buff, slot) ;
 
 /*------------------------------------------------ Сохранение данных */
 
@@ -1327,13 +1511,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define    _BUFF_SIZE  64000
 #define  _VALUES_MAX     100
 
+                char  slot_name[1024] ;
   Dcl_complex_record *record ;
                  int  type ;          /* Основной тип переменной */
                  int  status ;
                 char *work ;
                 char *next ;
+                char *ptr ;
                 char *end ;
               double  value ;
+                char  tmp[1024] ;
                  int  i ;
                  int  k ;
 
@@ -1362,17 +1549,50 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    
                               dgt_value=0 ;
 
+/*-------------------------------------------- Извлечение параметров */
+
+           strcpy(slot_name, "Unknown") ;
+
+       if(pars_cnt     == 1   &&                                    /* Проверяем число параметров */
+	  pars[0]->addr!=NULL   ) {
+
+                    memset(slot_name, 0, sizeof(slot_name)) ;       /* Извлекаем имя слота данных */
+        if(pars[0]->size>=sizeof(slot_name))
+                    memcpy(slot_name, pars[0]->addr, sizeof(slot_name)-1) ;
+        else        memcpy(slot_name, pars[0]->addr, pars[0]->size) ;
+
+                                  }
 /*------------------------------------------------ Считывание данных */
 
      if(EventUnit->state!=NULL)  strcpy(buff, EventUnit->state) ;
      else                        strcpy(buff, "") ;
 
-/*------------------------------------------------ Распаковка данных */
+/*------------------------------------------- Адресация слота данных */
 
-     if(*buff==0) {                                                 /* Если данных нет - оставяем исходную запись */
+         sprintf(tmp, "SLOT %s{\n", slot_name) ;
+
+      ptr=strstr(buff, tmp) ;
+   if(ptr==NULL) {                                                 /* Если данных нет - оставяем исходную запись */
                               dgt_value=1 ;
                       return(&dgt_return) ;
-                  } 
+                 }
+
+       ptr+=strlen(tmp) ;
+       end =strchr(ptr, '}') ;
+    if(end==NULL) {
+                              dgt_value=1 ;
+                      return(&dgt_return) ;
+                  }
+
+       *end= 0 ; 
+
+       memmove(buff, ptr, strlen(ptr)+1) ;
+
+    if(*buff==0) {                                                 /* Если данных нет - оставяем исходную запись */
+                              dgt_value=1 ;
+                      return(&dgt_return) ;
+                 } 
+/*------------------------------------------------ Распаковка данных */
 
               dcl_kernel->iXobject_clear(source) ;                  /* Очищаем структуру состояний */
 
@@ -1415,7 +1635,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   dcl_kernel->iDgt_set(value, &digits[k], values[k].type) ;
                                        values[k].addr=&digits[k] ;
                                    }
-
+            else                   {
+                   values[k].size=strlen((char *)values[k].addr) ;
+                                   } 
                                            }                                    
 /*- - - - - - - - - - - - - - - - - - - - - - -  Формирование записи */
         status=dcl_kernel->iXobject_set(source, values, record->elems_cnt) ;
@@ -1429,6 +1651,275 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     
 
+
+/*-------------------------------------------------------------------*/
+
+#undef   _BUFF_SIZE
+
+  return(&dgt_return) ;
+}
+
+
+/*********************************************************************/
+/*                                                                   */
+/*                     Получение списка целей                        */
+
+   Dcl_decl *Program_dcl_GetTargets(Lang_DCL  *dcl_kernel,
+                                    Dcl_decl  *source, 
+                                    Dcl_decl **pars, 
+                                         int   pars_cnt)
+
+{
+                char  unit_name[1024] ;
+          RSS_Object *unit ;
+     RSS_Unit_Target *targets ;
+                 int  targets_cnt ;
+                char  t_name[128] ;
+                char  t_spec[128] ;
+              double  t_x ;
+              double  t_y ;
+              double  t_z ;
+                 int  status ;
+                char  text[1024] ;
+                 int  i ;
+
+          Dcl_decl  rec_data[5] ={
+                                  {_CHR_AREA, 0, 0, 0, "object",           0,           t_name, 128, 128},
+                                  {_CHR_AREA, 0, 0, 0, "special", (void *)128,          t_spec, 128, 128},
+                                  {_DGT_VAL,  0, 0, 0, "x",       (void *)256, (char *)&t_x,      1,   1},
+                                  {_DGT_VAL,  0, 0, 0, "y",       (void *)264, (char *)&t_y,      1,   1},
+                                  {_DGT_VAL,  0, 0, 0, "z",       (void *)272, (char *)&t_z,      1,   1}
+                                 } ;
+  Dcl_complex_type  rec_template={ "target", 280, rec_data, 5} ;
+
+ static   double  dgt_value ;          /* Буфер числового значения */
+ static Dcl_decl  dgt_return={ _DGT_VAL, 0,0,0,"", &dgt_value, NULL, 1, 1} ;
+
+/*---------------------------------------------------- Инициализация */
+   
+                              dgt_value=0 ;
+
+/*-------------------------------------------- Извлечение параметров */
+
+       if(pars_cnt     < 1   &&                                    /* Проверяем число параметров */
+	  pars[0]->addr==NULL  ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                      return(&dgt_return) ; 
+                                 }
+
+                    memset(unit_name, 0, sizeof(unit_name)) ;       /* Извлекаем имя компонента */
+        if(pars[0]->size>=sizeof(unit_name))
+                    memcpy(unit_name, pars[0]->addr, sizeof(unit_name)-1) ;
+        else        memcpy(unit_name, pars[0]->addr, pars[0]->size) ;
+
+/*----------------------------------------- Идентификация компонента */
+
+                    unit=NULL ;
+
+       for(i=0 ; i<EventObject->Units.List_cnt ; i++)
+         if(!stricmp(EventObject->Units.List[i].object->Name, unit_name)) { 
+                         unit=EventObject->Units.List[i].object ;
+                                               break ;
+                                                                       }
+
+    if(unit==NULL) {
+                           sprintf(text, "Объект '%s' не включает компонент '%s'", EventObject->Name, unit_name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                   }
+/*------------------------------------------- Получение списка целей */
+
+       targets_cnt=unit->vSpecial("GET_TARGETS", &targets) ;
+    if(targets_cnt<0) {
+                         dcl_kernel->mError_code=_DCLE_USER_DEFINED ;
+                  strcpy(dcl_kernel->mError_details, "Component does not support targets iface") ;
+                               return(&dgt_return) ;
+                      }
+/*---------------------------------------------- Выдача списка целей */
+
+              dcl_kernel->iXobject_clear(source) ;                  /* Очищаем структуру состояний */
+
+   for(i=0 ; i<targets_cnt ; i++) {                                 /* LOOP - Перебор целей */
+
+              memset(t_name, 0, sizeof(t_name)) ;
+             strncpy(t_name, targets[i].target->Name, sizeof(t_name)-1) ;
+              memset(t_spec, 0, sizeof(t_spec)) ;
+             strncpy(t_spec, targets[i].special, sizeof(t_spec)-1) ;
+                     t_x    =targets[i].x ;
+                     t_y    =targets[i].y ;
+                     t_z    =targets[i].z ;
+
+        status=dcl_kernel->iXobject_add(source, &rec_template) ;
+     if(status) {
+                    dcl_kernel->mError_code=_DCLE_TYPEDEF_ELEM ;
+                      return(&dgt_return) ; 
+                }
+                                  }                                 /* END LOOP - Перебор целей */
+/*-------------------------------------------- Освобождение ресурсов */
+    
+    if(targets_cnt)  free(targets) ;
+
+/*-------------------------------------------------------------------*/
+
+  return(&dgt_return) ;
+}
+
+
+/*********************************************************************/
+/*                                                                   */
+/*                  Выделение организованных построений              */
+
+   Dcl_decl *Program_dcl_DetectOrder(Lang_DCL  *dcl_kernel,
+                                     Dcl_decl  *source, 
+                                     Dcl_decl **pars, 
+                                          int   pars_cnt)
+
+{
+              double  distance ;
+     RSS_Unit_Target *targets ;
+                 int  targets_cnt ;
+     RSS_Unit_Target *orders ;
+                 int  orders_cnt ;
+                 int  order ;
+  Dcl_complex_record *record ;
+                char  t_name[128] ;
+                char  t_spec[128] ;
+              double  t_x ;
+              double  t_y ;
+              double  t_z ;
+                 int  type ;          /* Основной тип переменной */
+                 int  status ;
+                char *work ;
+                char *next ;
+                char *ptr ;
+                char *end ;
+              double  value ;
+                char  text[1024] ;
+                char  tmp[1024] ;
+                 int  i ;
+                 int  j ;
+                 int  k ;
+
+          Dcl_decl  rec_data[5] ={
+                                  {_CHR_AREA, 0, 0, 0, "object",           0,           t_name, 128, 128},
+                                  {_CHR_AREA, 0, 0, 0, "special", (void *)128,          t_spec, 128, 128},
+                                  {_DGT_VAL,  0, 0, 0, "x",       (void *)256, (char *)&t_x,      1,   1},
+                                  {_DGT_VAL,  0, 0, 0, "y",       (void *)264, (char *)&t_y,      1,   1},
+                                  {_DGT_VAL,  0, 0, 0, "z",       (void *)272, (char *)&t_z,      1,   1}
+                                 } ;
+  Dcl_complex_type  rec_template={ "link", 280, rec_data, 5} ;
+
+ static   double  dgt_value ;          /* Буфер числового значения */
+ static Dcl_decl  dgt_return={ _DGT_VAL, 0,0,0,"", &dgt_value, NULL, 1, 1} ;
+
+/*---------------------------------------------------- Инициализация */
+
+                                targets=NULL ;
+                                 orders=NULL ;
+
+                              dgt_value=0 ;
+
+/*-------------------------------------------- Извлечение параметров */
+
+       if(pars_cnt     !=2    ||                                    /* Проверяем число параметров */
+	  pars[0]->addr==NULL ||
+	  pars[1]->addr==NULL   ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                      return(&dgt_return) ; 
+                                  }
+
+          distance=dcl_kernel->iDgt_get(pars[1]->addr, pars[1]->type) ;
+
+       if((pars[0]->type & _DCLT_XTP_OBJ)                           /* Проверяем наличие комплексного объекта */
+                         !=_DCLT_XTP_OBJ) {
+                                    dcl_kernel->mError_code=_DCLE_PROTOTYPE ;
+                                             return(&dgt_return) ; 
+                                          }
+/*------------------------------------------ Извлечение списка целей */
+
+          targets_cnt=pars[0]->buff ;
+          targets    =(RSS_Unit_Target *)calloc(targets_cnt, sizeof(*targets)) ;
+
+           record=(Dcl_complex_record *)pars[0]->addr ;
+
+   for(i=0 ; i<targets_cnt ; i++) {
+
+            targets[i].x    =dcl_kernel->iDgt_get(record->elems[2].addr, record->elems[2].type) ;
+            targets[i].y    =dcl_kernel->iDgt_get(record->elems[3].addr, record->elems[3].type) ;
+            targets[i].z    =dcl_kernel->iDgt_get(record->elems[4].addr, record->elems[4].type) ;
+            targets[i].order= 0 ;
+
+         record=(Dcl_complex_record *)record->next_record ;
+                                  }
+
+/*----------------------------------------------- Выделение формаций */
+
+#define  DISTANCE(i, j)  sqrt((targets[i].x-targets[j].x)*(targets[i].x-targets[j].x)+  \
+                              (targets[i].y-targets[j].y)*(targets[i].y-targets[j].y)+  \
+                              (targets[i].z-targets[j].z)*(targets[i].z-targets[j].z) )
+
+        orders_cnt=0 ;
+
+   for(i=1 ; i<targets_cnt ; i++) {
+
+     for(j=0 ; j<i ; j++) 
+       if(DISTANCE(i,j)<=distance)  break ;
+
+       if(j>=i)  continue ;
+        
+       if(targets[j].order==0) {
+                                                     orders_cnt++ ;
+                                    targets[j].order=orders_cnt ;
+                               }
+  
+                                    targets[i].order=targets[j].order ;
+                                  }
+
+#undef  DISTANCE
+
+/*-------------------------------------------------- Анализ формаций */
+
+  if(orders_cnt) {
+
+          orders_cnt++ ;
+
+          orders=(RSS_Unit_Target *)calloc(orders_cnt, sizeof(*orders)) ;
+
+     for(i=0 ; i<targets_cnt ; i++)
+       if(targets[i].order) {
+                              orders[targets[i].order].x    +=targets[i].x ; 
+                              orders[targets[i].order].y    +=targets[i].y ; 
+                              orders[targets[i].order].z    +=targets[i].z ; 
+                              orders[targets[i].order].order++ ;
+                            }
+    
+     for(order=1 ; order<orders_cnt ; order++) {
+                             orders[order].x/=orders[order].order ; 
+                             orders[order].y/=orders[order].order ; 
+                             orders[order].z/=orders[order].order ; 
+                                               }
+         
+                 }
+/*------------------------------------------- Выдача списка формаций */
+
+              dcl_kernel->iXobject_clear(source) ;                  /* Очищаем структуру состояний */
+
+   for(i=1 ; i<orders_cnt ; i++) if(orders[i].order>2) {            /* LOOP - Перебор формаций */
+    
+                     t_x=orders[i].x ;
+                     t_y=orders[i].y ;
+                     t_z=orders[i].z ;
+
+        status=dcl_kernel->iXobject_add(source, &rec_template) ;
+     if(status) {
+                    dcl_kernel->mError_code=_DCLE_TYPEDEF_ELEM ;
+                      return(&dgt_return) ; 
+                }
+                                                       }            /* END LOOP - Перебор формаций */
+/*-------------------------------------------- Освобождение ресурсов */
+    
+    if(targets_cnt)  free(targets) ;
+    if( orders_cnt)  free( orders) ;
 
 /*-------------------------------------------------------------------*/
 

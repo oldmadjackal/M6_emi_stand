@@ -1359,7 +1359,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
          object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
-         object->vCalculateShow() ;
+         object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
        if(time_1-time_s>=this->kernel->show_time_step) {
@@ -1725,7 +1725,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_Sadarm::vCalculateShow(void)
+     int  RSS_Object_Sadarm::vCalculateShow(double  t1, double  t2)
 {
    int i ;
 

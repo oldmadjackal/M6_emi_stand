@@ -96,11 +96,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
                     &RSS_Module_SearchRadar::cHelp   },
- { "info",    "i",  "#INFO - выдать информацию по объекту",
+ { "info",    "i",  "#INFO - выдать информацию по компоненту",
                     " INFO <Имя> \n"
-                    "   Выдать основную информацию по объекту в главное окно\n"
+                    "   Выдать основную информацию по компоненту в главное окно\n"
                     " INFO/ <Имя> \n"
-                    "   Выдать полную информацию по объекту в отдельное окно",
+                    "   Выдать полную информацию по компоненту в отдельное окно",
                     &RSS_Module_SearchRadar::cInfo },
  { "event",   "e",  "#EVENT - назначить событие факта обнаружения угрозы",
                     " EVENT <Имя> <Событие>\n"
@@ -782,6 +782,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------- Создание окна индикатора */
 
           strcpy(unit->Context->action, "INDICATOR") ;
+          strcpy(unit->Context->details, pos) ;
 
      SendMessage(RSS_Kernel::kernel_wnd, 
                  WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
@@ -967,6 +968,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_SearchRadar::vSpecial(char *oper, void *data)
 {
+  RSS_Unit_Target *targets ;
+         Matrix2d  Sum_Matrix ;
+         Matrix2d  Oper_Matrix ;
+         Matrix2d  Point ;
+       RSS_Object *target ;
+       RSS_Object *center ;
+              int  i ;
+
 /*------------------------------------------ Ссылка на модуль BATTLE */
 
     if(!stricmp(oper, "BATTLE")) {
@@ -974,6 +983,49 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                              this->battle=(RSS_Module_Battle *)data ;
                                       return(0) ;
                                  }
+/*-------------------------------- Выдача списка целей - GET_TARGETS */
+
+    if(!stricmp(oper, "GET_TARGETS")) {
+
+          if(this->threats_cnt==0)  return(0) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Подготовка */
+            targets=(RSS_Unit_Target *)calloc(this->threats_cnt, sizeof(*targets)) ;
+
+                  center=this->Owner ;
+
+                    Sum_Matrix.LoadE      (4, 4) ;
+//                 Oper_Matrix.Load4d_roll(center->a_roll) ;
+//                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+//                 Oper_Matrix.Load4d_elev(center->a_elev) ;
+//                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                   Oper_Matrix.Load4d_azim( center->a_azim) ;
+                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                   Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+                    Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+/*- - - - - - - - - - - - - - - - - - - -  Формирование списка целей */
+        for(i=0 ; i<this->threats_cnt ; i++) {
+
+                  target=this->threats[i] ;
+
+                      Point.LoadZero(4, 1) ;
+                      Point.SetCell (0, 0, target->x_base) ;
+                      Point.SetCell (1, 0, target->y_base) ;
+                      Point.SetCell (2, 0, target->z_base) ;
+                      Point.SetCell (3, 0,   1   ) ;
+
+                      Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */
+
+                 targets[i].target=target ;
+                 targets[i].x     =Point.GetCell(0, 0) ;
+                 targets[i].y     = 0. ;
+                 targets[i].z     =Point.GetCell(2, 0) ;
+          strcpy(targets[i].special, "XZ") ;
+                                             }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Подготовка */
+                    *(void **)data=(void *)targets ;
+
+                                         return(this->threats_cnt) ;
+                                      }
 /*-------------------------------------------------------------------*/
 
   return(-1) ;
@@ -1103,7 +1155,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_SearchRadar::vCalculateShow(void)
+     int  RSS_Unit_SearchRadar::vCalculateShow(double  t1, double  t2)
 {
 /*------------------------------------- Передача события на носитель */
 

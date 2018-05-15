@@ -186,7 +186,7 @@
                 contexts[i].hDlg=  hDlg ;
                 contexts[i].data=context ;
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Пропись заголовка */
-              sprintf(title, "Индикатор угроз: %s.%s",
+              sprintf(title, "Индикатор обстановки: %s.%s",
                                   context->Owner->Name, context->Name) ;
           SendMessage(hDlg, WM_SETTEXT, 0, (LPARAM)title) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
@@ -197,7 +197,7 @@
   			  return(FALSE) ;
   			     break ;
   			}
-/*------------------------------------------------ Отработка событий */
+/*-------------------------------------------- Отработка перерисовки */
 
     case WM_PAINT:      {
 
@@ -384,8 +384,8 @@
 
                       Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */
 
-                 dx=Point.GetCell (0, 0) ; ;
-                 dz=Point.GetCell (2, 0) ; ;
+                 dx=Point.GetCell (0, 0) ;
+                 dz=Point.GetCell (2, 0) ;
 
                 x_t=x_c-dx*rad/data->range_max ;
                 y_t=y_c-dz*rad/data->range_max ;

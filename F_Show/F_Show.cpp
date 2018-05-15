@@ -357,13 +357,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 if(end==NULL)  break ;
                   *end=0 ;
                                                  }
-
-                     name=pars[0] ;
-
 /*----------------------------------------------------- Разбор цвета */
 
      if(pars[1]==NULL) {
-                         SEND_ERROR("Не задано имя объекта. \n"
+                         SEND_ERROR("Не задан цвет объекта. \n"
                                     "Например: COLOR <Имя_объекта> GREEN") ;
                                         return(-1) ;
                        } 
@@ -388,6 +385,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                         return(-1) ;
                                              }
 /*------------------------------------------- Поиск объекта по имени */ 
+
+       name=pars[0] ; 
 
     if(name==NULL) {                                                /* Если имя не задано... */
                       SEND_ERROR("Не задано имя объекта. \n"

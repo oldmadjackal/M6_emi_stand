@@ -1128,8 +1128,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         status=object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
-                object->vCalculateShow() ;
+         status=object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
+                object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 
                 object->iShowTrace_("SHOW_TRACE") ;                 /* Отображение траектории */
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
@@ -1308,7 +1308,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        break_cnt++ ;
                     }
 
-                  CLONE(n)->vCalculateShow() ;
+                  CLONE(n)->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 
                   CLONE(n)->iShowTrace_("SHOW_TRACE") ;             /* Отображение траектории */
 
@@ -1331,7 +1331,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 clone->vCalculateStart(time_z) ;
                 clone->vCalculate     (time_z, time_c, NULL, 0) ;
-                clone->vCalculateShow () ;
+                clone->vCalculateShow (time_z, time_c) ;
 
                object->mSpawn=(RSS_Object **)
                                 realloc(object->mSpawn, sizeof(*object->mSpawn)*(object->mSpawn_cnt+1)) ;
@@ -1949,7 +1949,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_RocketLego::vCalculateShow(void)
+     int  RSS_Object_RocketLego::vCalculateShow(double  t1, double t2)
 {
    int i ;
 

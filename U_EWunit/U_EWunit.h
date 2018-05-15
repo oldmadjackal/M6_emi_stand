@@ -56,7 +56,7 @@
                virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
+               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
                virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
 
 	                     RSS_Unit_EWunit() ;                /* Конструктор */

@@ -1079,7 +1079,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_EWunit::vCalculateShow(void)
+     int  RSS_Unit_EWunit::vCalculateShow(double  t1, double  t2)
 {
 /*------------------------------------- Передача события на носитель */
 

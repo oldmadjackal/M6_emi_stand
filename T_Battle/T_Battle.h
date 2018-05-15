@@ -57,6 +57,35 @@
 
 #define  OBJ  RSS_Module_Battle_object
 
+ typedef struct {                           /* Цвет объекта на карте */
+                   char  object[64] ;
+               COLORREF  color ;
+                } RSS_Module_Battle_color ;
+
+#define  COLOR  RSS_Module_Battle_color
+
+ typedef struct {                           /* Трассировка объекта на карте */
+                   char  object[64] ;
+              RSS_Point *points ;
+                    int  points_max ;
+                    int  points_cnt ;
+                } RSS_Module_Battle_trace ;
+
+#define  TRACE  RSS_Module_Battle_trace
+
+/*----------- Описание класса контекста задачи "Задача обслуживания" */
+
+  class T_BATTLE_API RSS_Transit_Battle : public RSS_Transit {
+
+    public:
+             virtual   int  vExecute(void) ;             /* Исполнение действия */
+
+    public:
+                            RSS_Transit_Battle() ;  /* Конструктор */
+                           ~RSS_Transit_Battle() ;  /* Деструктор */
+
+                                                               } ;
+
 /*--------------------- Описание класса задачи "Задача обслуживания" */
 
 #define  _OBJECTS_MAX   1000
@@ -67,7 +96,7 @@
     public:
 
      static
-        struct RSS_Module_Battle_instr *mInstrList ;              /* Список команд */
+        struct RSS_Module_Battle_instr *mInstrList ;                /* Список команд */
 
                     static         OBJ  mObjects[_OBJECTS_MAX] ;
                     static         int  mObjects_cnt ;
@@ -75,22 +104,30 @@
                     static       FRAME *mSpawns[_SPAWNS_MAX] ;
                     static         int  mSpawns_cnt ;
 
-                    static       FRAME *mScenario ;               /* Описание задачи обслуживания */
+                    static       FRAME *mScenario ;                 /* Описание задачи обслуживания */
                     static         int  mScenario_cnt ;   
 
-                    static         VAR *mVariables ;              /* Список переменных */
+                    static         VAR *mVariables ;                /* Список переменных */
                     static         int  mVariables_cnt ;   
                     static        HWND  mVariables_Window ;
 
-                    static         int  mHit_cnt ;                /* Число поражённых объектов */
-     
+                    static         int  mHit_cnt ;                  /* Число поражённых объектов */
+    
+                                  char  mContextAction[64] ;        /* Действие 'контекстной' операции */
 
-                                  char  mContextAction[64] ;      /* Действие 'контекстной' операции */
+                    static   RSS_IFace  mExecIFace ;                /* Каноническая форма результата операции */
+                    static      double  mExecValue ;                /* Числовой результат операции */
+                    static         int  mExecError ;                /* Признак ошибки операции */
+                    static         int  mExecFail ;                 /* Признак неподдержки интерфейса внутренних связей */
 
-                    static   RSS_IFace  mExecIFace ;              /* Каноническая форма результата операции */
-                    static      double  mExecValue ;              /* Числовой результат операции */
-                    static         int  mExecError ;              /* Признак ошибки операции */
-                    static         int  mExecFail ;               /* Признак неподдержки интерфейса внутренних связей */
+                    static        HWND  mMapWindow ;                /* Окно индикатора карты */
+                    static       COLOR  mMapColors[_OBJECTS_MAX] ;  /* Цвета объектов на карте */
+                    static         int  mMapColors_cnt ;
+                    static       TRACE  mMapTraces[_OBJECTS_MAX] ;  /* Цвета объектов на карте */
+                    static         int  mMapTraces_cnt ;
+
+    public:
+                    RSS_Transit_Battle *Context ;
 
     public:
      virtual         int  vExecuteCmd   (const char *) ;          /* Выполнить команду */
@@ -107,7 +144,7 @@
                      int  cList         (char *, RSS_IFace *) ;   /* Инструкция LIST */
                      int  cProgram      (char *, RSS_IFace *) ;   /* Инструкция PROGRAM */
                      int  cRun          (char *, RSS_IFace *) ;   /* Инструкция RUN */
-                     int  cReset        (char *, RSS_IFace *) ;   /* Инструкция RESET */
+                     int  cMap          (char *, RSS_IFace *) ;   /* Инструкция MAP */
 
                      int  iFrameExecute (FRAME *, double, int) ;  /* Реализация инструкций сервисной задачи */
 
@@ -134,3 +171,5 @@
     BOOL CALLBACK  Task_Battle_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
     BOOL CALLBACK  Task_Battle_View_dialog(HWND, UINT, WPARAM, LPARAM) ;
     BOOL CALLBACK  Task_Battle_Vars_dialog(HWND, UINT, WPARAM, LPARAM) ;
+    BOOL CALLBACK  Task_Battle_Map_dialog (HWND, UINT, WPARAM, LPARAM) ;
+ LRESULT CALLBACK  Task_Battle_Map_prc    (HWND, UINT, WPARAM, LPARAM) ;

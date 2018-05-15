@@ -30,6 +30,9 @@
 
 #include "resource.h"
 
+   void *Ptr_decode(char *text) ;
+   char *Ptr_incode(void *ptr ) ;
+
 /*--------------------------------------------------- Форматы данных */
 
 #define    _FRAME_FORMAT  "% 6.2lf(% 5.2lf) %-10.10s %s"
@@ -126,6 +129,73 @@
 
 			            return(FALSE) ;
                               }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			  return(FALSE) ;
+			     break ;
+			}
+/*--------------------------------------------------------- Закрытие */
+
+    case WM_CLOSE:      {
+                            EndDialog(hDlg, 0) ;
+  			       return(FALSE) ;
+			              break ;
+			}
+/*----------------------------------------------------------- Прочее */
+
+    default :        {
+			  return(FALSE) ;
+			    break ;
+		     }
+/*-------------------------------------------------------------------*/
+	      }
+/*-------------------------------------------------------------------*/
+
+    return(TRUE) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/* 	     Обработчик сообщений диалогового окна MAP	             */
+
+    BOOL CALLBACK  Task_Battle_Map_dialog(  HWND hDlg,     UINT Msg, 
+		  	                  WPARAM wParam, LPARAM lParam) 
+{
+                HWND  hElem  ;
+                 int  elm ;         /* Идентификатор элемента диалога */
+                 int  status ;
+
+/*------------------------------------------------- Большая разводка */
+
+  switch(Msg) {
+
+/*---------------------------------------------------- Инициализация */
+
+    case WM_INITDIALOG: {
+/*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+                      hElem=GetDlgItem(hDlg, IDC_MAP) ;
+          SendMessage(hElem, WM_SETTEXT, NULL, 
+                       (LPARAM)Ptr_incode((void *)lParam)) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+  			  return(FALSE) ;
+  			     break ;
+  			}
+/*-------------------------------------------- Отработка перерисовки */
+
+    case WM_PAINT:      {
+
+                      hElem=GetDlgItem(hDlg, IDC_MAP) ;
+          SendMessage(hElem, WM_PAINT, NULL, NULL) ;
+                          
+ 			    return(FALSE) ;
+			       break ;
+			}
+/*------------------------------------------------ Отработка событий */
+
+    case WM_COMMAND:    {
+
+	status=HIWORD(wParam) ;
+	   elm=LOWORD(wParam) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 			  return(FALSE) ;
 			     break ;
@@ -479,3 +549,354 @@
 
   return(result) ;
 }
+
+
+/*********************************************************************/
+/*                                                                   */
+/*            Элемент - индикатор круговых диаграмм                  */
+
+ LRESULT CALLBACK  Task_Battle_Map_prc(
+                                         HWND  hWnd,     UINT  Msg,
+ 			               WPARAM  wParam, LPARAM  lParam
+                                      )
+{
+                  HDC  hDC_wnd ;
+                  HDC  hDC ;
+              HBITMAP  hBM ;
+             COLORREF  color ;
+          PAINTSTRUCT  PaintCfg ;
+                 HPEN  Pen ;
+                 HPEN  Pen_prv ;
+               HBRUSH  Brush ;
+               HBRUSH  Brush_prv ;
+                 RECT  Rect ;
+    RSS_Module_Battle *data ;               /* Источник данных */
+                 char  data_ptr[32] ;       /* Адрес описания, кодированный */
+                TRACE *trace ;
+           RSS_Object *center ;
+               double  x ;
+               double  z ;
+               double  x_c ;
+               double  z_c ;
+               double  x_min ;
+               double  x_max ;
+               double  z_min ;
+               double  z_max ;
+               double  dx ;
+               double  dz ;
+               double  step ;
+                  int  x_scr ;
+                  int  z_scr ;
+                  int  x_prv ;
+                  int  z_prv ;
+                  int  i ;
+                  int  j ;
+
+#pragma warning(disable : 4244)
+
+/*------------------------------------------------ Извлечение данных */
+
+   if(Msg==WM_PAINT        ||
+      Msg==WM_LBUTTONDBLCLK  ) {
+  
+        SendMessage(hWnd, WM_GETTEXT, (WPARAM)sizeof(data_ptr),
+                                      (LPARAM)       data_ptr  ) ;
+
+           data=(RSS_Module_Battle *)Ptr_decode(data_ptr) ;
+                               }
+/*--------------------------------------------------- Общая разводка */
+
+  switch(Msg) {
+
+/*----------------------------------------------- Основные сообщения */
+
+    case WM_CREATE:   break ;
+
+    case WM_COMMAND:  break ;
+
+/*-------------------------------------------------------- Отрисовка */
+
+    case WM_PAINT:   {
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Извлечение данных */
+                InvalidateRect(hWnd, NULL, false) ;
+
+        if(data==NULL) {
+                          ValidateRect(hWnd,  NULL) ;
+                              break ;
+                       }
+/*- - - - - - - - - - - - - - - - - - - Определение зоны отображения */
+       for(i=0 ; i<data->mObjects_cnt ; i++) {
+
+                     x=data->mObjects[i].object->x_base ;
+                     z=data->mObjects[i].object->z_base ;
+
+         if(i==0) {
+                     x_min=x ;
+                     x_max=x ;
+                     z_min=z ;
+                     z_max=z ;
+                  }
+         else     {
+                    if(x<x_min)  x_min=x ;
+                    if(x>x_max)  x_max=x ;
+                    if(z<z_min)  z_min=z ;
+                    if(z>z_max)  z_max=z ;
+                  }
+                                             }
+
+     if(data->mObjects_cnt==0) {
+                                  x_min=-1.0 ;
+                                  x_max= 1.0 ;
+                                  z_min=-1.0 ;
+                                  z_max= 1.0 ;
+                               }
+
+     if(x_min==x_max) {
+                         x_min-=1.0 ;
+                         x_max+=1.0 ;
+                      }   
+     if(z_min==z_max) {
+                         z_min-=1.0 ;
+                         z_max+=1.0 ;
+                      }   
+/*- - - - - - - - - - - - - - - - - -  Создание "теневого" контекста */
+       hDC_wnd=BeginPaint(hWnd, &PaintCfg) ;
+
+           hDC=CreateCompatibleDC    (hDC_wnd) ; 
+           hBM=CreateCompatibleBitmap(hDC_wnd, GetDeviceCaps(hDC_wnd, HORZRES), 
+                                               GetDeviceCaps(hDC_wnd, VERTRES) ) ; 
+                         SelectObject(hDC, hBM) ;
+/*- - - - - - - - - - - - - - - - - - - - - Форматирование диаграммы */
+               GetClientRect(hWnd, &Rect) ;
+
+            dx=fabs((x_max-x_min)/(Rect.right-Rect.left)) ;
+            dz=fabs((z_max-z_min)/(Rect.bottom-Rect.top)) ;
+
+         if(dx<dz) dx =dz ;
+                   dx*=1.05 ;
+
+            x_c  =(x_max+x_min)/2. ;
+            z_c  =(z_max+z_min)/2. ;
+            x_min=x_c-dx*(Rect.right -Rect.left)/2. ;
+            x_max=x_c+dx*(Rect.right -Rect.left)/2. ;
+            z_min=z_c-dx*(Rect.bottom-Rect.top )/2. ;
+            z_max=z_c+dx*(Rect.bottom-Rect.top )/2. ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Рассчёт сетки */
+                     x=fabs(x_max-x_min) ;
+                     z=fabs(z_max-z_min) ;
+            if(x<z)  x=z ;
+
+         for(step=0.01 ; step<100000. ; step*=10.) {
+               if(x/(1.*step)<5) {  step=1.*step ;  break ;  }
+               if(x/(2.*step)<5) {  step=2.*step ;  break ;  }
+               if(x/(5.*step)<5) {  step=5.*step ;  break ;  }
+                                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Очистка поля окна */
+             Brush    =    CreateSolidBrush(RGB(192, 192, 192)) ;
+             Brush_prv=(HBRUSH)SelectObject(hDC, Brush) ;
+
+                                   FillRect(hDC, &Rect, Brush) ;
+
+                               SelectObject(hDC, Brush_prv) ;
+                               DeleteObject(Brush) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - Форматирование сетки */
+               Pen    =           CreatePen(PS_SOLID, 0, RGB(148, 148, 148)) ;
+               Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+
+       if(x_min<0) 
+        for(x=0. ; x>x_min ; x-=step) {  
+             MoveToEx(hDC, (x-x_min)/dx, 0,   NULL) ;
+               LineTo(hDC, (x-x_min)/dx, Rect.bottom-Rect.top) ;
+                                       }
+
+       if(x_max>0) 
+        for(x=0. ; x<x_max ; x+=step) {  
+             MoveToEx(hDC, (x-x_min)/dx, 0,   NULL) ;
+               LineTo(hDC, (x-x_min)/dx, Rect.bottom-Rect.top) ;
+                                       }
+
+       if(z_min<0) 
+        for(z=0. ; z>z_min ; z-=step) {  
+             MoveToEx(hDC, 0,                    (z-z_min)/dx, NULL) ;
+               LineTo(hDC, Rect.right-Rect.left, (z-z_min)/dx) ;
+                                       }
+
+       if(z_max>0) 
+        for(z=0. ; z<z_max ; z+=step) {  
+             MoveToEx(hDC, 0,                    (z-z_min)/dx, NULL) ;
+               LineTo(hDC, Rect.right-Rect.left, (z-z_min)/dx) ;
+                                       }
+/*- - - - - - - - - - - - - - - - - -  Отображение объектов на карте */
+       for(i=0 ; i<data->mObjects_cnt ; i++) {
+
+                     x_scr=(data->mObjects[i].object->x_base-x_min)/dx ;
+                     z_scr=(data->mObjects[i].object->z_base-z_min)/dx ;
+
+                 color=RGB(0, 0, 0) ;
+
+          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцвети - */
+            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                              */
+                 if( strlen(data->mObjects[i].object->Name)>=
+                     strlen(data->mMapColors[j].object    )  )
+                  if(!memicmp(data->mMapColors[j].object,
+                              data->mObjects[i].object->Name,
+                       strlen(data->mMapColors[j].object)-1  )) {  color=data->mMapColors[j].color ;  break ;  }
+                                                              }
+            else                                              {
+                  if(!stricmp(data->mMapColors[j].object,
+                              data->mObjects[i].object->Name)) {  color=data->mMapColors[j].color ;  break ;  }
+                                                              }
+
+                           Pen    =           CreatePen(PS_SOLID, 0, color) ;
+                           Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+                         Brush    =    CreateSolidBrush(color) ;
+                         Brush_prv=(HBRUSH)SelectObject(hDC, Brush) ;
+
+                                    Ellipse(hDC, x_scr-2, z_scr-2, x_scr+2, z_scr+2) ;
+
+                               SelectObject(hDC, Brush_prv) ;
+                               SelectObject(hDC, Pen_prv) ;
+                               DeleteObject(Brush) ;
+                               DeleteObject(Pen) ;
+                                                }
+/*- - - - - - - - - - - - - - - - - -  Трассировка объектов на карте */
+       for(i=0 ; i<data->mObjects_cnt ; i++) {
+
+          for(j=0 ; j<data->mMapTraces_cnt ; j++)
+            if(!stricmp(data->mMapTraces[j].object,
+                        data->mObjects[i].object->Name))  break ;  
+
+            if(j>=data->mMapTraces_cnt)  continue ;
+
+               trace=&data->mMapTraces[j] ;
+
+            if(trace->points_cnt!=0)                                /* Если объект стоит на месте... */
+             if(trace->points[trace->points_cnt-1].x==
+                 data->mObjects[i].object->x_base      &&
+                trace->points[trace->points_cnt-1].z==
+                 data->mObjects[i].object->z_base        )  continue ;
+
+            if(trace->points_cnt==trace->points_max) {
+                trace->points_max+=  1000 ;
+                trace->points     =(RSS_Point *)
+                                     realloc(trace->points, 
+                                             trace->points_max*sizeof(*trace->points)) ;
+                                                     }
+
+                trace->points[trace->points_cnt].x=data->mObjects[i].object->x_base ;
+                trace->points[trace->points_cnt].z=data->mObjects[i].object->z_base ;
+                              trace->points_cnt++ ;
+
+                 color=RGB(0, 0, 0) ;
+
+          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцвети - */
+            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                              */
+                 if( strlen(data->mObjects[i].object->Name)>=
+                     strlen(data->mMapColors[j].object    )  )
+                  if(!memicmp(data->mMapColors[j].object,
+                              data->mObjects[i].object->Name,
+                       strlen(data->mMapColors[j].object)-1  )) {  color=data->mMapColors[j].color ;  break ;  }
+                                                              }
+            else                                              {
+                  if(!stricmp(data->mMapColors[j].object,
+                              data->mObjects[i].object->Name)) {  color=data->mMapColors[j].color ;  break ;  }
+                                                              }
+
+                           Pen    =           CreatePen(PS_SOLID, 0, color) ;
+                           Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+
+
+          for(j=0 ; j<trace->points_cnt ; j++) {
+  
+                       x_scr=(trace->points[j].x-x_min)/dx ;
+                       z_scr=(trace->points[j].z-z_min)/dx ;
+
+                    if(j==0           )  MoveToEx(hDC, x_scr, z_scr, NULL) ;
+               else if(x_scr!=x_prv ||
+                       z_scr!=z_prv   )  LineTo  (hDC, x_scr, z_scr) ;
+
+                       x_prv=x_scr ;
+                       z_prv=z_scr ;
+                                               }
+
+                               SelectObject(hDC, Pen_prv) ;
+                               DeleteObject(Pen) ;
+                                                }
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Вывод диаграммы */
+            BitBlt(hDC_wnd, 
+                   Rect.left, Rect.top, 
+                   Rect.right-Rect.left, Rect.bottom-Rect.top, 
+                   hDC,
+                   Rect.left, Rect.top, 
+                   SRCCOPY                           ) ;
+
+                    ValidateRect(hWnd,  NULL) ;
+                        EndPaint(hWnd, &PaintCfg) ;
+/*- - - - - - - - - - - - - - - - - - - - - -  Освобождение ресурсов */
+            if(hBM!=NULL)  DeleteObject(hBM) ;
+            if(hDC!=NULL)  DeleteDC    (hDC) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+			     break ;
+		     }
+/*------------------------------------------------- Прочие сообщения */
+
+    default :        {
+		return( DefWindowProc(hWnd, Msg, wParam, lParam) ) ;
+			    break ;
+		     }
+/*-------------------------------------------------------------------*/
+	      }
+/*-------------------------------------------------------------------*/
+
+    return(0) ;
+
+#pragma warning(default : 4244)
+}
+
+
+/*********************************************************************/
+/*                                                                   */
+/*                Преобразование адреса данных в строку              */
+/*                Преобразование строки в адрес данных               */
+
+#define  _UD_PTR_PREFIX   "UD_Pointer:"
+
+  union {
+          unsigned  long  code ;
+                    void *ptr ;  } Ptr_cvt ;
+
+
+   char *Ptr_incode(void *ptr)
+
+{
+  static char  ptr_text[128] ;
+         char  tmp[32] ;
+
+
+              Ptr_cvt.ptr=ptr ;
+        ultoa(Ptr_cvt.code, tmp, 16) ;
+
+       strcpy(ptr_text, _UD_PTR_PREFIX) ;
+       strcat(ptr_text,     tmp       ) ;
+
+   return(ptr_text) ;
+}
+
+
+   void *Ptr_decode(char *text)
+
+{
+  char *end ;
+
+
+        end=strstr(text, _UD_PTR_PREFIX) ;
+     if(end==NULL)  return(NULL) ;
+
+        end=text+strlen(_UD_PTR_PREFIX) ;
+
+          Ptr_cvt.code=strtoul(end, &end, 16) ;
+
+   return(Ptr_cvt.ptr) ;
+}
+
+

@@ -2163,7 +2163,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_Missile::vCalculateShow(void)
+     int  RSS_Object_Missile::vCalculateShow(double  t1, double  t2)
 {
    int i ;
 

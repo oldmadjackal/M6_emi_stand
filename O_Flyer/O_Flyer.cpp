@@ -159,7 +159,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " UNIT <Имя объекта> <Имя компонента> <Тип компонента>\n"
                     "   добавить компонент в состав объекта",
                     &RSS_Module_Flyer::cUnit },
- { "path",  "path", "#PATH - включение/выклячеие отображения траектории движения",
+ { "path",  "path", "#PATH - включение/выключение отображения траектории движения",
                     " PATH <Имя> <0 или 1>\n"
                     "   Включить (1) или выключить (0) отображения траектории движения\n",
                     &RSS_Module_Flyer::cPath },
@@ -169,6 +169,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " TRACE/P <Имя> <Имя программа> [<Длительность>]\n"
                     "   Моделирование движения объекта для программы управления\n",
                     &RSS_Module_Flyer::cTrace },
+ { "stream",  "st", "#STREAM - задание файла потока телеметрии",
+                    " STREAM <Имя> <Имя файла телеметрии>\n"
+                    "   Задание файла потока телеметрии\n",
+                    &RSS_Module_Flyer::cStream },
  {  NULL }
                                                             } ;
 
@@ -1919,7 +1923,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000) ;
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
          object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
-         object->vCalculateShow() ;
+         object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
        if(time_1-time_s>=this->kernel->show_time_step) {
@@ -1937,6 +1941,66 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #undef  _COORD_MAX   
 #undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции STREAM                  */
+/*								    */
+/*      STREAM <Имя> <Файл телеметрии>                              */
+
+  int  RSS_Module_Flyer::cStream(char *cmd)
+
+{
+#define   _PARS_MAX   4
+ RSS_Object_Flyer *object ;
+             char *pars[_PARS_MAX] ;
+             char *name ;
+             char *end ;
+              int  i ;
+
+/*-------------------------------------- Дешифровка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя объекта.\n"
+                                      "Например: STREAM <Имя> ...") ;
+                                     return(-1) ;
+                         }
+
+       object=FindObject(name) ;                                    /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*---------------------------------------- Фиксация файла телеметрии */
+
+  if(pars[1]==NULL) {
+                       SEND_ERROR("Не задано имя файла телеметрии.\n"
+                                  "Например: STREAM <Имя> <Файл телеметрии>") ;
+                                     return(-1) ;
+                    }
+
+      strncpy(object->stream_path, pars[1], sizeof(object->stream_path)-1) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
 
    return(0) ;
 }
@@ -2534,6 +2598,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     memset(programs,  0, sizeof(programs)) ;
     memset(battle_cb, 0, sizeof(battle_cb)) ;
 
+    memset(stream_path, 0, sizeof(stream_path)) ;
+
       trace_on    =  0 ;
       trace_time  =  0 ;
 
@@ -2704,14 +2770,47 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vCalculateStart(double  t)
 {
-  int  i ;
+  FILE *file ;
+  char  text[1024] ;
+   int  i ;
 
-        this->program=NULL ;
+/*------------------------------------------------------- Подготовка */
 
-        this->iSaveTracePoint("CLEAR") ;
+             this->program=NULL ;
+
+             this->iSaveTracePoint("CLEAR") ;
+
+      memset(this->direct_select, 0, sizeof(this->direct_select)) ;
 
     for(i=0 ; i<Units.List_cnt ; i++)                               /* Инициализация подчиненных объектов */
                   Units.List[i].object->vCalculateStart(t) ;
+
+/*--------------------------------------------- Обработка телеметрии */
+
+   if(this->stream_path[0]!=0) {
+
+        file=fopen(this->stream_path, "w") ;
+     if(file==NULL) {
+                         sprintf(text, "%s - Stream file open error %d : %s", this->Name, errno, this->stream_path) ;
+                      SEND_ERROR(text) ;
+                    }
+     else           {
+                         sprintf(text, "%.5lf;"
+                                       "%.5lf;%.5lf;%.5lf;"
+                                       "%.5lf;%.5lf;%.5lf;"
+                                       "%.5lf;"
+                                       "\n", 
+                                         t,
+                                         this->x_base, this->y_base, this->z_base,
+                                         this->a_azim, this->a_elev, this->a_roll,
+                                         this->v_abs
+                                ) ;
+                          fwrite(text, 1, strlen(text), file) ;
+                          fclose(file) ;
+                    }         
+
+                               }
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }
@@ -2756,14 +2855,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Постоянная скорость */
 
    if(this->g_ctrl==0) {
+/*- - - - - - - - - - - - - - - - - - - -  Расчёт по старому вектору */
                           x_base+=x_velocity*(t2-t1) ;
                           y_base+=y_velocity*(t2-t1) ;
                           z_base+=z_velocity*(t2-t1) ;
+/*- - - - - - - - - - - - - - - - - - - Обработка целевого состояния */
+     if(this->direct_select[0]!=0) {
 
-                  if(m_ctrl!=NULL) {
-                                      delete m_ctrl ;
-                                             m_ctrl=NULL ;
+          strupr(this->direct_select) ;
+
+       if(strchr(this->direct_select, 'X')!=NULL)  x_base=this->direct_target.x ;
+       if(strchr(this->direct_select, 'Y')!=NULL)  y_base=this->direct_target.y ;
+       if(strchr(this->direct_select, 'Z')!=NULL)  z_base=this->direct_target.z ;
+       if(strchr(this->direct_select, 'A')!=NULL)  a_azim=this->direct_target.azim ;
+       if(strchr(this->direct_select, 'E')!=NULL)  a_elev=this->direct_target.elev ;
+       if(strchr(this->direct_select, 'R')!=NULL)  a_roll=this->direct_target.roll ;
+
+          memset(this->direct_select, 0, sizeof(this->direct_select)) ;
+
                                    }
+/*- - - - - - - - - - - - - Сброс контекста управления по перегрузке */
+     if(m_ctrl!=NULL) {
+                         delete m_ctrl ;
+                                m_ctrl=NULL ;
+                      }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                        }
 /*-------------------------------------------- Постоянная перегрузка */
 
@@ -2911,13 +3027,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object_Flyer::vCalculateShow(void)
+     int  RSS_Object_Flyer::vCalculateShow(double t1, double t2)
 {
-   int i ;
+  FILE *file ;
+  char  text[1024] ;
+   int  i ;
 
+/*-------------------------------------------- Обработка отображения */
 
     for(i=0 ; i<Units.List_cnt ; i++)                               /* Отработка подчененных объектов */ 
-                  Units.List[i].object->vCalculateShow() ;
+                  Units.List[i].object->vCalculateShow(t1, t2) ;
 
          this->iSaveTracePoint("ADD") ;                             /* Сохранение точки траектории */  
 
@@ -2931,6 +3050,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                              this->a_elev, 
                                              this->a_roll ) ;
                                             }
+/*--------------------------------------------- Обработка телеметрии */
+
+   if(this->stream_path[0]!=0) {
+
+        file=fopen(this->stream_path, "a+") ;
+     if(file==NULL) {
+                         sprintf(text, "%s - Stream file open error %d : %s", this->Name, errno, this->stream_path) ;
+                      SEND_ERROR(text) ;
+                    }
+     else           {
+                         sprintf(text, "%.5lf;"
+                                       "%.5lf;%.5lf;%.5lf;"
+                                       "%.5lf;%.5lf;%.5lf;"
+                                       "%.5lf;"
+                                       "\n", 
+                                         t2,
+                                         this->x_base, this->y_base, this->z_base,
+                                         this->a_azim, this->a_elev, this->a_roll,
+                                         this->v_abs
+                                ) ;
+                          fwrite(text, 1, strlen(text), file) ;
+                          fclose(file) ;
+                    }         
+
+                               }
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }

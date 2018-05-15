@@ -1,15 +1,18 @@
-  typedef <data>  {
-                     double  x ;
-                     double  z ;
-                        int  step ;
-                        int  x_direct ;
-                  } ;
+  typedef <destination>  {
+                           double  x ;
+                           double  z ;
+                              int  step ;
+                              int  x_direct ;
+                         } ;
 
-      <data>  data ;
+  <destination>  destination ;
+      <unknown>  targets ;
+      <unknown>  orders ;
 
   double  x_min, x_max, z_min, z_max ;
   double  x_step ;
   double  done ;
+     int  i ;
 
 //------------------------------- Конфигурация
 
@@ -23,49 +26,60 @@
 
   if($Time<5)  return ;
 
-     data.StateRead() ;
+     destination.StateRead("Destination") ;
 
 //------------------------------- Выход в квадрат
 
-   if(data.step==0)
+   if(destination.step==0)
    {
-        done=ToPoint(x_min, z_min, $dTime) ;
+        done=ToPoint(x_min, z_min, $dTime, "G", 5.) ;
      if(done) {
                  Log("Zone 0 reached") ;
-                     data.step++ ;
-                     data.x       =x_min ;
-                     data.z       =z_max ;
-                     data.x_direct= 1 ;
+                     destination.step++ ;
+                     destination.x       =x_min ;
+                     destination.z       =z_max ;
+                     destination.x_direct= 1 ;
               }
    }
 //------------------------------- Барражирование в квадрате
 
   else 
   {
-       done=ToPoint(data.x, data.z, $dTime) ;
+//- - - - - - - - - - - - - - - - - -  Движение по маршруту
+       done=ToPoint(destination.x, destination.z, $dTime, "G", 5.) ;
     if(done) {
-                 Log("Turning point reached: " @ atos(data.x) @ ":"  @ atos(data.z)) ;
+                 Log("Turning point reached: " @ atos(destination.x) @ ":"  @ atos(destination.z)) ;
 
-        if(data.step==1)
+        if(destination.step==1)
         {
-           data.step=2 ;
+           destination.step=2 ;
 
-            if(data.x==x_min)  data.x_direct=  1 ;
-            if(data.x==x_max)  data.x_direct=(-1) ;
-                               data.x       =data.x+data.x_direct*x_step ;
+            if(destination.x==x_min)  destination.x_direct=  1 ;
+            if(destination.x==x_max)  destination.x_direct=(-1) ;
+                                      destination.x       =destination.x+destination.x_direct*x_step ;
         }
         else
         {
-           data.step=1 ;
+           destination.step=1 ;
 
-            if(data.z==z_min)  data.z=z_max ;
-            else               data.z=z_min ; 
+            if(destination.z==z_min)  destination.z=z_max ;
+            else                      destination.z=z_min ; 
         }
-
              }
+//- - - - - - - - - - - - - - - - - -  Идентификация цели
+       targets.GetTargets ("radar") ;
+
+    if(targets.count>0)
+    {
+        orders.DetectOrder(targets, 100) ;
+
+//     for(i=0 ; i<orders.count ; i++)  Log("  Order " @ atos(i) @ " > " @ atos(orders[i].x) @ ":"  @ atos(orders[i].z)) ;
+
+//       if(orders.count)  Message("Target!") ;
+    }
   }
 //------------------------------- Завершение
  
-     data.StateSave() ;
+     destination.StateSave("Destination") ;
 
 return ;

@@ -342,10 +342,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                   Задание целевого состояния                     */
+
+     int  RSS_Object::vCalculateDirect(RSS_Point *target, char *select)
+{
+           this->direct_target=*target ;
+   strncpy(this->direct_select, select, sizeof(this->direct_select)-1) ;
+
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*             Подготовка расчета изменения состояния               */
 
      int  RSS_Object::vCalculateStart(double  t)
 {
+    memset(this->direct_select, 0, sizeof(this->direct_select)) ;
+
   return(0) ;
 }
 
@@ -356,6 +371,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object::vCalculate(double t1, double t2, char *callback, int callback_size)
 {
+
+/*------------------------------------- Обработка целевого состояния */
+
+   if(this->direct_select[0]!=0) {
+
+          strupr(this->direct_select) ;
+
+       if(strchr(this->direct_select, 'X')!=NULL)  this->x_base=this->direct_target.x ;
+       if(strchr(this->direct_select, 'Y')!=NULL)  this->y_base=this->direct_target.y ;
+       if(strchr(this->direct_select, 'Z')!=NULL)  this->z_base=this->direct_target.z ;
+       if(strchr(this->direct_select, 'A')!=NULL)  this->a_azim=this->direct_target.azim ;
+       if(strchr(this->direct_select, 'E')!=NULL)  this->a_elev=this->direct_target.elev ;
+       if(strchr(this->direct_select, 'R')!=NULL)  this->a_roll=this->direct_target.roll ;
+
+          memset(this->direct_select, 0, sizeof(this->direct_select)) ;
+
+                                 }
+/*-------------------------------------------------------------------*/
+
   return(0) ;
 }
 
@@ -364,7 +398,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Object::vCalculateShow(void)
+     int  RSS_Object::vCalculateShow(double  t1, double  t2)
 {
   return(0) ;
 }

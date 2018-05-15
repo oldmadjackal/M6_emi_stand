@@ -1641,7 +1641,7 @@
                                       return(&dgt_return) ; 
                                   }
 
-                        memset(templ, 0, sizeof(templ)) ;           /* Копируем маску файлов в рабочий буфер */
+                        memset(templ, 0, sizeof(templ)) ;           /* Копируем вид сравнения в рабочий буфер */
 
        if(pars_cnt     >= 3   ||
 	  pars[2]->addr==NULL   ) {

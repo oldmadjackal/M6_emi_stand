@@ -120,6 +120,8 @@
                   COLORREF  mTrace_color ;
                        int  mTrace_dlist ;
 
+                      char  stream_path[FILENAME_MAX] ;        /* Файл телеметрии */
+
     public:
                virtual void  vFree          (void) ;            /* Освободить ресурсы */
                virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
@@ -128,7 +130,7 @@
                virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
                virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateShow (void) ;            /* Отображение результата расчета изменения состояния */
+               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
                virtual  int  vEvent         (char *, double) ;  /* Обработка событий */
                virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iExecuteProgram(double, double) ;  /* Отработка программного управления */
@@ -172,6 +174,7 @@
                      int  cUnit         (char *) ;                     /* Инструкция UNIT */
                      int  cPath         (char *) ;                     /* Инструкция PATH */
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
+                     int  cStream       (char *) ;                     /* Инструкция STREAM */
 
         RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */
                      int  iReadProgram  (RSS_Object_Flyer *, char *) ; /* Считывание файла описания программы */

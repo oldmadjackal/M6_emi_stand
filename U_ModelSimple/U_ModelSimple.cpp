@@ -1064,7 +1064,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_ModelSimple::vCalculateShow(void)
+     int  RSS_Unit_ModelSimple::vCalculateShow(double  t1, double  t2)
 {
   return(0) ;
 }

@@ -119,6 +119,16 @@
 			     RSS_Unit_Model  () ;                /* Конструктор */
 			    ~RSS_Unit_Model  () ;                /* Деструктор */
                                                         } ;
+/*----------------------------- Описания для специальных компонентов */
+
+   struct RSS_Unit_Target {
+                             RSS_Object *target ;
+                                 double  x ;
+                                 double  y ;
+                                 double  z ;
+                                   char  special[128] ;
+                                    int  order ;
+                          } ;
 /*-------------------------------------------------------------------*/
 
 #endif  // RSS_UNIT_H

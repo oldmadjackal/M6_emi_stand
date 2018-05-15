@@ -52,10 +52,10 @@ END
 // Dialog
 //
 
-IDD_HELP DIALOG  0, 0, 350, 206
+IDD_HELP DIALOGEX 0, 0, 350, 206
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Справка по командам секции Task Service"
-FONT 8, "MS Sans Serif"
+CAPTION "Справка по командам секции Task Battle"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     LISTBOX         IDC_HELP_LIST,6,7,337,192,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
 END
@@ -82,6 +82,14 @@ BEGIN
     LISTBOX         IDC_EXEC_LIST,7,88,289,39,LBS_SORT | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
 END
 
+IDD_MAP DIALOGEX 0, 0, 255, 207
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Карта объектов Task Battle"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    CONTROL         "Custom1",IDC_MAP,"Task_Battle_Map_class",0x0,0,0,254,206
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -97,6 +105,12 @@ BEGIN
         RIGHTMARGIN, 296
         TOPMARGIN, 7
         BOTTOMMARGIN, 142
+    END
+
+    "IDD_MAP", DIALOG
+    BEGIN
+        RIGHTMARGIN, 254
+        BOTTOMMARGIN, 206
     END
 END
 #endif    // APSTUDIO_INVOKED

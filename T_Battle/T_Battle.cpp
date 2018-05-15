@@ -111,6 +111,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "run",        "r",  "#RUN (R) - запуск исполнения сценария боя", 
                        " RUN [<Число повторов>]\n",
                        &RSS_Module_Battle::cRun },
+ { "map",        "m",  "#MAP (M) - отображение карты боя", 
+                       " MAP [<Квадрант размещения>]\n"
+                       "   Отобразить окно карты поля боя\n"
+                       " MAP/C[Q] <Объект>[&] <Название цвета>\n"
+                       "   Установить цвет объекта (объектов с заданным шаблоном имени) на карте: RED, GREEN, BLUE\n"
+                       "   Kлюч Q блокирует выдачу предупреждающих сообщений\n"
+                       " MAP/T[Q] <Объект>\n"
+                       "   Трассировать объект\n"
+                       "   Kлюч Q блокирует выдачу предупреждающих сообщений\n",
+                       &RSS_Module_Battle::cMap },
  {  NULL }
                                                               } ;
 
@@ -136,6 +146,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                int  RSS_Module_Battle::mHit_cnt ;
 
+                              HWND  RSS_Module_Battle::mMapWindow ;
+                             COLOR  RSS_Module_Battle::mMapColors[_OBJECTS_MAX] ;
+                               int  RSS_Module_Battle::mMapColors_cnt ;
+                             TRACE  RSS_Module_Battle::mMapTraces[_OBJECTS_MAX] ;
+                               int  RSS_Module_Battle::mMapTraces_cnt ;
+
 
 /********************************************************************/
 /*								    */
@@ -144,11 +160,33 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      RSS_Module_Battle::RSS_Module_Battle(void)
 
 {
+  static  WNDCLASS  Map_wnd ;
+
+/*---------------------------------------------------- Инициализация */
+
                 keyword="EmiStand" ;
          identification="Battle" ;
                category="Task" ;
 
              mInstrList=RSS_Module_Battle_InstrList ;
+
+                Context=new RSS_Transit_Battle ;
+
+/*----------------------------------- Регистрация класса элемент Map */
+
+	Map_wnd.lpszClassName="Task_Battle_Map_class" ;
+	Map_wnd.hInstance    = GetModuleHandle(NULL) ;
+	Map_wnd.lpfnWndProc  = Task_Battle_Map_prc ;
+	Map_wnd.hCursor      = LoadCursor(NULL, IDC_ARROW) ;
+	Map_wnd.hIcon        =  NULL ;
+	Map_wnd.lpszMenuName =  NULL ;
+	Map_wnd.hbrBackground=  NULL ;
+	Map_wnd.style        =    0 ;
+	Map_wnd.hIcon        =  NULL ;
+
+            RegisterClass(&Map_wnd) ;
+
+/*-------------------------------------------------------------------*/
 }
 
 
@@ -464,7 +502,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
 
                                 OBJECTS[i]->vPop() ;
-                                OBJECTS[i]->vCalculateShow() ;
+                                OBJECTS[i]->vCalculateShow(0, 0) ;
                                                      }
          if(OBJECTS[i]->battle_state== _SPAWN_STATE) {
 
@@ -541,6 +579,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        char *words[30] ;
      double  value ;
         int  row ;
+       char  error[1024] ;
         int  n ;
         int  i ;
 
@@ -641,8 +680,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
          if(memicmp(words[0], "T=",  2) &&
             memicmp(words[0], "DT=", 3)   ) {
-                 sprintf(text, "Строка программы сценария должна начинаться с метки времени T=... или DT=... (строка %d)", row) ;
-              SEND_ERROR(text) ;
+                 sprintf(error, "Строка программы сценария должна начинаться с метки времени T=... или DT=... (строка %d)", row) ;
+              SEND_ERROR(error) ;
                    return(-1) ;
                                             }
 
@@ -650,8 +689,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              value=strtod(end+1, &end) ;
 
          if(*end!=0) {
-                          sprintf(text, "Некорректная метка времени (строка %d)", row) ;
-                       SEND_ERROR(text) ;
+                          sprintf(error, "Некорректная метка времени (строка %d)", row) ;
+                       SEND_ERROR(error) ;
                             return(-1) ;
                      }
 
@@ -663,8 +702,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(!stricmp(words[1], "START")) {
 
               if(words[2]==NULL) {
-                                    sprintf(text, "Не задано имя объекта (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задано имя объекта (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
@@ -672,8 +711,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               if(!stricmp(OBJECTS[i]->Name, words[2]))  break ;
 
               if(i==OBJECTS_CNT) {                                       /* Если имя не найдено... */
-                           sprintf(text, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
-                        SEND_ERROR(text) ;
+                           sprintf(error, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
+                        SEND_ERROR(error) ;
                             return(-1) ;
                                  }
 
@@ -682,8 +721,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               if(words[3]!=NULL) {
                         this->mScenario[n].t_par=strtod(words[3], &end) ;
                  if(*end!=0) {
-                                  sprintf(text, "Некорректное время активности объекта (строка %d)", row) ;
-                               SEND_ERROR(text) ;
+                                  sprintf(error, "Некорректное время активности объекта (строка %d)", row) ;
+                               SEND_ERROR(error) ;
                                     return(-1) ;
                              }
 
@@ -725,14 +764,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(!stricmp(words[1], "EVENT")) {
 
               if(words[2]==NULL) {
-                                    sprintf(text, "Не задано имя объекта (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задано имя объекта (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
               if(words[3]==NULL) {
-                                    sprintf(text, "Не задано событие (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задано событие (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
@@ -740,8 +779,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               if(!stricmp(OBJECTS[i]->Name, words[2]))  break ;
 
               if(i==OBJECTS_CNT) {                                       /* Если имя не найдено... */
-                           sprintf(text, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
-                        SEND_ERROR(text) ;
+                           sprintf(error, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
+                        SEND_ERROR(error) ;
                             return(-1) ;
                                  }
 
@@ -760,20 +799,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(!stricmp(words[1], "SPAWN")) {
 
               if(words[2]==NULL) {
-                                    sprintf(text, "Не задано имя объекта-шаблона (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задано имя объекта-шаблона (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
               if(words[3]==NULL) {
-                                    sprintf(text, "Не задана размерность залпа (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задана размерность залпа (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
               if(words[4]==NULL) {
-                                    sprintf(text, "Не задан темп порождения (строка %d)", row) ;
-                                 SEND_ERROR(text) ;
+                                    sprintf(error, "Не задан темп порождения (строка %d)", row) ;
+                                 SEND_ERROR(error) ;
                                       return(-1) ;
                                  }
 
@@ -781,8 +820,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               if(!stricmp(OBJECTS[i]->Name, words[2]))  break ;
 
               if(i==OBJECTS_CNT) {                                       /* Если имя не найдено... */
-                           sprintf(text, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
-                        SEND_ERROR(text) ;
+                           sprintf(error, "Объекта с именем '%s' НЕ существует  (строка %d)", words[2], row) ;
+                        SEND_ERROR(error) ;
                             return(-1) ;
                                  }
 
@@ -822,8 +861,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - Неизвестная операция */
          else                            {
 
-                          sprintf(text, "Неизвестная операция (строка %d)", row) ;
-                       SEND_ERROR(text) ;
+                          sprintf(error, "Неизвестная операция (строка %d)", row) ;
+                       SEND_ERROR(error) ;
                             return(-1) ;
                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -913,7 +952,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  
            preObjects_cnt=this->mObjects_cnt ;
 
-                  hit_sum= 0. ;
+                  hit_sum=0 ;
 
    for(attempt=0 ; attempt<attempt_cnt ; attempt++) {               /* LOOP.0 */
 
@@ -931,7 +970,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
 
                                 OBJECTS[i]->vPop() ;
-                                OBJECTS[i]->vCalculateShow() ;
+                                OBJECTS[i]->vCalculateShow(0, 0) ;
                                                      }
          if(OBJECTS[i]->battle_state== _SPAWN_STATE) {
 
@@ -1065,7 +1104,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c,
                                                                    callback, _CALLBACK_SIZE-1) ;
-            mObjects[i].object->vCalculateShow() ;
+            mObjects[i].object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 
          if(mObjects[i].cut_time!=    0. &&
             mObjects[i].cut_time<=time_c   )  mObjects[i].active=0 ;
@@ -1123,7 +1162,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 clone->vCalculateStart(S->next_event) ;
                 clone->vCalculate     (S->next_event, time_c, NULL, 0) ;
-                clone->vCalculateShow () ;
+                clone->vCalculateShow (S->next_event, time_c) ;
 /*- - - - - - - - - - - - - - - - - - -  Добавление объекта в список */
            if(mObjects_cnt>=_OBJECTS_MAX) {
                       SEND_ERROR("Список объектов сценария слишком велик") ;
@@ -1173,6 +1212,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  time_s=time_1 ;
 
               this->kernel->vShow(NULL) ;
+
+       if(this->mMapWindow!=NULL)  SendMessage(this->mMapWindow, WM_PAINT, NULL, NULL) ;
+
                                                        }
 /*-------------------------------------- Главный исполнительный цикл */
 
@@ -1192,6 +1234,166 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     else                SEND_ERROR("Моделирование завершено") ;
 
 /*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции MAP                     */
+/*								    */
+/*        MAP <Квадрант отображения>                                */
+
+  int  RSS_Module_Battle::cMap(char *cmd, RSS_IFace *iface)
+
+{
+#define   _PARS_MAX  10
+
+      char *pars[_PARS_MAX] ;
+       int  quiet_flag ;
+       int  trace_oper ;
+       int  color_oper ;
+  COLORREF  color ;
+      char *pos ;
+      char  text[1024] ;
+      char *end ;
+       int  i  ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                   trace_oper=0 ;
+                   color_oper=0 ;
+                   quiet_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 't')!=NULL ||
+                   strchr(cmd, 'T')!=NULL   )  trace_oper=1 ;
+                if(strchr(cmd, 'c')!=NULL ||
+                   strchr(cmd, 'C')!=NULL   )  color_oper=1 ;
+                if(strchr(cmd, 'q')!=NULL ||
+                   strchr(cmd, 'Q')!=NULL   )  quiet_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+/*--------------------------------------- Задание режима трассировки */
+
+    if(trace_oper) {
+/*- - - - - - - - - - - - - - - - - - - - - - -  Определение объекта */
+     if(pars[0]==NULL) {
+                         SEND_ERROR("Не задано имя объекта. \n"
+                                    "Например: MAP/T <Имя_объекта>") ;
+                                        return(-1) ;
+                       } 
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, pars[0]))  break ;
+
+ 
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
+                           sprintf(text, "Операция выполнена, хотя объекта с именем '%s' "
+                                         "НЕ существует.", pars[0]) ;
+       if(!quiet_flag)  SEND_ERROR(text) ;
+                       }
+/*- - - - - - - - - - - - - - - - - - - - -  Регистрация трассировки */
+    if(mMapTraces_cnt>=_OBJECTS_MAX) {
+                      SEND_ERROR("Список трассировок объектов слишком велик") ;
+                                         return(-1) ;
+                                     }
+
+       strncpy(mMapTraces[mMapTraces_cnt].object, pars[0], sizeof(mMapTraces[0].object)-1) ;
+                          mMapTraces_cnt++ ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                   }
+/*-------------------------------------------- Задание цвета объекта */
+
+    else
+    if(color_oper) {
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Определение цвета */
+     if(pars[1]==NULL) {
+                         SEND_ERROR("Не задан цвет объекта. \n"
+                                    "Например: MAP/C <Имя_объекта> GREEN") ;
+                                        return(-1) ;
+                       } 
+
+              if(!stricmp(pars[1], "RED"  ))  color=RGB(127,   0,   0) ;
+         else if(!stricmp(pars[1], "GREEN"))  color=RGB(  0, 127,   0) ;
+         else if(!stricmp(pars[1], "BLUE" ))  color=RGB(  0,   0, 127) ;
+         else                                {
+                         SEND_ERROR("Неизвестное название цвета") ;
+                                        return(-1) ;
+                                             }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Определение объекта */
+     if(pars[0]==NULL) {
+                         SEND_ERROR("Не задано имя объекта. \n"
+                                    "Например: MAP/C <Имя_объекта> GREEN") ;
+                                        return(-1) ;
+                       } 
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, pars[0]))  break ;
+
+ 
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
+                           sprintf(text, "Операция выполнена, хотя объекта с именем '%s' "
+                                         "НЕ существует.", pars[0]) ;
+       if(!quiet_flag)  SEND_ERROR(text) ;
+                       }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Регистрация цвета */
+    if(mMapColors_cnt>=_OBJECTS_MAX) {
+                      SEND_ERROR("Список цветов объектов слишком велик") ;
+                                         return(-1) ;
+                                     }
+
+       strncpy(mMapColors[mMapColors_cnt].object, pars[0], sizeof(mMapColors[0].object)-1) ;
+               mMapColors[mMapColors_cnt].color =color ;
+                          mMapColors_cnt++ ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                   }
+/*----------------------------------------- Создание окна индикатора */
+
+    else           {
+                      pos=pars[0] ;   
+       if(pos==NULL)  pos="0" ;
+
+          strcpy(Context->action, "MAP") ;
+          strcpy(Context->details, pos) ;
+
+     SendMessage(RSS_Kernel::kernel_wnd, 
+                 WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                          (LPARAM) Context              ) ;
+
+                   }
+/*-------------------------------------------------------------------*/
+
+#undef    OBJECTS
+#undef    OBJECTS_CNT
 
    return(0) ;
 }
@@ -1453,4 +1655,94 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   OBJECTS_CNT
 
    return(_NEXT_FRAME) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_Battle::RSS_Transit_Battle(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_Battle::~RSS_Transit_Battle(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_Battle::vExecute(void)
+
+{
+     HWND  hWnd ;
+     RECT  rect ;
+      int  x ; 
+      int  y ; 
+      int  w_x ; 
+      int  w_y ; 
+
+/*----------------------------------------------- Создание карты боя */
+
+   if(!stricmp(action, "MAP")) {
+
+         hWnd=CREATE_DIALOG(GetModuleHandle(NULL),
+                             (LPCDLGTEMPLATE)ProgramModule.Resource("IDD_MAP", RT_DIALOG),
+	                        NULL, Task_Battle_Map_dialog, 
+                                  (LPARAM)&ProgramModule) ;
+
+             GetWindowRect(hWnd, &rect);
+                              w_x=rect.bottom-rect.top +1 ;
+                              w_y=rect.right -rect.left+1 ;
+
+                                 x= 0 ;
+                                 y= 0 ;
+         if(details[0]=='1') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='2') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='3') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= 0 ;                                       }
+         if(details[0]=='4') {   x= RSS_Kernel::display.x-w_x ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+         if(details[0]=='5') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='6') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='7') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='8') {   x= 0 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='9') {   x= 0 ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+
+
+                     SetWindowPos(hWnd, NULL, x, y, 0, 0,
+                                   SWP_NOOWNERZORDER | SWP_NOSIZE);
+                       ShowWindow(hWnd, SW_SHOW) ;
+
+                         SetFocus(ProgramModule.kernel_wnd) ;
+
+                                   ProgramModule.mMapWindow=hWnd ;
+
+                                     }
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
 }

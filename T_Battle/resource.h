@@ -4,6 +4,8 @@
 //
 #define IDC_HELP_LIST                   1000
 #define IDC_SCENARIO                    1001
+#define IDC_INDICATOR                   1001
+#define IDC_MAP                         1001
 #define IDC_COMMAND                     1002
 #define IDC_ACTION                      1003
 #define IDC_SET                         1005
@@ -11,7 +13,6 @@
 #define IDC_VARS_CLEAR                  1007
 #define IDC_VARS                        1007
 #define IDC_EXEC_LIST                   1009
-#define IDC_LIST1                       1010
 #define IDC_OBJECTS                     1010
 #define IDC_VARS_LIST                   1012
 #define IDC_INSERT_ROW                  2001

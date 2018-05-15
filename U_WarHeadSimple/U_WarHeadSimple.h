@@ -42,7 +42,7 @@
          virtual        int  vCalculateStart   (double) ;                           /* Подготовка расчета изменения состояния */
          virtual        int  vCalculate        (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      
-         virtual        int  vCalculateShow    (void) ;                             /* Отображение результата расчета изменения состояния */
+         virtual        int  vCalculateShow    (double, double) ;                   /* Отображение результата расчета изменения состояния */
          virtual        int  vSpecial          (char *, void *) ;                   /* Специальные действия */
 
          virtual        int  vSetWarHeadControl(char *) ;                           /* Управление БЧ */

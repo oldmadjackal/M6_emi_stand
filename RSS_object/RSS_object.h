@@ -109,34 +109,37 @@
   class RSS_OBJECT_API RSS_Object {
 
        public:
-                       char  Name[128] ;       /* Имя обьекта */
-                       char  Type[128] ;       /* Тип обьекта */
-                       char  Decl[1024] ;      /* Описание обьекта */
+                       char   Name[128] ;       /* Имя обьекта */
+                       char   Type[128] ;       /* Тип обьекта */
+                       char   Decl[1024] ;      /* Описание обьекта */
 
-                        int  battle_state ;    /* Род объекта в бою */
-#define                       _ACTIVE_STATE  1
-#define                        _SPAWN_STATE  2
+                        int   battle_state ;    /* Род объекта в бою */
+#define                        _ACTIVE_STATE  1
+#define                         _SPAWN_STATE  2
 
-                     double  x_base ;          /* Координаты базовой точки */
-                     double  y_base ;
-                     double  z_base ;
-                     double  x_base_stack ;
-                     double  y_base_stack ;
-                     double  z_base_stack ;
+                     double   x_base ;          /* Координаты базовой точки */
+                     double   y_base ;
+                     double   z_base ;
+                     double   x_base_stack ;
+                     double   y_base_stack ;
+                     double   z_base_stack ; 
 
-                     double  a_azim ;          /* Углы ориентации */
-                     double  a_elev ;
-                     double  a_roll ;
-                     double  a_azim_stack ;
-                     double  a_elev_stack ;
-                     double  a_roll_stack ;
+                     double   a_azim ;          /* Углы ориентации */
+                     double   a_elev ;
+                     double   a_roll ;
+                     double   a_azim_stack ;
+                     double   a_elev_stack ;
+                     double   a_roll_stack ;
 
-                     double  x_velocity ;      /* Вектор скорости */
-                     double  y_velocity ;
-                     double  z_velocity ;
-                     double  x_velocity_stack ;
-                     double  y_velocity_stack ;
-                     double  z_velocity_stack ;
+                     double   x_velocity ;      /* Вектор скорости */
+                     double   y_velocity ;
+                     double   z_velocity ;
+                     double   x_velocity_stack ;
+                     double   y_velocity_stack ;
+                     double   z_velocity_stack ;
+
+                  RSS_Point   direct_target ;     /* Целевая точка программного управления */
+                       char   direct_select[16] ;
 
        struct RSS_Parameter  *Parameters ;     /* Список параметров */
                         int   Parameters_cnt ;
@@ -177,7 +180,8 @@
    virtual              int  vCalculateStart (double) ;             /* Подготовка расчета изменения состояния */
    virtual              int  vCalculate      (double, double,       /* Расчет изменения состояния */
                                                       char *, int) ;
-   virtual              int  vCalculateShow  (void) ;               /* Отображение результата расчета изменения состояния */
+   virtual              int  vCalculateDirect(RSS_Point *, char *); /* Задание целевого состояния */
+   virtual              int  vCalculateShow  (double, double) ;     /* Отображение результата расчета изменения состояния */
    virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
 
    virtual              int  vResetFeatures  (void *) ;             /* Сброс контекста проверки свойств */
