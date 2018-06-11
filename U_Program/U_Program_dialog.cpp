@@ -146,7 +146,6 @@
 {
   static Indicator_context   contexts[_IND_MAX] ;
           RSS_Unit_Program  *context ;
-                      HWND   hElem  ;
                        int   elm ;           /* Идентификатор элемента диалога */
                        int   status ;
                       char   title[1024] ;

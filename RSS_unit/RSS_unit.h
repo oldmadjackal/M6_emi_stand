@@ -126,6 +126,7 @@
                                  double  x ;
                                  double  y ;
                                  double  z ;
+                                 double  azim ;
                                    char  special[128] ;
                                     int  order ;
                           } ;

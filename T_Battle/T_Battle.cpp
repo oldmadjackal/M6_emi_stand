@@ -109,7 +109,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        " PROGRAM <Имя файла>\n",
                        &RSS_Module_Battle::cProgram },
  { "run",        "r",  "#RUN (R) - запуск исполнения сценария боя", 
-                       " RUN [<Число повторов>]\n",
+                       " RUN [<Число повторов>]\n"
+                       "   Исполнение сценария в реальном времени\n"
+                       " RUN/F [<Число повторов>]\n"
+                       "   Исполнение сценария с максимальным ускорением времени\n",
                        &RSS_Module_Battle::cRun },
  { "map",        "m",  "#MAP (M) - отображение карты боя", 
                        " MAP [<Квадрант размещения>]\n"
@@ -147,6 +150,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                int  RSS_Module_Battle::mHit_cnt ;
 
                               HWND  RSS_Module_Battle::mMapWindow ;
+                               int  RSS_Module_Battle::mMapRegime ;
+                            double  RSS_Module_Battle::mMapXmin ;
+                            double  RSS_Module_Battle::mMapXmax ;
+                            double  RSS_Module_Battle::mMapZmin ;
+                            double  RSS_Module_Battle::mMapZmax ;
                              COLOR  RSS_Module_Battle::mMapColors[_OBJECTS_MAX] ;
                                int  RSS_Module_Battle::mMapColors_cnt ;
                              TRACE  RSS_Module_Battle::mMapTraces[_OBJECTS_MAX] ;
@@ -173,6 +181,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 Context=new RSS_Transit_Battle ;
 
 /*----------------------------------- Регистрация класса элемент Map */
+
+          mMapRegime=_MAP_KEEP_RANGE ;
 
 	Map_wnd.lpszClassName="Task_Battle_Map_class" ;
 	Map_wnd.hInstance    = GetModuleHandle(NULL) ;
@@ -522,6 +532,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            mObjects_cnt=0 ;
             mSpawns_cnt=0 ;
+
+/*------------------------------------- Инициализация объектов карты */
+
+     for(i=0 ; i<mMapTraces_cnt ; i++) {
+
+       if(mMapTraces[i].points_max!=0)  free(mMapTraces[i].points) ;
+                                             mMapTraces[i].points    =NULL ;
+                                             mMapTraces[i].points_max= 0 ;
+                                             mMapTraces[i].points_cnt= 0 ;
+                                       }
+
+                 mMapTraces_cnt=0 ;
+
+       if(this->mMapWindow!=NULL)  SendMessage(this->mMapWindow, WM_PAINT, NULL, NULL) ;
 
 /*------------------------------------------------------ Перерисовка */
 
@@ -894,6 +918,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               RSS_IFace  iface_ ;
                    char *pars[_PARS_MAX] ;
+                    int  fast ; 
                  double  time_0 ;              /* Стартовое время расчета */ 
                  double  time_1 ;              /* Текущее время */ 
                  double  time_c ;              /* Абсолютное время расчета */ 
@@ -924,6 +949,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       if(iface==NULL)  iface=&iface_ ;                              /* При отсутствии межмодульного интерфейса */
                                                                     /*     используем локальную заглушку       */ 
 /*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                   fast=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+                              cmd++ ;
+                          if(*cmd=='f' || *cmd=='F')  fast=1 ;
+                              cmd++ ;
+                        }       
+
+       if(*cmd==' ')  cmd++ ; 
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
@@ -958,6 +994,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                        RSS_Kernel::battle=1 ;
 
+/*------------------------------------- Инициализация объектов карты */
+
+     for(i=0 ; i<mMapTraces_cnt ; i++) {
+                                          mMapTraces[i].points_cnt=0 ;
+                                       }
 /*--------------------------------- Инициализация контекста объектов */
 
 #define   OBJECTS       RSS_Kernel::kernel->kernel_objects
@@ -1059,6 +1100,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               time_w=time_c-(time_1-time_0) ;
 
+          if(fast==0)                                               /* Для реального времени - выдерживаем паузу */
            if(time_w>=0)  Sleep(time_w*1000) ;
 
                     hit_avg=((double)(hit_sum+mHit_cnt))/(attempt+1.) ;
@@ -1292,6 +1334,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                            cmd=end+1 ;
                         }
+
+    if(trace_oper &&
+       color_oper   ) {
+                        SEND_ERROR("Одновременное использование ключей T и C недопустимо") ;
+                                       return(-1) ;
+                      }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
@@ -1500,6 +1548,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    object->vPush() ;
                                                 }
 
+                   object->vSpecial       ("BATTLE", this) ;
+                   object->vResetFeatures (NULL) ;
                    object->vCalculateStart(t) ;
 
                mObjects[mObjects_cnt].object  =object ;

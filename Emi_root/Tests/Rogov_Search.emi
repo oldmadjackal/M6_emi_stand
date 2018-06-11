@@ -30,19 +30,53 @@ eye>50
 
 ;------------------------- БЛА
 
-flyer cr bla летун-1 8 0.5 12 1 2
+;flyer cr bla летун-1 8 0.5 12 1 2
+flyer cr bla бла-рогов
 bla unit radar SearchRadar
 bla.radar range 500 10000
 bla unit control Program
-bla.control program tests\bla.dcl
+;bla.control program tests\bla.dcl
+bla.control embeded tests\bla.pgm
 
-bla base -5000 600 10500
-bla v 200
+bla base -5000 600 0
+bla angle/a -90
+bla v 300
 
 eye -1000 11000 0
 eye>50
 z 5000
 la bla
+
+;------------------------- Суб-боеприпас
+
+sadarm cr sb sadarm
+sb velocity 15
+sb scan/a 100
+sb scan/t 30
+sb scan/r  8
+sb scan/v 30
+scene visible sb 0
+
+;------------------------- Кассеты
+
+rocket-lego cr kas1 ракета-1 0.45 2.5
+kas1 lego engine EngineSimple
+kas1 lego warhead WarHeadSimple
+kas1 lego model ModelSimple
+kas1.engine p tests/dummy.dat
+kas1.model mass 478
+kas1.model slide 0
+kas1.model dv/a 0.4
+kas1.model dv/e 1.0
+kas1.warhead tripping/a 250
+;kas1.warhead stripe sb 2 20
+kas1.warhead pancakes sb 15 20 5 25
+kas1 owner bla
+
+kas1 copy kas2
+
+;scene visible kas1 0
+;scene visible kas2 0
 
 ;------------------------- Танки
 flyer cr tank1 танк

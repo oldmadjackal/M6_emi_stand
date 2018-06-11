@@ -2760,6 +2760,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vSpecial(char *oper, void *data)
 {
+   int  i ;
+
+/*----------------------------------------- Трансляция на компоненты */
+
+    for(i=0 ; i<this->Units.List_cnt ; i++)
+      this->Units.List[i].object->vSpecial(oper, data) ;
+    
+/*-------------------------------------------------------------------*/
+
   return(-1) ;
 }
 
@@ -2839,8 +2848,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------- Отработка подчиненных объектов */
 
     for(i=0 ; i<Units.List_cnt ; i++)
-                  Units.List[i].object->vCalculate(t1, t2, NULL, 0) ;
+      Units.List[i].object->vCalculate(t1, t2, callback, callback_size) ;
 
+/*------------------------------------- Обработка целевого состояния */
+
+   if(this->direct_select[0]!=0) {
+/*- - - - - - - - - - - - - - - - - - - -  Расчёт заданных положений */
+          strupr(this->direct_select) ;
+
+       if(strchr(this->direct_select, 'X')!=NULL)  x_base=this->direct_target.x ;
+       if(strchr(this->direct_select, 'Y')!=NULL)  y_base=this->direct_target.y ;
+       if(strchr(this->direct_select, 'Z')!=NULL)  z_base=this->direct_target.z ;
+       if(strchr(this->direct_select, 'A')!=NULL)  a_azim=this->direct_target.azim ;
+       if(strchr(this->direct_select, 'E')!=NULL)  a_elev=this->direct_target.elev ;
+       if(strchr(this->direct_select, 'R')!=NULL)  a_roll=this->direct_target.roll ;
+/*- - - - - - - - - - - - - - - - - - - - - Расчёт проекций скорости */
+                Vect_Matrix.LoadZero   (3, 1) ;
+                Vect_Matrix.SetCell    (2, 0, v_abs) ;
+
+                 Sum_Matrix.Load3d_azim(-a_azim) ;
+                Oper_Matrix.Load3d_elev(-a_elev) ;
+                 Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+                Vect_Matrix.LoadMul    (&Sum_Matrix, &Vect_Matrix) ;
+
+                       x_velocity=Vect_Matrix.GetCell(0, 0) ;
+                       y_velocity=Vect_Matrix.GetCell(1, 0) ;
+                       z_velocity=Vect_Matrix.GetCell(2, 0) ;
+/*- - - - - - - - - - - - - - - - - - - - Расчёт свободных положений */
+       if(strchr(this->direct_select, 'X')==NULL)  x_base+=x_velocity*(t2-t1) ;
+       if(strchr(this->direct_select, 'Y')==NULL)  y_base+=y_velocity*(t2-t1) ;
+       if(strchr(this->direct_select, 'Z')==NULL)  z_base+=z_velocity*(t2-t1) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+          memset(this->direct_select, 0, sizeof(this->direct_select)) ;
+
+                                        return(0) ;
+                                 }
 /*---------------------------------------------- Отработка программы */
 
                           trace_time=t2 ;
@@ -2859,21 +2901,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                           x_base+=x_velocity*(t2-t1) ;
                           y_base+=y_velocity*(t2-t1) ;
                           z_base+=z_velocity*(t2-t1) ;
-/*- - - - - - - - - - - - - - - - - - - Обработка целевого состояния */
-     if(this->direct_select[0]!=0) {
-
-          strupr(this->direct_select) ;
-
-       if(strchr(this->direct_select, 'X')!=NULL)  x_base=this->direct_target.x ;
-       if(strchr(this->direct_select, 'Y')!=NULL)  y_base=this->direct_target.y ;
-       if(strchr(this->direct_select, 'Z')!=NULL)  z_base=this->direct_target.z ;
-       if(strchr(this->direct_select, 'A')!=NULL)  a_azim=this->direct_target.azim ;
-       if(strchr(this->direct_select, 'E')!=NULL)  a_elev=this->direct_target.elev ;
-       if(strchr(this->direct_select, 'R')!=NULL)  a_roll=this->direct_target.roll ;
-
-          memset(this->direct_select, 0, sizeof(this->direct_select)) ;
-
-                                   }
 /*- - - - - - - - - - - - - Сброс контекста управления по перегрузке */
      if(m_ctrl!=NULL) {
                          delete m_ctrl ;

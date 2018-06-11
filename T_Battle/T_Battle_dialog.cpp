@@ -625,7 +625,14 @@
                               break ;
                        }
 /*- - - - - - - - - - - - - - - - - - - Определение зоны отображения */
+                     x_min=-1.0 ;
+                     x_max= 1.0 ;
+                     z_min=-1.0 ;
+                     z_max= 1.0 ;
+
        for(i=0 ; i<data->mObjects_cnt ; i++) {
+
+         if(data->mObjects[i].object==NULL)  continue ;
 
                      x=data->mObjects[i].object->x_base ;
                      z=data->mObjects[i].object->z_base ;
@@ -644,13 +651,6 @@
                   }
                                              }
 
-     if(data->mObjects_cnt==0) {
-                                  x_min=-1.0 ;
-                                  x_max= 1.0 ;
-                                  z_min=-1.0 ;
-                                  z_max= 1.0 ;
-                               }
-
      if(x_min==x_max) {
                          x_min-=1.0 ;
                          x_max+=1.0 ;
@@ -659,6 +659,18 @@
                          z_min-=1.0 ;
                          z_max+=1.0 ;
                       }   
+
+     if(data->mMapRegime & _MAP_KEEP_RANGE) {                       /* Режим сохранения максимального охвата */
+
+           if(x_min<data->mMapXmin)  data->mMapXmin=x_min ;
+           else                               x_min=data->mMapXmin ;
+           if(x_max>data->mMapXmax)  data->mMapXmax=x_max ;
+           else                               x_max=data->mMapXmax ;
+           if(z_min<data->mMapZmin)  data->mMapZmin=z_min ;
+           else                               z_min=data->mMapZmin ;
+           if(z_max>data->mMapZmax)  data->mMapZmax=z_max ;
+           else                               z_max=data->mMapZmax ;
+                                            } 
 /*- - - - - - - - - - - - - - - - - -  Создание "теневого" контекста */
        hDC_wnd=BeginPaint(hWnd, &PaintCfg) ;
 
@@ -729,6 +741,8 @@
 /*- - - - - - - - - - - - - - - - - -  Отображение объектов на карте */
        for(i=0 ; i<data->mObjects_cnt ; i++) {
 
+         if(data->mObjects[i].object==NULL)  continue ;
+
                      x_scr=(data->mObjects[i].object->x_base-x_min)/dx ;
                      z_scr=(data->mObjects[i].object->z_base-z_min)/dx ;
 
@@ -761,6 +775,8 @@
                                                 }
 /*- - - - - - - - - - - - - - - - - -  Трассировка объектов на карте */
        for(i=0 ; i<data->mObjects_cnt ; i++) {
+
+         if(data->mObjects[i].object==NULL)  continue ;
 
           for(j=0 ; j<data->mMapTraces_cnt ; j++)
             if(!stricmp(data->mMapTraces[j].object,

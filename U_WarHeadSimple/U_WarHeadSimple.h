@@ -29,12 +29,15 @@
                         int  load_type ;                       /* Вид снаряжения */
 #define                        _GRENADE_TYPE   0
 #define                         _STRIPE_TYPE   1
+#define                       _PANCAKES_TYPE   2
                      double  hit_range ;                       /* Радиус поражения */
                      double  blast_radius ;                    /* Радиус вспышки взрыва */
                        char  sub_unit[128] ;                   /* Название шаблона суб-боеприпаса */
                  RSS_Object *sub_object ;                      /* Объект суб-боеприпаса */
                         int  sub_count ;                       /* Количество суб-боеприпасов */
                      double  sub_step ;                        /* Шаг выброса суб-боеприпасов */
+                        int  sub_series ;                      /* Количество серий сбросов суб-боеприпасов */
+                        int  sub_range ;                       /* Параметр разброса серии */
 
     public:
          virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
@@ -72,6 +75,7 @@
                      int  cTripping     (char *) ;                           /* Инструкция TRIPPING */ 
                      int  cGrenade      (char *) ;                           /* Инструкция GRENADE */ 
                      int  cStripe       (char *) ;                           /* Инструкция STRIPE */ 
+                     int  cPancakes     (char *) ;                           /* Инструкция PANCAKES */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 

@@ -15,6 +15,58 @@
 
 /*---------------------------------------------- Параметры генерации */
 
+/*---------------------------------- Встроенные программы управления */
+
+typedef  struct {
+                   char  program_name[128] ;
+                } RSS_Unit_Program_Embeded ;
+
+#define  _ROUTE_MAX  100
+#define  _DROPS_MAX   10
+   
+typedef  struct {
+                   char  program_name[128] ;
+
+       struct {
+                 double  x ;
+                 double  z ;
+              }          route[_ROUTE_MAX] ;
+                    int  route_cnt ;
+                    int  route_idx ;
+                    int  route_dir ;
+
+                 double  g ;
+                 double  e_max ;
+                 double  e_rate ;
+                 double  h_min ;
+                 double  column_spacing ;
+                 double  jump_distance ;
+                 double  drop_height ;
+                 double  drop_distance ;
+                    int  drops_number ;
+                 double  drops_interval ;
+       struct {
+                   char  weapon[64] ;
+              }          drops[_DROPS_MAX] ;
+                    int  drops_cnt ;
+
+                   char  stage_0_event[1024] ;
+                   char  stage_4_event[1024] ;                  
+                 double  stage_4_after ;
+                   char  stage_1_radar[1024] ;
+                 double  stage_2_time ;
+                   char  stage_4_radar[1024] ;
+
+                 double  stage ;
+                 double  x_direct ;
+                 double  z_direct ;
+                 double  a_direct ;
+                 double  e_direct ;
+                 double  check_time ;
+                    int  dropped ;
+                    int  stage_4_event_done ;
+
+                } RSS_Unit_Program_Embeded_ColumnHunter ;
 
 /*---- Описание класса контекста компонента "Программное управление" */
 
@@ -35,6 +87,7 @@
 
     public:
                       char *program ;                              /* Программа управления */
+                      void *embeded ;                              /* Стандартная программа управления */                    
                       char *state ;                                /* Хранимое состояние программы */
 
                       char  event_name[128] ;                      /* Имя формируемого события */
@@ -53,6 +106,8 @@
                                                      char *, int) ;
                virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
                virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+
+                        int  EmbededColumnHunter(double, double, char *, int) ;
 
 	                     RSS_Unit_Program() ;           /* Конструктор */
 	                    ~RSS_Unit_Program() ;           /* Деструктор */
@@ -78,9 +133,11 @@
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
                      int  cProgram      (char *) ;                     /* Инструкция PROGRAM */ 
+                     int  cEmbeded      (char *) ;                     /* Инструкция EMBEDED */ 
                      int  cShow         (char *) ;                     /* Инструкция SHOW */ 
 
                 RSS_Unit *FindUnit      (char *) ;                     /* Поиск компонента по имени */
+                    void *ReadEmbeded   (char *, char *) ;             /* Считывание настроек встроенной программы */
 
     public:
 	                  RSS_Module_Program() ;              /* Конструктор */

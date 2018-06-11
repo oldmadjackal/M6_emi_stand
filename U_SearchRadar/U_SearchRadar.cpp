@@ -1087,7 +1087,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for(i=0 ; i<battle->mObjects_cnt ; i++) {
 
-         object=battle->mObjects[i].object ;
+        object=battle->mObjects[i].object ;
+     if(object==NULL)  continue ;
 
 /*------------------------ –асчет относительной скорости и положени€ */
 

@@ -16,6 +16,7 @@
 #include <math.h>
 #include <sys\stat.h>
 
+#include "..\Matrix\Matrix.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
@@ -116,8 +117,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " STRIPE <Имя> <Суб-боеприпас> <Число суб-боеприпасов> <Шаг выброса>\n"
                     "   Задать характеристики кассетной БЧ с линейным выбросом\n",
                     &RSS_Module_WarHeadSimple::cStripe },
+ { "pancakes","pc", "#PANCACES - задать характеристики кассетной БЧ с выбросом последовательными кругами ('блинчики')",
+                    " PANCACES <Имя> <Суб-боеприпас> <Число суб-боеприпасов> <Шаг выброса> <Число кругов> <Радиус круга>\n"
+                    "   Задать характеристики кассетной БЧ с выбросом последовательными кругами\n",
+                    &RSS_Module_WarHeadSimple::cPancakes },
  {  NULL }
                                                             } ;
+
 
 /********************************************************************/
 /*								    */
@@ -810,6 +816,125 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции PANCAKES                */
+/*								    */
+/*   PANCAKES <Имя> <Суб-боеприпас> ...                             */
+/*         ... <Число суб-боеприпасов> <Шаг выброса> ...            */
+/*         ..  <Число кругов> <Радиус круга>                        */
+
+  int  RSS_Module_WarHeadSimple::cPancakes(char *cmd)
+
+{
+#define  _COORD_MAX   4
+#define   _PARS_MAX  10
+
+                    char  *pars[_PARS_MAX] ;
+                    char  *name ;
+                    char  *sub_name ;
+                    char **xyz ;
+                  double   coord[_COORD_MAX] ;
+                     int   coord_cnt ;
+  RSS_Unit_WarHeadSimple  *unit ;
+              RSS_Object  *sub_object ;
+                    char   text[1024] ;
+                    char  *error ; 
+                    char  *end ;
+                     int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                 sub_name= pars[1] ;
+                      xyz=&pars[2] ;   
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонента. \n"
+                                      "Например: PANCAKES <Имя_компонентa> ...") ;
+                                         return(-1) ;
+                         }
+
+       unit=(RSS_Unit_WarHeadSimple *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------ Проверка суб-боеприпаса */
+
+    if(sub_name   ==NULL ||
+       sub_name[0]==  0    ) {                                      /* Если имя суб-боеприпаса не задано... */
+                           SEND_ERROR("Не задано имя суб-боеприпаса. \n"
+                                      "Например: PANCAKES <Имя компонентa> <Имя суб-боеприпаса> ...") ;
+                                         return(-1) ;
+                             }
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, sub_name)) {  sub_object=OBJECTS[i] ;
+                                                              break ;         }
+
+         if(i>=OBJECTS_CNT) {
+                                sprintf(text, "Объект '%s' не найден ", sub_name) ;
+                             SEND_ERROR(text) ;
+                                  return(NULL) ;
+                            }
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение параметра") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                       error= NULL ;
+      if(coord_cnt<3)  error="Не указаны параметры БЧ" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись значений */
+
+                 unit->load_type  =_PANCAKES_TYPE ;
+         strncpy(unit-> sub_unit, sub_name, sizeof(unit->sub_unit)-1) ;
+                 unit-> sub_object= sub_object ;
+                 unit-> sub_count = coord[0] ;
+                 unit-> sub_step  = coord[1] ;
+                 unit-> sub_series= coord[2] ;
+                 unit-> sub_range = coord[3] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*	   Поиск обьекта типа WarHeadSimple по имени                */
 
   RSS_Unit *RSS_Module_WarHeadSimple::FindUnit(char *name)
@@ -983,6 +1108,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              unit->     sub_object  =this->     sub_object ;
              unit->     sub_count   =this->     sub_count ;
              unit->     sub_step    =this->     sub_step ;
+             unit->     sub_series  =this->     sub_series ;
+             unit->     sub_range   =this->     sub_range ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1033,6 +1160,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      double  k ;
      double  s, dx, dy, dz ;
      double  x_drop, y_drop, z_drop ;
+   Matrix2d  Sum_Matrix ;
+   Matrix2d  Oper_Matrix ;  
+   Matrix2d  Vect_Matrix ;  
+     double  step_e, angle_e, x_e, y_e ;
+        int  n ;
         int  i ;
 
 /*------------------------------------------------- Входной контроль */
@@ -1067,7 +1199,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   if(blast) {
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ОФ */
-   if(load_type==_GRENADE_TYPE) {
+   if(load_type== _GRENADE_TYPE) {
 
      if(callback!=NULL) {
                            sprintf(text, "STOP %s;"
@@ -1079,9 +1211,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                   ) ;
                            strncat(callback, text, cb_size) ;
                         }
-                                }
+                                 }
 /*- - - - - - - - - - - - - - - - - - - - -  Последовательный выброс */
-   if(load_type== _STRIPE_TYPE) {
+   if(load_type==  _STRIPE_TYPE) {
 
      if(callback!=NULL) {
                            sprintf(text, "STOP %s;"
@@ -1114,7 +1246,61 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                }
                                    }
                         }
-                                }
+                                 }
+/*- - - - - - - - - - - - - - - - - - - - - - - Выброс "блинчиками" */
+   if(load_type==_PANCAKES_TYPE) {
+
+        Sum_Matrix.Load3d_azim(-this->Owner->a_azim) ;             /* Рассчёт матрицы преобразования */
+       Oper_Matrix.Load3d_elev(-this->Owner->a_elev) ;
+        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+
+                       s=sqrt((this->Owner->x_base-x)*(this->Owner->x_base-x)+
+                              (this->Owner->y_base-y)*(this->Owner->y_base-y)+
+                              (this->Owner->z_base-z)*(this->Owner->z_base-z) ) ;
+                      dx=this->sub_step*(this->Owner->x_base-x)/s ;
+                      dy=this->sub_step*(this->Owner->y_base-y)/s ;
+                      dz=this->sub_step*(this->Owner->z_base-z)/s ;
+
+     if(callback!=NULL) {
+                           sprintf(text, "STOP %s;"
+                                         "EXEC SCENE VISIBLE %s 0;",
+                                          this->Owner->Name, this->Owner->Name) ;
+                           strncat(callback, text, cb_size) ;
+
+        if(this->sub_object!=NULL) {
+
+          for(n=0 ; n<this->sub_series ; n++) {
+
+            for(i=0 ; i<this->sub_count/this->sub_series ; i++) {
+
+               step_e=2.*_PI/((double)(this->sub_count/this->sub_series)) ;
+              angle_e=ProgramModule.gGaussianValue(i*step_e, step_e/4.) ;
+                  x_e=this->sub_range*cos(angle_e) ;
+                  y_e=this->sub_range*sin(angle_e) ;
+
+                 Vect_Matrix.LoadZero(3, 1) ;
+                 Vect_Matrix.SetCell (0, 0, x_e) ;
+                 Vect_Matrix.SetCell (1, 0, y_e) ;
+                 Vect_Matrix.SetCell (2, 0, 0) ;
+                 Vect_Matrix.LoadMul (&Sum_Matrix, &Vect_Matrix) ;
+
+                   x_drop=this->Owner->x_base+dx*n+Vect_Matrix.GetCell(0, 0) ;
+                   y_drop=this->Owner->y_base+dy*n+Vect_Matrix.GetCell(1, 0) ;
+                   z_drop=this->Owner->z_base+dz*n+Vect_Matrix.GetCell(2, 0) ;
+
+                           sprintf(sub_name, "%s_sub_%d_%d", this->Owner->Name, n+1, i+1) ;
+
+                           sprintf(text, "EXEC %s COPY %s %s %lf %lf %f;"
+                                         "START %s;",
+                                          this->sub_object->Module->identification, this->sub_unit, sub_name, x_drop, y_drop, z_drop,
+                                                   sub_name
+                                  ) ;
+                           strncat(callback, text, cb_size) ;
+                                                                }
+                                              }
+                                   }
+                        }
+                                 }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                        return(1) ;
                  }

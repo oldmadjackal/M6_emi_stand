@@ -121,6 +121,12 @@
                     static         int  mExecFail ;                 /* Признак неподдержки интерфейса внутренних связей */
 
                     static        HWND  mMapWindow ;                /* Окно индикатора карты */
+                    static         int  mMapRegime ;                /* Режим работы карты: */
+#define                                    _MAP_KEEP_RANGE  1       /*   Сохранять максимальный охват */                                 
+                    static      double  mMapXmin ;                  /* Диапазон координат карты */
+                    static      double  mMapXmax ;
+                    static      double  mMapZmin ;
+                    static      double  mMapZmax ;
                     static       COLOR  mMapColors[_OBJECTS_MAX] ;  /* Цвета объектов на карте */
                     static         int  mMapColors_cnt ;
                     static       TRACE  mMapTraces[_OBJECTS_MAX] ;  /* Цвета объектов на карте */
