@@ -142,6 +142,6 @@
 /* Τΰιλ  O_Missile_Lego.cpp */
 
 /* Τΰιλ  O_Missile_Lego_dialog.cpp */
-  BOOL CALLBACK  Object_MissileLego_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_MissileLego_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_MissileLego_Lego_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_MissileLego_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_MissileLego_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_MissileLego_Lego_dialog  (HWND, UINT, WPARAM, LPARAM) ;
