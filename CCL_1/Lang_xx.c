@@ -13,6 +13,8 @@
 #include "lang_std.h"
 #include "ccl_1.h"
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 
@@ -1613,7 +1615,9 @@ static char  work[_LEN_MAX] ;
    if(text_flag) {
 			n=text_size/_CULC_FRAME+1 ;                 /* Опред.число кадров под */
 								    /*   текстовой сегмент    */
+#pragma warning(disable : 4312)
 		    L_culc_code(_TSEG_OPER, (char *)n, NULL) ;      /* Специфицируем текстовой сегмент */
+#pragma warning(default : 4312)
 
 		       exe=&SYS_CULC_CODE[SYS_CULC_CNT] ;           /* Опр.адрес текстового буфера */
 		memcpy(exe, text_buff, n*_CULC_FRAME) ;             /* Заполнеям текстовой сегмент */
@@ -2163,7 +2167,9 @@ static char  work[_LEN_MAX] ;
 				    i           =SYS_CULC_CNT ;
 		      SYS_CULC_CODE[i].oper_code=code ;
 
+#pragma warning(disable : 4311)
 				      cvt.dbl=(long)oper1 ;
+#pragma warning(default : 4311)
 
 			    SYS_CULC_CODE[i].oper_code|=_DATA_OP1 ;
 		   memmove(&SYS_CULC_CODE[i].addr1, &cvt.bin[2], 4) ;
@@ -2199,7 +2205,9 @@ static char  work[_LEN_MAX] ;
   else if(oper1[1]=='E')   SYS_CULC_CODE[i].addr1=&(SYS_EXT_VARS[n1].value) ;
   else if(oper1[1]=='T')   SYS_CULC_CODE[i].addr1=  vars_tbl[n1] ;
   else if(oper1[1]=='P')   SYS_CULC_CODE[i].addr1=  vars_tbl[n1] ;
+#pragma warning(disable : 4312)
   else if(oper1[1]=='R')   SYS_CULC_CODE[i].addr1= (double *)n1 ;
+#pragma warning(default : 4312)
   else if(oper1[1]=='Z') {
 				      cvt.dbl=0 ;
 				SYS_CULC_CODE[i].oper_code|=_DATA_OP1 ;
@@ -2643,8 +2651,10 @@ static char  work[_LEN_MAX] ;
 
        case _CALLE_OPER : {
 
+#pragma warning(disable : 4311)
 	     *oper2=L_call_entry((int)exe->addr1,
 				   vars_stack, vars_stack_cnt) ;
+#pragma warning(default : 4311)
 					 vars_stack_cnt=0 ;
 					   break ;  }
 
