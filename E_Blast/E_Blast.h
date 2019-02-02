@@ -109,4 +109,4 @@
 /* Τΰιλ  E_Blast.cpp */
 
 /* Τΰιλ  E_Blast_dialog.cpp */
-    BOOL CALLBACK  Effect_Blast_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Effect_Blast_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
