@@ -966,7 +966,7 @@
 	        TextOut(hDC, metrics->draw_x_base+x_value[i].pos
                             -metrics->font.tmAveCharWidth*zone.digits/2,
                              metrics->draw_y_base+metrics->draw_y_size,
-                                      zone.buff, strlen(zone.buff)) ;
+                                      zone.buff, (int)strlen(zone.buff)) ;
 				  }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - Отработка по Y */
                UDi_value_zone(view_decl->y_min,
@@ -979,7 +979,7 @@
                              metrics->draw_y_base-
                               metrics->font.tmHeight/2+
                                 y_value[i].pos,
-                                      zone.buff, strlen(zone.buff)) ;
+                                      zone.buff, (int)strlen(zone.buff)) ;
 				  }
 /*--------------------------------- Отрисовка рамки области графиков */
 
@@ -1822,9 +1822,9 @@
 
 /*-------------------------------------------- Отрисовка "стрелочки" */
 
-            MoveToEx(hDC, x_1, y_1, NULL) ;
-              LineTo(hDC, x_c, y_c      ) ;
-              LineTo(hDC, x_2, y_2      ) ;
+            MoveToEx(hDC, (int)x_1, (int)y_1, NULL) ;
+              LineTo(hDC, (int)x_c, (int)y_c      ) ;
+              LineTo(hDC, (int)x_2, (int)y_2      ) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -2208,7 +2208,7 @@
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Выделение памяти */
        if(profile->points_cnt>=prof_pnts_max) {
 
-             prof_pnts_max+=sqrt((double)points_cnt)*2 ;
+             prof_pnts_max+=(int)sqrt((double)points_cnt)*2 ;
             profile->points=(struct UD_profile_point *)
                               realloc(profile->points,
                                        prof_pnts_max*sizeof(profile->points[0])) ;

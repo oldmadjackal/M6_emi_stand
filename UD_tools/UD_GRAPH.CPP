@@ -99,7 +99,9 @@
 {
    int  pos ;
 
+#pragma warning(disable : 4244)
      pos=(x-udg_metrics.x_min)/udg_metrics.dx+0.5-1 ;
+#pragma warning(default : 4244)
 
   return(pos) ;
 }
@@ -110,8 +112,12 @@
 {
    int  pos ;
 
+#pragma warning(disable : 4244)
+
                           pos=(y-udg_metrics.y_min)/udg_metrics.dy+0.5 ;
    if(udg_metrics.y_dir)  pos=udg_metrics.y_size-pos ;
+
+#pragma warning(default : 4244)
 
   return(pos) ;
 }

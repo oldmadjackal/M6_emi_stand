@@ -78,7 +78,7 @@
            if(end!=NULL)  *end=0 ;
 
                     TextOut(hDC, 0, i*TextMetric.tmHeight,
-                                           beg, strlen(beg)) ;
+                                           beg, (int)strlen(beg)) ;
 
            if(end!=NULL)  *end='\n' ;
            if(end==NULL)     break ;

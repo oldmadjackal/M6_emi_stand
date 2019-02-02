@@ -244,6 +244,8 @@
           coef=(         value-table[i-1].value)/
                (table[i].value-table[i-1].value) ;
 
+#pragma warning(disable : 4244)
+
            red= GetRValue(table[i-1].color)  +
                (GetRValue(table[i  ].color)-
                 GetRValue(table[i-1].color) )*coef ;               
@@ -253,6 +255,8 @@
           blue= GetBValue(table[i-1].color)  +
                (GetBValue(table[i  ].color)-
                 GetBValue(table[i-1].color) )*coef ;               
+
+#pragma warning(default : 4244)
 
          color= RGB(red, green, blue) ;
 
@@ -387,7 +391,7 @@
      int  cnt[_STEP_CNT] ;
 
 
-	   power=log10(range) ;
+	   power=(int)log10(range) ;
 
 					   base = 1. ;
     if(power<0)  for(i=power ; i<0 ; i++)  base/=10. ;
@@ -397,8 +401,10 @@
 	  mant=range/base ;
 
     for(i=0 ; i<_STEP_CNT ; i++) {
+#pragma warning(disable : 4244)
 				      cnt[i]=mant/step[i] ;
 				   if(cnt[i]<_OPT_CNT)  break ;
+#pragma warning(default : 4244)
 				 }
 
 	 opt1=_OPT_CNT/(cnt[i]+0.) ;

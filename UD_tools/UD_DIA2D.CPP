@@ -983,7 +983,7 @@
 	  UDi_value_cvt(x_value[i].value, &zone, 0) ;
 	        TextOut(hDC, metrics->draw_x_base+x_value[i].pos,
                              metrics->draw_y_base+metrics->draw_y_size,
-                                      zone.buff, strlen(zone.buff)) ;
+                                      zone.buff, (int)strlen(zone.buff)) ;
 				  }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - Отработка по Y */
                UDi_value_zone(data_decl->y_min,
@@ -996,7 +996,7 @@
                              metrics->draw_y_base-
                               metrics->font.tmHeight/2+
                                 y_value[i].pos,
-                                      zone.buff, strlen(zone.buff)) ;
+                                      zone.buff, (int)strlen(zone.buff)) ;
 				  }
 /*--------------------------------- Отрисовка рамки области графиков */
 
@@ -1219,9 +1219,10 @@
         y_scanner=UDg_ycoord_w(NULL, y-metrics->draw_y_base,     
                                                        NULL, NULL) ;
 /*- - - - - - - - - - - - - - - - - - - - Определяем "ведущую" точку */
-	         data=(UD_data_2Dpoint *)base_decl->data ;
-           y_scn_null=  1 ;
-                    k=  0 ;
+	         data =(UD_data_2Dpoint *)base_decl->data ;
+           y_scn_null =  1 ;
+           y_scn_value=  0. ;
+                    k =  0 ;
 
          for(j=0 ; j<base_decl->data_cnt ; j++) {
 
