@@ -33,13 +33,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Feature_Hit_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                   WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Feature_Hit_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                            WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_Hit  Module ;
              int  elm ;         /* Идентификатор элемента диалога */
-             int  status ;
-             int  index ;
+         LRESULT  status ;
+         LRESULT  index ;
              int  insert_flag ;
             char *help ;
             char  text[512] ;

@@ -315,7 +315,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Извлечение данных */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
@@ -639,7 +639,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Извлечение данных */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
@@ -1258,7 +1258,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int RSS_Feature_Hit::iOverallTest(RSS_Feature_Hit *trgt)
 {
    double  s_min, s_max ;
-   double  d_min, d_max ;
+// double  d_min, d_max ;
    double  t_min, t_max ;
 
                                                s_min =this->track_s    .x ;

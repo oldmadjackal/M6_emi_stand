@@ -188,4 +188,4 @@
 /* Τΰιλ  F_Hit.cpp */
 
 /* Τΰιλ  F_Hit_dialog.cpp */
-  BOOL CALLBACK  Feature_Hit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Feature_Hit_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
