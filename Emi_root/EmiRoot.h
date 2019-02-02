@@ -19,6 +19,19 @@
   _EXTERNAL  double  __robot_step_joint ;  /* Шаги изменения степеней подвижности объектов */
   _EXTERNAL  double  __robot_step_link ;
 
+/*---- Описание класса контекста компонента "Программное управление" */
+
+  class RSS_Transit_Main : public RSS_Transit {
+
+    public:
+             virtual   int  vExecute(void) ;       /* Исполнение действия */
+                                             
+    public:
+                            RSS_Transit_Main() ;   /* Конструктор */
+                           ~RSS_Transit_Main() ;   /* Деструктор */
+
+                                                               } ;
+
 /*------------------------- Описание класса управления общим модулем */
 
   class RSS_Module_Main : public RSS_Kernel {
@@ -45,6 +58,7 @@
                      int  cLookPoint    (char *) ;              /* Инструкция EYE */ 
                      int  cLookDirection(char *) ;              /* Инструкция LOOK */ 
                      int  cLookAt       (char *) ;              /* Инструкция LOOKAT */ 
+                     int  cLookFrom     (char *) ;              /* Инструкция LOOKFROM */ 
                      int  cLookZoom     (char *) ;              /* Инструкция ZOOM */
                      int  cRead         (char *) ;              /* Инструкция READ */
                      int  cWrite        (char *) ;              /* Инструкция WRITE */
@@ -93,11 +107,11 @@
      void  iDebug                   (char *, char *) ;
 
 /* EmiRoot_dialog.cpp */
-    BOOL CALLBACK  Main_Help_dialog       (HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна HELP */
-    BOOL CALLBACK  Main_ObjectsList_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна OBJECTS LIST */
+  INT_PTR CALLBACK  Main_Help_dialog       (HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна HELP */
+  INT_PTR CALLBACK  Main_ObjectsList_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна OBJECTS LIST */
 
 /* EmiRoot_monitor.cpp */
-      int  EmiRoot_threads(char *, char *) ;      /* Мониторинг рабочих потоков */ 
-      int  EmiRoot_modules(char *) ;              /* Отображение списка присоединенных модулей */ 
-    BOOL CALLBACK  Main_Threads_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна THREADS */
-    BOOL CALLBACK  Main_Modules_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна MODULES */
+               int  EmiRoot_threads    (char *, char *) ;               /* Мониторинг рабочих потоков */ 
+               int  EmiRoot_modules    (char *) ;                       /* Отображение списка присоединенных модулей */ 
+  INT_PTR CALLBACK  Main_Threads_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна THREADS */
+  INT_PTR CALLBACK  Main_Modules_dialog(HWND, UINT, WPARAM, LPARAM) ;   /* Обработчик окна MODULES */

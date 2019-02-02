@@ -112,14 +112,14 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна THREADS           */
 
-    BOOL CALLBACK  Main_Threads_dialog(  HWND hDlg,     UINT Msg, 
- 		                       WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Main_Threads_dialog(  HWND hDlg,     UINT Msg, 
+                                        WPARAM wParam, LPARAM lParam) 
 {
     WorkThread *thread_data ;
          DWORD  thread_id ;
            int  elm ;         /* Идентификатор элемента диалога */
-           int  status ;
-           int  index ;
+       LRESULT  status ;
+       LRESULT  index ;
            int  cnt ;
           char  text[1024] ;
 
@@ -154,10 +154,10 @@
 
              thread_data=(WorkThread *)lParam ;
        
-                     cnt=LB_GET_COUNT(IDC_THREADS_LIST) ;
+                     cnt=(int)LB_GET_COUNT(IDC_THREADS_LIST) ;
 
            for(index=0 ; index<cnt ; index++) {
-                 thread_id=LB_ROW_ITEM(IDC_THREADS_LIST, index) ;
+                 thread_id=(DWORD)LB_ROW_ITEM(IDC_THREADS_LIST, index) ;
               if(thread_id==thread_data->Thread_id) {
                            LB_DEL_ROW(IDC_THREADS_LIST, index) ;
                                          break ;
@@ -241,14 +241,14 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна MODULES           */
 
-    BOOL CALLBACK  Main_Modules_dialog(  HWND hDlg,     UINT Msg, 
- 		                       WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Main_Modules_dialog(  HWND hDlg,     UINT Msg, 
+                                        WPARAM wParam, LPARAM lParam) 
 {
     static  HFONT  font ;        /* Шрифт */
  class RSS_Kernel *entry ;
               int  elm ;         /* Идентификатор элемента диалога */
               int  status ;
-              int  index ;
+          LRESULT  index ;
              char  tmp[1024] ;
               int  i ;
 

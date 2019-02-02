@@ -235,6 +235,15 @@
 
           glClearColor(0.7f, 0.7f, 0.7f, 0.0f) ;
                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+/*- - - - - - - - - - - - - - - - - - - - - -  Подвижное поле зрения */
+     if(CONTEXT.AtObject  [0]!=0 ||                                 /* Если специфицирована точка наблюдения */
+        CONTEXT.FromObject[0]!=0   ) {                              /*    или точка установки камеры         */
+                                        EmiRoot_lookat_point(&CONTEXT) ;
+                                         range=CONTEXT.Range_strobe ;
+                                     }
+     else                            {
+                                         range=0. ;
+                                     }
 /*- - - - - - - - - - - - - - - - - - - -  Описание источников света */
 #pragma warning(disable : 4244)
 
@@ -248,14 +257,6 @@
               glEnable(GL_LIGHT0) ;
              glLightfv(GL_LIGHT0, GL_POSITION, light_pos) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Задание точки зрения */
-     if(CONTEXT.AtObject[0]!=0) {                                   /* Если специфицирована точка наблюдения */
-                                   EmiRoot_lookat_point(&CONTEXT) ;
-                                    range=CONTEXT.Range_strobe ;
-                                }
-     else                       {
-                                    range=0. ;
-                                }
-
           glMatrixMode(GL_PROJECTION) ;
         glLoadIdentity() ;
 //      gluPerspective(30., xy_aspect, 5., 100.) ;
@@ -473,6 +474,9 @@
     entry=strstr(end+1, "LOOKAT=") ;
          strncpy(CONTEXT.AtObject, entry+strlen("LOOKAT="), sizeof(CONTEXT.AtObject)) ;
 
+    entry=strstr(end+1, "LOOKFROM=") ;
+         strncpy(CONTEXT.FromObject, entry+strlen("LOOKFROM="), sizeof(CONTEXT.FromObject)) ;
+
 /*-------------------------------------------------------------------*/
 
 #undef  CONTEXT
@@ -490,16 +494,17 @@
 
 #define  CONTEXT   EmiRoot_contexts[EmiRoot_context_idx]
 
-                                                           *text = "" ;
-    sprintf(field, " NAME=%s",       CONTEXT.name     ) ;  *text+=field ;
-    sprintf(field, " LOOK_X=%.10lf", CONTEXT.Look_x   ) ;  *text+=field ;
-    sprintf(field, " LOOK_Y=%.10lf", CONTEXT.Look_y   ) ;  *text+=field ;
-    sprintf(field, " LOOK_Z=%.10lf", CONTEXT.Look_z   ) ;  *text+=field ;
-    sprintf(field, " LOOK_A=%.10lf", CONTEXT.Look_azim) ;  *text+=field ;
-    sprintf(field, " LOOK_E=%.10lf", CONTEXT.Look_elev) ;  *text+=field ;
-    sprintf(field, " LOOK_R=%.10lf", CONTEXT.Look_roll) ;  *text+=field ;
-    sprintf(field, " ZOOM=%.10lf",   CONTEXT.Zoom     ) ;  *text+=field ;
-    sprintf(field, " LOOKAT=%s",     CONTEXT.AtObject ) ;  *text+=field ;
+                                                            *text = "" ;
+    sprintf(field, " NAME=%s",       CONTEXT.name      ) ;  *text+=field ;
+    sprintf(field, " LOOK_X=%.10lf", CONTEXT.Look_x    ) ;  *text+=field ;
+    sprintf(field, " LOOK_Y=%.10lf", CONTEXT.Look_y    ) ;  *text+=field ;
+    sprintf(field, " LOOK_Z=%.10lf", CONTEXT.Look_z    ) ;  *text+=field ;
+    sprintf(field, " LOOK_A=%.10lf", CONTEXT.Look_azim ) ;  *text+=field ;
+    sprintf(field, " LOOK_E=%.10lf", CONTEXT.Look_elev ) ;  *text+=field ;
+    sprintf(field, " LOOK_R=%.10lf", CONTEXT.Look_roll ) ;  *text+=field ;
+    sprintf(field, " ZOOM=%.10lf",   CONTEXT.Zoom      ) ;  *text+=field ;
+    sprintf(field, " LOOKAT=%s",     CONTEXT.AtObject  ) ;  *text+=field ;
+    sprintf(field, " LOOKFROM=%s",   CONTEXT.FromObject) ;  *text+=field ;
 
 #undef  CONTEXT
 }
@@ -679,6 +684,46 @@
 
 /*********************************************************************/
 /*                                                                   */
+/*                 Работа с точкой установки камеры                  */
+
+   int  EmiRoot_lookfrom(char *name, char *oper, char *look_from) 
+{
+   int  wnd_num ;
+
+/*--------------------------------------- Определение контекста окна */
+
+   for(wnd_num=0 ; wnd_num<_OPENGL_WND_MAX ; wnd_num++)             /* Ищем по таблице контекстов */
+     if(!stricmp(EmiRoot_contexts[wnd_num].name, name))  break ;
+
+     if(wnd_num==_OPENGL_WND_MAX)  return(-1) ;
+
+/*------------------------------------------------------- Извлечение */
+
+   if(!stricmp(oper, "GET")) {
+
+     if(look_from!=NULL)  strcpy(look_from, EmiRoot_contexts[wnd_num].FromObject) ;
+
+                             }
+/*-------------------------------------------------------- Занесение */
+
+   if(!stricmp(oper, "SET")) {
+
+     if(look_from!=NULL) {
+
+         memset(EmiRoot_contexts[wnd_num].FromObject, 0, 
+                              sizeof(EmiRoot_contexts[wnd_num].FromObject)) ;
+        strncpy(EmiRoot_contexts[wnd_num].FromObject, look_from,
+                              sizeof(EmiRoot_contexts[wnd_num].FromObject)-1) ;
+                         } 
+                             }
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
+}
+
+
+/*********************************************************************/
+/*                                                                   */
 /*                         Перерисовать окно                         */
 
    int  EmiRoot_redraw(char *name) 
@@ -720,18 +765,44 @@
 
 #define  _RAD_TO_GRD  57.296  
 
-/*------------------------------------------- Обработка на константу */
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
+/*------------------------------------------- Точка установки камеры */
+
+  if(context->FromObject[0]!=0) {
+
+                    memset(name, 0, sizeof(name)) ;
+                   strncpy(name, context->FromObject, sizeof(name)-1) ;
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, name))  break ;
+
+    if(i==OBJECTS_CNT) {                                            /* Если имя не задано... */
+             SEND_ERROR("Объект установки камеры НЕ существует") ;
+                  context->FromObject[0]=0 ;
+                             return(0) ;
+                       }
+
+            OBJECTS[i]->vGetPosition(&target) ;
+
+                   context->Look_x      =target.x ;
+                   context->Look_y      =target.y ;
+                   context->Look_z      =target.z ;
+
+                   context->Range_strobe=  0. ;
+                                } 
+/*------------------------------------------------- Точка наблюдения */
+
+  if(context->AtObject[0]==0)  return(0) ;
+
+/*- - - - - - - - - - - - - - - - - - - - - - Обработка на константу */
                 x=strtod(context->AtObject, &end) ;
                 y=strtod(              end, &end) ;
                 z=strtod(              end, &end) ;
-
-/*---------------------------------------------- Обработка на объект */
+/*- - - - - - - - - - - - - - - - - - - - - - -  Обработка на объект */
 
    if(*end!=0) {
-
-#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
-#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
                     memset(name, 0, sizeof(name)) ;
                    strncpy(name, context->AtObject, sizeof(name)-1) ;
@@ -750,12 +821,7 @@
                         x=target.x ;
                         y=target.y ;
                         z=target.z ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   OBJECTS
-#undef   OBJECTS_CNT
-
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                } 
 /*---------------------------------------- Пересчет углов наблюдения */
 
@@ -774,6 +840,9 @@
                                 (z-context->Look_z)*(z-context->Look_z) ) ;
 
 /*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
 
 #undef  _RAD_TO_GRD
 

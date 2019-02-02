@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <process.h>
 #include <malloc.h>
+#include <io.h>
 #include <stdio.h>
 #include <direct.h>
 #include <time.h>
@@ -28,7 +29,6 @@
 //#include "Controls.h"
 
 #pragma warning(disable : 4996)
-
 
 /*--------------------------------------------- Системные переменные */
 
@@ -66,8 +66,8 @@
 /*------------------------------------ Обработчики элементов диалога */
 
   union WndProc_par {
-                        long            par ;
-                     LRESULT (CALLBACK *call)(HWND, UINT, WPARAM, LPARAM) ; 
+                      LONG_PTR            par ;
+                       LRESULT (CALLBACK *call)(HWND, UINT, WPARAM, LPARAM) ; 
                     } ;
 
   static union WndProc_par  Cmd_WndProc ;
@@ -78,9 +78,9 @@
 /*------------------------------------ Процедуры обработки сообщений */
 
    LRESULT CALLBACK  EmiRoot_window_processor(HWND, UINT, WPARAM, LPARAM) ;
-      BOOL CALLBACK  EmiRoot_main_dialog     (HWND, UINT, WPARAM, LPARAM) ;
+   INT_PTR CALLBACK  EmiRoot_main_dialog     (HWND, UINT, WPARAM, LPARAM) ;
 
-      UINT CALLBACK  iEmiRoot_read_HookProc  (HWND, UINT, WPARAM, LPARAM) ;
+  UINT_PTR CALLBACK  iEmiRoot_read_HookProc  (HWND, UINT, WPARAM, LPARAM) ;
 
 
 /*********************************************************************/
@@ -96,6 +96,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
     HDC  hDCScreen ;
     MSG  SysMessage ;
    char  text[512] ;
+    int  init_flag ;
     int  i ;
 
 /*------------------------------------- Определение рабочего раздела */
@@ -205,7 +206,15 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 /*------------------------------------------ Главный диалоговый цикл */
 
+                               init_flag=1 ;
+
         while(GetMessage(&SysMessage, NULL, 0, 0)) {
+
+          if(init_flag) {
+                               init_flag=0 ;
+                           SendMessage(hDialog, WM_USER,
+                                         (WPARAM)_USER_EXECUTE_START, (LPARAM)NULL) ;
+                        } 
           
                        TranslateMessage(&SysMessage) ;
                         DispatchMessage(&SysMessage) ;
@@ -323,8 +332,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*								     */
 /*	   Обработчик сообщений диалогового окна VIEW	             */	
 
-    BOOL CALLBACK  EmiRoot_main_dialog(  HWND  hDlg,     UINT  Msg, 
- 			               WPARAM  wParam, LPARAM  lParam) 
+  INT_PTR CALLBACK  EmiRoot_main_dialog(  HWND  hDlg,     UINT  Msg, 
+                                        WPARAM  wParam, LPARAM  lParam) 
 {
                  HWND  hPrn ;
                  RECT  wr ;      /* Габарит окна */
@@ -443,9 +452,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                                  wr.bottom-wr.top+1, true) ;
 /*- - - - - - - - - - - - - - - - -  Перехват обработчиков сообщений */
        Tmp_WndProc.call=EmiRoot_Cmd_WndProc ;
-       Cmd_WndProc.par =GetWindowLong(ITEM(IDC_COMMAND), GWL_WNDPROC) ;
-                        SetWindowLong(ITEM(IDC_COMMAND), GWL_WNDPROC,
-                                                   Tmp_WndProc.par) ;
+       Cmd_WndProc.par =GetWindowLongPtr(ITEM(IDC_COMMAND), GWLP_WNDPROC) ;
+                        SetWindowLongPtr(ITEM(IDC_COMMAND), GWLP_WNDPROC,
+                                                            Tmp_WndProc.par) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Пропись шрифтов */
                 font=CreateFont(14, 7, 0, 0, FW_THIN, 
                                  false, false, false,
@@ -458,7 +467,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                     SendMessage(ITEM(IDC_STATUS_INFO),
                                   WM_SETFONT, (WPARAM)font, 0) ;
 /*- - - - - - - - - - - - - - - - -  Инициализация значеий элементов */
-            SETs(IDC_COMMAND, "@Tests\\rogov_search.emi") ;
+//          SETs(IDC_COMMAND, "@Tests\\rogov_search.emi") ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Инициализация фокуса */
                           SetFocus(ITEM(IDC_COMMAND)) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -513,6 +522,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
                                             return(FALSE) ;
                                          }
+/*- - - - - - - - - - - - - - Исполнение начального командного файла */
+        if(wParam==_USER_EXECUTE_START ) {
+
+           if(_access("start.emi", 0x00)==0) 
+                          EmiRoot_command_start("@start.emi") ;
+
+                             return(FALSE) ;
+                                          }
 /*- - - - - - - - - - - - - - - - - "Внешнее" редактирование задания */
         if(wParam==_USER_EXECUTE_COMMAND) {
 
@@ -1070,7 +1087,7 @@ typedef  struct {
 
      if(text[0]==0)  continue ;
 
-      size=strlen(command)+strlen(word2)+3 ;
+      size=(int)strlen(command)+(int)strlen(word2)+3 ;
        end=strrchr(text, '>') ;
            memmove(end+size+1, end+1, strlen(end+1)+1) ;
                    end[1]=0 ;
@@ -1330,7 +1347,9 @@ typedef  struct {
                                       return(-1) ;
                               }  
 
+#pragma warning(disable : 4244)
                   step=value*1000 ;
+#pragma warning(default : 4244)
                                         }
 /*-------------------------------------------------- Команда - Пауза */
 
@@ -1345,8 +1364,10 @@ typedef  struct {
                                    return(-1) ;
                               }  
 
+#pragma warning(disable : 4244)
                           value=value*1000-step ;
                     Sleep(value) ;
+#pragma warning(default : 4244)
 
                                         }
 /*--------------------------------------------- Команда - Примечание */
@@ -1555,6 +1576,9 @@ typedef  struct {
  { "lookat",    "la",    "# LOOKAT - задать точку(объект) наблюдения",
                          " LOOKAT <Имя объекта>\n",
                          &RSS_Module_Main::cLookAt },
+ { "lookfrom",  "lf",    "# LOOKFROM - задать точку(объект), из которого ведётся наблюдение",
+                         " LOOKFROM <Имя объекта>\n",
+                         &RSS_Module_Main::cLookFrom },
  { "zoom",      "z",     "# ZOOM - управление полем зрения камеры",
                          " ZOOM <Ширина поля зрения>\n"
                          " ZOOM+\n"
@@ -1788,7 +1812,7 @@ typedef  struct {
 
 /*------------------------------------------------ Извлечение данных */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
@@ -1990,13 +2014,17 @@ typedef  struct {
   int  RSS_Module_Main::cAll(char *cmd)
 
 {
+  RSS_Transit_Main  Context ; 
+
 /*-------------------------------------- Дешифровка командной строки */
 
-/*----------------------------------------------- Выполнение диалога */
+/*------------------------------------------------- Открытие диалога */
 
-    DialogBoxIndirect(GetModuleHandle(NULL),
-			(LPCDLGTEMPLATE)Resource("IDD_OBJECTS_LIST", RT_DIALOG),
-			   GetActiveWindow(), Main_ObjectsList_dialog) ;
+          strcpy(Context.action, "ALL") ;
+
+     SendMessage(RSS_Kernel::kernel_wnd, 
+                  WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                           (LPARAM)&Context              ) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -2492,6 +2520,7 @@ typedef  struct {
 
 {
      int   quiet_flag ;        /* Флаг отображения изменений */
+    char   look_from[128] ; 
     char  *end ;
 
 /*---------------------------------------------------- Анализ ключей */
@@ -2506,9 +2535,65 @@ typedef  struct {
             if(end!=NULL)  cmd=end+1 ;
                                     }
 
+/*--------------------------------------------------------- Проверка */
+
+   if(cmd[0]!=0) {
+                        EmiRoot_lookfrom("Main", "Get", look_from) ;
+
+    if(!stricmp(look_from, cmd)) {
+                    SEND_ERROR("Данный объект уже используется как 'носитель' камеры") ;
+                                     return(-1) ;
+                               }
+                 } 
 /*-------------------------------------------------- Пропись на окно */
 
                         EmiRoot_lookat("Main", "Set", cmd) ;
+
+/*------------------------------------------------------ Перерисовка */
+
+     if(quiet_flag==0)  EmiRoot_redraw("Main") ;
+
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции LOOKFROM                */
+
+  int  RSS_Module_Main::cLookFrom(char *cmd) 
+
+{
+     int   quiet_flag ;        /* Флаг отображения изменений */
+    char   look_at[128] ; 
+    char  *end ;
+
+/*---------------------------------------------------- Анализ ключей */
+
+                                     quiet_flag=0 ;     
+
+     if(strstr(cmd, "/q")!=NULL ||
+        strstr(cmd, "/Q")!=NULL   ) {
+                                       quiet_flag=1 ;
+
+               end=strchr(cmd, ' ') ;
+            if(end!=NULL)  cmd=end+1 ;
+                                    }
+/*--------------------------------------------------------- Проверка */
+
+   if(cmd[0]!=0) {
+                        EmiRoot_lookat("Main", "Get", look_at) ;
+
+    if(!stricmp(look_at, cmd)) {
+                    SEND_ERROR("Данный объект уже используется как целевой для камеры") ;
+                                     return(-1) ;
+                               }
+                 } 
+/*-------------------------------------------------- Пропись на окно */
+
+                        EmiRoot_lookfrom("Main", "Set", cmd) ;
 
 /*------------------------------------------------------ Перерисовка */
 
@@ -2734,8 +2819,8 @@ typedef  struct {
 }
 
 
-  UINT CALLBACK  iEmiRoot_read_HookProc(  HWND hDlg,     UINT uiMsg, 
-                                    WPARAM wParam, LPARAM lParam )
+  UINT_PTR CALLBACK  iEmiRoot_read_HookProc(  HWND hDlg,     UINT uiMsg, 
+                                            WPARAM wParam, LPARAM lParam )
 {
    if(uiMsg==WM_INITDIALOG) {
       SetWindowPos(hDlg, HWND_TOPMOST, 0, 0, 0, 0,
@@ -3024,7 +3109,7 @@ typedef  struct {
    if(!stricmp(cmd, "AUTO"  )) {
                                   this->srand_fixed=0 ;
 
-                                    srand(time(NULL)) ;
+                                   srand((unsigned int)time(NULL)) ;
                                }
 /*----------------------------------- Задание страт-точки генератора */
 
@@ -3193,6 +3278,93 @@ typedef  struct {
            fwrite(text, 1, strlen(text), file) ;
            fwrite("\n", 1, strlen("\n"), file) ;
            fclose(file) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_Main::RSS_Transit_Main(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_Main::~RSS_Transit_Main(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_Main::vExecute(void)
+
+{
+   HWND  hWnd ;
+   RECT  rect ;
+    int  x ; 
+    int  y ; 
+    int  w_x ; 
+    int  w_y ; 
+
+/*------------------------------------- Отображение перечня объектов */
+
+   if(!stricmp(action, "ALL")) {
+
+       hWnd=CreateDialogIndirect(GetModuleHandle(NULL),
+                                  (LPCDLGTEMPLATE)Kernel.Resource("IDD_OBJECTS_LIST", RT_DIALOG),
+                                     GetActiveWindow(), Main_ObjectsList_dialog) ;
+
+                    GetWindowRect(hWnd, &rect);
+                              w_x=rect.bottom-rect.top +1 ;
+                              w_y=rect.right -rect.left+1 ;
+
+                                 x= 0 ;
+                                 y= 0 ;
+         if(details[0]=='1') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='2') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= 0 ;                                       }
+         if(details[0]=='3') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= 0 ;                                       }
+         if(details[0]=='4') {   x= RSS_Kernel::display.x-w_x ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+         if(details[0]=='5') {   x= RSS_Kernel::display.x-w_x ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='6') {   x=2*w_x+2*(RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='7') {   x=  w_x+  (RSS_Kernel::display.x-4*w_x)/3 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='8') {   x= 0 ;
+                                 y= RSS_Kernel::display.y-w_y ;               }
+         if(details[0]=='9') {   x= 0 ;
+                                 y=(RSS_Kernel::display.y-w_y)/2 ;            }
+
+
+                     SetWindowPos(hWnd, NULL, x, y, 0, 0,
+                                   SWP_NOOWNERZORDER | SWP_NOSIZE);
+                       ShowWindow(hWnd, SW_SHOW) ;
+
+                         SetFocus(Kernel.kernel_wnd) ;
+
+                               }
+/*------------------------------------- Отображение перечня объектов */
+
+   return(0) ;
 }
 
 
