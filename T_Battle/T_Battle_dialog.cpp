@@ -11,7 +11,7 @@
 #include <io.h>
 #include <math.h>
 
-#include "d:\_Projects\_Libraries\controls.h"
+#include "..\Emi_root\controls.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
@@ -41,8 +41,8 @@
 /*------------------------------------ Обработчики элементов диалога */
 
   union WndProc_par {
-                        long            par ;
-                     LRESULT (CALLBACK *call)(HWND, UINT, WPARAM, LPARAM) ; 
+                     LONG_PTR            par ;
+                      LRESULT (CALLBACK *call)(HWND, UINT, WPARAM, LPARAM) ; 
                     } ;
 
   static union WndProc_par  Scenario_WndProc ;
@@ -57,13 +57,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Task_Battle_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                   WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Task_Battle_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                            WPARAM wParam, LPARAM lParam) 
 {
    RSS_Module_Battle  Module ;
                  int  elm ;         /* Идентификатор элемента диалога */
-                 int  status ;
-                 int  index ;
+             LRESULT  status ;
+             LRESULT  index ;
                  int  insert_flag ;
                 char *help ;
                 char  text[512] ;
@@ -158,8 +158,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна MAP	             */
 
-    BOOL CALLBACK  Task_Battle_Map_dialog(  HWND hDlg,     UINT Msg, 
-		  	                  WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Task_Battle_Map_dialog(  HWND hDlg,     UINT Msg, 
+                                           WPARAM wParam, LPARAM lParam) 
 {
                 HWND  hElem  ;
                  int  elm ;         /* Идентификатор элемента диалога */
@@ -225,14 +225,14 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна EDIT	             */
 
-    BOOL CALLBACK  Task_Battle_View_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                   WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Task_Battle_View_dialog(  HWND hDlg,     UINT Msg, 
+                                            WPARAM wParam, LPARAM lParam) 
 {
    static RSS_Module_Battle *Module ;
               static  HFONT  font ;        /* Шрифт */
                         int  elm ;         /* Идентификатор элемента диалога */
                         int  status ;
-                        int  index ;
+                    LRESULT  index ;
                        char  text[512] ;
                         int  i ;
 
@@ -276,9 +276,9 @@
                LB_ADD_ROW(IDC_OBJECTS, text) ;
                                                 }
 /*- - - - - - - - - - - - - - - - -  Перехват обработчиков сообщений */
-           Scenario_WndProc.par =GetWindowLong(ITEM(IDC_SCENARIO), GWL_WNDPROC) ;
                 Tmp_WndProc.call=Task_Battle_Scenario_WndProc ;
-          SetWindowLong(ITEM(IDC_SCENARIO), GWL_WNDPROC, Tmp_WndProc.par) ;
+           Scenario_WndProc.par =GetWindowLongPtr(ITEM(IDC_SCENARIO), GWLP_WNDPROC) ;
+                                 SetWindowLongPtr(ITEM(IDC_SCENARIO), GWLP_WNDPROC, Tmp_WndProc.par) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
@@ -346,8 +346,8 @@
 /*								     */
 /*        Обработчик сообщений диалогового окна VARIABLES            */
 
-    BOOL CALLBACK  Task_Battle_Vars_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                   WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Task_Battle_Vars_dialog(  HWND hDlg,     UINT Msg, 
+                                            WPARAM wParam, LPARAM lParam) 
 {
    RSS_Module_Battle  Module ;
        static  HFONT  font ;        /* Шрифт */
@@ -573,7 +573,7 @@
     RSS_Module_Battle *data ;               /* Источник данных */
                  char  data_ptr[32] ;       /* Адрес описания, кодированный */
                 TRACE *trace ;
-           RSS_Object *center ;
+//         RSS_Object *center ;
                double  x ;
                double  z ;
                double  x_c ;

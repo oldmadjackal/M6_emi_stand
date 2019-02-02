@@ -174,8 +174,8 @@
 /* Τΰιλ  T_Battle.cpp */
 
 /* Τΰιλ  T_Battle_dialog.cpp */
-    BOOL CALLBACK  Task_Battle_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Task_Battle_View_dialog(HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Task_Battle_Vars_dialog(HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Task_Battle_Map_dialog (HWND, UINT, WPARAM, LPARAM) ;
- LRESULT CALLBACK  Task_Battle_Map_prc    (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Task_Battle_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Task_Battle_View_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Task_Battle_Vars_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Task_Battle_Map_dialog (HWND, UINT, WPARAM, LPARAM) ;
+  LRESULT CALLBACK  Task_Battle_Map_prc    (HWND, UINT, WPARAM, LPARAM) ;

@@ -1100,8 +1100,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               time_w=time_c-(time_1-time_0) ;
 
+#pragma warning(disable : 4244)
           if(fast==0)                                               /* Для реального времени - выдерживаем паузу */
            if(time_w>=0)  Sleep(time_w*1000) ;
+#pragma warning(default : 4244)
 
                     hit_avg=((double)(hit_sum+mHit_cnt))/(attempt+1.) ;
 
