@@ -130,5 +130,5 @@
 /* Τΰιλ  O_Sadarm.cpp */
 
 /* Τΰιλ  O_Sadarm_dialog.cpp */
-  BOOL CALLBACK  Object_Sadarm_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_Sadarm_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Sadarm_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Sadarm_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;

@@ -521,7 +521,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Извлечение данных */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
@@ -637,7 +637,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            char *pars[10] ;
            char *end ;
            char  tmp[1024] ;
-            int  status ;
+        INT_PTR  status ;
             int  i ;
 
 /*-------------------------------------- Дешифровка командной строки */
@@ -694,13 +694,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 			             GetActiveWindow(), 
                                      Object_Sadarm_Create_dialog, 
                                     (LPARAM)&data               ) ;
-   if(status)  return(status) ;
+   if(status)  return(-1) ;
 
             this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 
-   return(status) ;
+   return(0) ;
 }
 
 
@@ -1356,7 +1356,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               time_w=time_c-(time_1-time_0) ;
 
+#pragma warning(disable : 4244)
            if(time_w>=0)  Sleep(time_w*1000) ;
+#pragma warning(default : 4244)
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
          object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
          object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;

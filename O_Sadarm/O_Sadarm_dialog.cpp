@@ -35,13 +35,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Object_Sadarm_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                     WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_Sadarm_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                              WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_Sadarm  Module ;
                 int  elm ;         /* Идентификатор элемента диалога */
-                int  status ;
-                int  index ;
+            LRESULT  status ;
+            LRESULT  index ;
                 int  insert_flag ;
                char *help ;
                char  text[512] ;
@@ -136,8 +136,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CREATE            */
 
-    BOOL CALLBACK  Object_Sadarm_Create_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                       WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_Sadarm_Create_dialog(  HWND hDlg,     UINT Msg, 
+                                                WPARAM wParam, LPARAM lParam) 
 {
          RSS_Module_Sadarm  Module ;
  static     RSS_Model_data *data ;
