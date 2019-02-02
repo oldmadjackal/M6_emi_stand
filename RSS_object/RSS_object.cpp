@@ -9,6 +9,7 @@
 #include "..\RSS_feature\RSS_feature.h"
 #include "RSS_object.h"
 
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 
