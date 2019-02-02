@@ -384,7 +384,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Формирование описания */
 
       sprintf(text, "%s\r\n%s\r\n"
-                    "Range Min   % 5lf\r\n" 
                     "Owner       %s\r\n" 
                     "\r\n",
                         unit->Name,      unit->Type, 
@@ -432,7 +431,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     char *pars[_PARS_MAX] ;
                     char *name ;
   RSS_Unit_WarHeadSimple *unit ;
-                     int  status ;
+                 INT_PTR  status ;
                     char *end ;
                      int  i ;
 
@@ -471,12 +470,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*--------------------------------------- Переход в диалоговый режим */
 
-        status=DialogBoxIndirectParam( GetModuleHandle(NULL),
-                                      (LPCDLGTEMPLATE)Resource("IDD_PARS", RT_DIALOG),
-                                       GetActiveWindow(), 
-                                       Unit_WarHeadSimple_Pars_dialog, 
-                                      (LPARAM)unit                    ) ;
-          return(status) ;
+       status=DialogBoxIndirectParam( GetModuleHandle(NULL),
+                                     (LPCDLGTEMPLATE)Resource("IDD_PARS", RT_DIALOG),
+                                      GetActiveWindow(), 
+                                      Unit_WarHeadSimple_Pars_dialog, 
+                                     (LPARAM)unit                    ) ;
+    if(status)  return(-1) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -802,8 +801,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  unit->load_type  =_STRIPE_TYPE ;
          strncpy(unit-> sub_unit, sub_name, sizeof(unit->sub_unit)-1) ;
                  unit-> sub_object= sub_object ;
-                 unit-> sub_count = coord[0] ;
-                 unit-> sub_step  = coord[1] ;
+                 unit-> sub_count = (int)coord[0] ;
+                 unit-> sub_step  =      coord[1] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -919,10 +918,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  unit->load_type  =_PANCAKES_TYPE ;
          strncpy(unit-> sub_unit, sub_name, sizeof(unit->sub_unit)-1) ;
                  unit-> sub_object= sub_object ;
-                 unit-> sub_count = coord[0] ;
-                 unit-> sub_step  = coord[1] ;
-                 unit-> sub_series= coord[2] ;
-                 unit-> sub_range = coord[3] ;
+                 unit-> sub_count = (int)coord[0] ;
+                 unit-> sub_step  =      coord[1] ;
+                 unit-> sub_series= (int)coord[2] ;
+                 unit-> sub_range = (int)coord[3] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1142,8 +1141,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_WarHeadSimple::vCalculateStart(double  t)
 {
-        blast=0 ;
-   start_time=t ;
+        blast=        0 ;
+   start_time=(time_t)t ;
 
   return(0) ;
 }

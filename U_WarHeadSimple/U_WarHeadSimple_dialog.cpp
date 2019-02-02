@@ -34,13 +34,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Unit_WarHeadSimple_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		                                  WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_WarHeadSimple_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                   WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_WarHeadSimple  Module ;
                        int  elm ;         /* Идентификатор элемента диалога */
-                       int  status ;
-                       int  index ;
+                   LRESULT  status ;
+                   LRESULT  index ;
                        int  insert_flag ;
                       char *help ;
                       char  text[512] ;
@@ -135,8 +135,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна PARS	             */
 
-    BOOL CALLBACK  Unit_WarHeadSimple_Pars_dialog(  HWND hDlg,     UINT Msg, 
- 		                                  WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_WarHeadSimple_Pars_dialog(  HWND hDlg,     UINT Msg, 
+                                                   WPARAM wParam, LPARAM lParam) 
 {
    static  RSS_Unit_WarHeadSimple *unit ;
                               int  elm ;         /* Идентификатор элемента диалога */
@@ -163,6 +163,7 @@
 
                       unit=(RSS_Unit_WarHeadSimple *)lParam ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+#pragma warning(disable : 4244)
                  SETi(IDC_ALTITUDE,     unit->tripping_altitude) ;
                  SETi(IDC_TIME,         unit->tripping_time    ) ;
                  SETi(IDC_HIT_RANGE,    unit->hit_range        ) ;
@@ -170,6 +171,7 @@
                  SETs(IDC_SUB_UNIT,     unit->sub_unit         ) ;
                  SETi(IDC_SUB_COUNT,    unit->sub_count        ) ;
                  SETi(IDC_SUB_STEP,     unit->sub_step         ) ;
+#pragma warning(default : 4244)
 
                                            DISABLE(IDC_ALTITUDE) ;
                                            DISABLE(IDC_TIME) ;

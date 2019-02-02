@@ -100,5 +100,5 @@
 /* Τΰιλ  U_WarHeadSimple.cpp */
 
 /* Τΰιλ  U_WarHeadSimple_dialog.cpp */
-    BOOL CALLBACK  Unit_WarHeadSimple_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Unit_WarHeadSimple_Pars_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_WarHeadSimple_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_WarHeadSimple_Pars_dialog(HWND, UINT, WPARAM, LPARAM) ;
