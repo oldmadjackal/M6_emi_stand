@@ -427,7 +427,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   char *pars[_PARS_MAX] ;
                   char *name ;
   RSS_Unit_ModelSimple  *unit ;
-                   int  status ;
+               INT_PTR  status ;
                   char *end ;
                    int  i ;
 
@@ -471,7 +471,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        GetActiveWindow(), 
                                        Unit_ModelSimple_Pars_dialog, 
                                       (LPARAM)unit                   ) ;
-          return(status) ;
+     if(status)  return(-1) ;
 
 /*-------------------------------------------------------------------*/
 

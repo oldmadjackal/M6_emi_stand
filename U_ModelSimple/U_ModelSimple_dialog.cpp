@@ -34,13 +34,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Unit_ModelSimple_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		                                WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_ModelSimple_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_ModelSimple  Module ;
                      int  elm ;         /* Идентификатор элемента диалога */
-                     int  status ;
-                     int  index ;
+                 LRESULT  status ;
+                 LRESULT  index ;
                      int  insert_flag ;
                     char *help ;
                     char  text[512] ;
@@ -135,8 +135,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна PARS	             */
 
-    BOOL CALLBACK  Unit_ModelSimple_Pars_dialog(  HWND hDlg,     UINT Msg, 
- 		                                WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_ModelSimple_Pars_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
    static  RSS_Unit_ModelSimple *unit ;
                             int  elm ;         /* Идентификатор элемента диалога */

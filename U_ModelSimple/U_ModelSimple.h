@@ -89,5 +89,5 @@
 /* Τΰιλ  U_ModelSimple.cpp */
 
 /* Τΰιλ  U_ModelSimple_dialog.cpp */
-    BOOL CALLBACK  Unit_ModelSimple_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Unit_ModelSimple_Pars_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_ModelSimple_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_ModelSimple_Pars_dialog(HWND, UINT, WPARAM, LPARAM) ;
