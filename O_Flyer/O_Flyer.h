@@ -202,6 +202,6 @@
 /* Τΰιλ  O_Flyer.cpp */
 
 /* Τΰιλ  O_Flyer_dialog.cpp */
-  BOOL CALLBACK  Object_Flyer_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_Flyer_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_Flyer_Units_dialog (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Flyer_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Flyer_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Flyer_Units_dialog (HWND, UINT, WPARAM, LPARAM) ;
