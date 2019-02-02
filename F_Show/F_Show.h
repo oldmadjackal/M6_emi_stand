@@ -156,4 +156,4 @@
 /* Τΰιλ  F_Show.cpp */
 
 /* Τΰιλ  F_Show_dialog.cpp */
-  BOOL CALLBACK  Feature_Show_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Feature_Show_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;

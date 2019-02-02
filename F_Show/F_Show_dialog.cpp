@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <io.h>
 
-#include "d:\_Projects\_Libraries\controls.h"
+#include "..\Emi_root\controls.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
@@ -31,13 +31,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Feature_Show_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                    WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Feature_Show_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                             WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_Show  Module ;
               int  elm ;         /* Идентификатор элемента диалога */
-              int  status ;
-              int  index ;
+          LRESULT  status ;
+          LRESULT  index ;
               int  insert_flag ;
              char *help ;
              char  text[512] ;
