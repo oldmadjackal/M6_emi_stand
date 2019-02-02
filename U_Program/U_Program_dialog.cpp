@@ -34,13 +34,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Unit_Program_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		                            WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_Program_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                             WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_Program  Module ;
                      int  elm ;         /* Идентификатор элемента диалога */
-                     int  status ;
-                     int  index ;
+                 LRESULT  status ;
+                 LRESULT  index ;
                      int  insert_flag ;
                     char *help ;
                     char  text[512] ;
@@ -141,8 +141,8 @@
 
 #define  _IND_MAX  10
 
-   BOOL CALLBACK  Unit_Program_Show_dialog(  HWND  hDlg,     UINT  Msg, 
-                                               WPARAM  wParam, LPARAM  lParam) 
+  INT_PTR CALLBACK  Unit_Program_Show_dialog(  HWND  hDlg,     UINT  Msg, 
+                                             WPARAM  wParam, LPARAM  lParam) 
 {
   static Indicator_context   contexts[_IND_MAX] ;
           RSS_Unit_Program  *context ;

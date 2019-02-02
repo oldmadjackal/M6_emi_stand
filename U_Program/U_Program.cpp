@@ -338,7 +338,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Извлечение данных */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
@@ -1232,7 +1232,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        for(i=0 ; dcl_program_lib[i].name[0]!=0 ; i++)
          if(dcl_program_lib[i].type     ==_CHR_AREA &&
             dcl_program_lib[i].func_flag==  0         )  
-             dcl_program_lib[i].size=strlen((char *)dcl_program_lib[i].addr) ;
+             dcl_program_lib[i].size=(int)strlen((char *)dcl_program_lib[i].addr) ;
 
 /*--------------------------------------------- Выполнение программы */
 
@@ -1751,9 +1751,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   int  Program_emb_Log(char *text)
 {
-   HWND  hDlg ;
-    int  rows_cnt ;
-    int  i ;
+     HWND  hDlg ;
+  LRESULT  rows_cnt ;
+      int  i ;
 
 #define  _LOG_MAX   100
 
@@ -2777,7 +2777,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        values[k].addr=&digits[k] ;
                                    }
             else                   {
-                   values[k].size=strlen((char *)values[k].addr) ;
+                   values[k].size=(int)strlen((char *)values[k].addr) ;
                                    } 
                                            }                                    
 /*- - - - - - - - - - - - - - - - - - - - - - -  Формирование записи */
