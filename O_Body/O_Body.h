@@ -76,5 +76,5 @@
 /* Τΰιλ  O_Body.cpp */
 
 /* Τΰιλ  O_Body_dialog.cpp */
-  BOOL CALLBACK  Object_Body_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_Body_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Body_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Body_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
