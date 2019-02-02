@@ -140,7 +140,7 @@
 /* Τΰιλ  O_Rocket_Lego.cpp */
 
 /* Τΰιλ  O_Rocket_Lego_dialog.cpp */
-  BOOL CALLBACK  Object_RocketLego_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_RocketLego_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_RocketLego_Lego_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_RocketLego_Drops_dialog (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_RocketLego_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_RocketLego_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_RocketLego_Lego_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_RocketLego_Drops_dialog (HWND, UINT, WPARAM, LPARAM) ;

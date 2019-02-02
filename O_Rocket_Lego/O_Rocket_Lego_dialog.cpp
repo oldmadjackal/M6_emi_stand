@@ -34,13 +34,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Object_RocketLego_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                         WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_RocketLego_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                  WPARAM wParam, LPARAM lParam) 
 {
  RSS_Module_RocketLego  Module ;
                    int  elm ;         /* Идентификатор элемента диалога */
-                   int  status ;
-                   int  index ;
+               LRESULT  status ;
+               LRESULT  index ;
                    int  insert_flag ;
                   char *help ;
                   char  text[512] ;
@@ -135,8 +135,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CREATE            */
 
-    BOOL CALLBACK  Object_RocketLego_Create_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                           WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_RocketLego_Create_dialog(  HWND hDlg,     UINT Msg, 
+                                                    WPARAM wParam, LPARAM lParam) 
 {
         RSS_Module_RocketLego  Module ;
  static        RSS_Model_data *data ;
@@ -344,8 +344,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна LEGO              */
 
-    BOOL CALLBACK  Object_RocketLego_Lego_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                         WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_RocketLego_Lego_dialog(  HWND hDlg,     UINT Msg, 
+                                                  WPARAM wParam, LPARAM lParam) 
 {
  static                 HFONT  font ;         /* Шрифт */
  static RSS_Module_RocketLego *Module ;
@@ -490,8 +490,8 @@
 
 #define  _IND_MAX  10
 
-   BOOL CALLBACK  Object_RocketLego_Drops_dialog(  HWND  hDlg,     UINT  Msg, 
-                                                 WPARAM  wParam, LPARAM  lParam) 
+  INT_PTR CALLBACK  Object_RocketLego_Drops_dialog(  HWND  hDlg,     UINT  Msg, 
+                                                   WPARAM  wParam, LPARAM  lParam) 
 {
   static Indicator_context   contexts[_IND_MAX] ;
               UD_diag_data  *context ;
@@ -625,5 +625,3 @@
 
     return(TRUE) ;
 }
-
-
