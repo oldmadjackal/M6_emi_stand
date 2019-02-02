@@ -39,13 +39,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Unit_SearchRadar_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		                                WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_SearchRadar_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
   RSS_Module_SearchRadar  Module ;
                      int  elm ;         /* Идентификатор элемента диалога */
-                     int  status ;
-                     int  index ;
+                 LRESULT  status ;
+                 LRESULT  index ;
                      int  insert_flag ;
                     char *help ;
                     char  text[512] ;
@@ -146,8 +146,8 @@
 
 #define  _IND_MAX  10
 
-   BOOL CALLBACK  Unit_SearchRadar_Show_dialog(  HWND  hDlg,     UINT  Msg, 
-                                               WPARAM  wParam, LPARAM  lParam) 
+  INT_PTR CALLBACK  Unit_SearchRadar_Show_dialog(  HWND  hDlg,     UINT  Msg, 
+                                                 WPARAM  wParam, LPARAM  lParam) 
 {
   static Indicator_context   contexts[_IND_MAX] ;
       RSS_Unit_SearchRadar  *context ;
@@ -387,8 +387,10 @@
                  dx=Point.GetCell (0, 0) ;
                  dz=Point.GetCell (2, 0) ;
 
+#pragma warning(disable : 4244)
                 x_t=x_c-dx*rad/data->range_max ;
                 y_t=y_c-dz*rad/data->range_max ;
+#pragma warning(default : 4244)
 
                          color    =                 RGB(255, 0, 0) ;
                            Pen    =           CreatePen(PS_SOLID, 0, color) ;

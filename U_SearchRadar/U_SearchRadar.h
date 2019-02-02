@@ -110,6 +110,6 @@
 /* Τΰιλ  U_SearchRadar.cpp */
 
 /* Τΰιλ  U_SearchRadar_dialog.cpp */
-    BOOL CALLBACK  Unit_SearchRadar_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Unit_SearchRadar_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
- LRESULT CALLBACK  Unit_SearchRadar_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_SearchRadar_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_SearchRadar_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  LRESULT CALLBACK  Unit_SearchRadar_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;
