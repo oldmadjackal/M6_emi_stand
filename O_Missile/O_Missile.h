@@ -141,5 +141,5 @@
 /* Τΰιλ  O_Missile.cpp */
 
 /* Τΰιλ  O_Missile_dialog.cpp */
-  BOOL CALLBACK  Object_Missile_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  BOOL CALLBACK  Object_Missile_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Missile_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Missile_Create_dialog(HWND, UINT, WPARAM, LPARAM) ;

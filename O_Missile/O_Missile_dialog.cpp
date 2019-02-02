@@ -32,13 +32,13 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-    BOOL CALLBACK  Object_Missile_Help_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                      WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_Missile_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                               WPARAM wParam, LPARAM lParam) 
 {
  RSS_Module_Missile  Module ;
                 int  elm ;         /* Идентификатор элемента диалога */
-                int  status ;
-                int  index ;
+            LRESULT  status ;
+            LRESULT  index ;
                 int  insert_flag ;
                char *help ;
                char  text[512] ;
@@ -133,8 +133,8 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CREATE            */
 
-    BOOL CALLBACK  Object_Missile_Create_dialog(  HWND hDlg,     UINT Msg, 
- 		  	                        WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Object_Missile_Create_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
         RSS_Module_Missile  Module ;
  static     RSS_Model_data *data ;
