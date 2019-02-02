@@ -1,0 +1,4 @@
+LIBRARY F_Visibility
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA
