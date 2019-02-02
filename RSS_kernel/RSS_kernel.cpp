@@ -17,6 +17,7 @@
 #include "..\RSS_object\RSS_object.h"
 #include "RSS_Kernel.h"
 
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 
@@ -196,7 +197,7 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
 
 {
             char  dll_mask[512] ;   /* Путь к разделу DLL */
-             int  dll_group ;	    /* Дескриптор поисковой группы DLL */
+        intptr_t  dll_group ;	    /* Дескриптор поисковой группы DLL */
      _finddata_t  dll_file ;	    /* Описание найденного файла */
             char  dll_path[512] ;   /* Полный путь к файлу DLL */
 	 HMODULE  module ;	    /* Дескриптор DLL */
@@ -1015,7 +1016,7 @@ typedef RSS_Kernel *(*MODULE_PTR)(void);
    void  RSS_IFace::vSignal(char *signal, void *data)
 {
    if(this->std_iface!=NULL)  
-         sprintf(this->std_iface, "%s:%s", signal, data) ;
+         sprintf(this->std_iface, "%s:%s", signal, (char *)data) ;
 }
 
 

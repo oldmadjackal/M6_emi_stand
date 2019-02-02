@@ -283,6 +283,7 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 #define  _USER_EXECUTE_COMMAND    101    /* Выполнить команду */
 #define  _USER_COMMAND_PREFIX     102    /* Установка префикса командной строки */
 #define  _USER_DEFAULT_OBJECT     103    /* Установка объекта по умолчанию */
+#define  _USER_EXECUTE_START      104    /* Исполнить STRAT.EMI */
 
 #define  _USER_DIRECT_COMMAND     201    /* Задание секции прямого управления */
 
