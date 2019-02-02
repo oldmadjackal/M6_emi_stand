@@ -33,6 +33,7 @@
 #include "dcl.h"
 
 
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 /*----------------------------------- Описания типов и модификаторов */
@@ -440,7 +441,9 @@ typedef struct {
  		               dcl_x_elem->type=type ;
  		               dcl_x_elem->size=buff_new ;
  		               dcl_x_elem->buff=buff_new ;
+#pragma warning(disable : 4312)
  		               dcl_x_elem->addr=(void *)CURR_X_TYPE.size  ;
+#pragma warning(default : 4312)
 
                           offset=((size*buff_new-1)/4+1)*4 ;        /* Выравниваем размер под 32-разряда */
                         

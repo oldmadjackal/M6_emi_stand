@@ -43,6 +43,8 @@
 #include "dcl.h"
 
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 /*--------------------------- Описание системы подстрок и операторов */

@@ -194,7 +194,9 @@
 #ifdef UNIX
       sprintf(tmp, " % 15s typedef %s %p  %d  %d ",
 #else
+#pragma warning(disable : 4477)
       sprintf(tmp, " % 15s typedef %s %8Fx  %d  %d ",
+#pragma warning(default : 4477)
 #endif
                 pars[0]->name, Kernel->nX_types[mode].name,
                               addr, size, buff) ;                               
@@ -213,7 +215,9 @@
 #ifdef UNIX
      sprintf(tmp, " % 15s %-9s %8p (%7s) (%2d/%2d)(%2d/%2d) ",
 #else
+#pragma warning(disable : 4477)
      sprintf(tmp, " % 15s %-9s %8Fx (%7s) (%2d/%2d)(%2d/%2d) ",
+#pragma warning(default : 4477)
 #endif
 	      pars[0]->name, types[type], addr, modes[mode],
 	       size, buff, size*elem, buff*elem             ) ;
@@ -236,7 +240,9 @@
 #ifdef UNIX
 	       sprintf(tmp, " % 15s %-9s %8p (%2d/%2d)",
 #else
+#pragma warning(disable : 4477)
 	       sprintf(tmp, " % 15s %-9s %8Fx (%2d/%2d)",
+#pragma warning(default : 4477)
 #endif
 			 pars[0]->name, types[type], addr,
 				 size, buff) ;
@@ -390,7 +396,7 @@
 
 		      string=ctime(&time_crn) ;
 
-                          sprintf(tmp, "Current time:%s  Pause:%ld", string, time_d) ;
+                          sprintf(tmp, "Current time:%s  Pause:%lld", string, time_d) ;
 
       if(DCL_DEBUG)  Kernel->iLog("SHOW>", tmp) ;
       else                 printf("\n %s",    tmp) ;

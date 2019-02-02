@@ -38,6 +38,8 @@
 #include "dcl.h"
 
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 /*---------------------------------------------------- Внешние связи */
@@ -384,7 +386,7 @@ unsigned long  file_ctime ;
                  DIR *dir_hdr ;
        struct dirent *file_info ;
 #else
-                 int  dir_hdr ;
+            intptr_t  dir_hdr ;
   struct _finddata_t  file_info ;
 #endif
                 char *names ;

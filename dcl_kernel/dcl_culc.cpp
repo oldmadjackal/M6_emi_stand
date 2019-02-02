@@ -22,6 +22,9 @@
 
 #include "dcl.h"
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
+
 /*-------------------------------------------- Специлаьные параметры */
 
 #define    _SYS_BASE      '0'

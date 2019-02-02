@@ -40,6 +40,7 @@
 #include "dcl.h"
 
 
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 /*---------------------------------------------------- Внешние связи */

@@ -29,6 +29,8 @@
 #include "dcl.h"
 #include "dcl_md5.h"
 
+#pragma warning(disable : 4244)
+#pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 
 /*---------------------------------------------------- Внешние связи */
@@ -152,7 +154,11 @@
 
          for(j=0 ; j<master->list_cnt ; j++) {
                       elems[j]     =master->list[j] ;
+#pragma warning(disable : 4302)
+#pragma warning(disable : 4311)
                       elems[j].addr=data+(long)(elems[j].addr) ;
+#pragma warning(default : 4302)
+#pragma warning(default : 4311)
 
               type=t_base(elems[j].type) ;
            if(type==_DGT_VAL  ||                                    /* Приведение размеров    */
@@ -1641,7 +1647,7 @@
                                       return(&dgt_return) ; 
                                   }
 
-                        memset(templ, 0, sizeof(templ)) ;           /* Копируем вид сравнения в рабочий буфер */
+                        memset(templ, 0, sizeof(templ)) ;           /* Копируем маску файлов в рабочий буфер */
 
        if(pars_cnt     >= 3   ||
 	  pars[2]->addr==NULL   ) {
