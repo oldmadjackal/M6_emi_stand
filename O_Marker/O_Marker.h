@@ -103,4 +103,4 @@
 /* Τΰιλ  O_Marker.cpp */
 
 /* Τΰιλ  O_Marker_dialog.cpp */
-  BOOL CALLBACK  Object_Marker_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Object_Marker_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;

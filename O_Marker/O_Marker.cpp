@@ -476,7 +476,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Èçâëå÷åíèå äàííûõ */
 
-              buff_size=data->size()+16 ;
+              buff_size=(int)data->size()+16 ;
               buff     =(char *)calloc(1, buff_size) ;
 
        strcpy(buff, data->c_str()) ;
