@@ -110,6 +110,6 @@
 /* Τΰιλ  U_EWunit.cpp */
 
 /* Τΰιλ  U_EWunit_dialog.cpp */
-    BOOL CALLBACK  Unit_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Unit_EWunit_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
- LRESULT CALLBACK  Unit_EWunit_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_EWunit_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_EWunit_Show_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  LRESULT CALLBACK  Unit_EWunit_Indicator_prc(HWND, UINT, WPARAM, LPARAM) ;
