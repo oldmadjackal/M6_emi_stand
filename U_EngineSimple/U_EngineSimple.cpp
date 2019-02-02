@@ -393,7 +393,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Формирование описания */
 
       sprintf(text, "%s\r\n%s\r\n"
-                    "Range Min   % 5lf\r\n" 
                     "Owner       %s\r\n" 
                     "\r\n",
                         unit->Name,      unit->Type, 

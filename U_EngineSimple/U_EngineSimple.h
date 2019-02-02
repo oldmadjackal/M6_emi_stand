@@ -108,5 +108,5 @@
 /* Τΰιλ  U_EngineSimple.cpp */
 
 /* Τΰιλ  U_EngineSimple_dialog.cpp */
-    BOOL CALLBACK  Unit_EngineSimple_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-    BOOL CALLBACK  Unit_EngineSimple_View_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_EngineSimple_Help_dialog(HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_EngineSimple_View_dialog(HWND, UINT, WPARAM, LPARAM) ;
