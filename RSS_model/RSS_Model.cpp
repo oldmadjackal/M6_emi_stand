@@ -189,26 +189,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                 sizeof(data->picture)) ;
                                                                  }
 /*- - - - - - - - - - - - - - - - - - - - - - - Параметр - ПАРАМЕТРЫ */
-       else if(!memicmp(text, "#PAR1=", strlen("#PAR1="))) {
-                 strncpy(data->pars[0].text, text+strlen("#PAR1="), 
-                                          sizeof(data->pars[0].text)) ;
-                                                           }
-       else if(!memicmp(text, "#PAR2=", strlen("#PAR2="))) {
-                 strncpy(data->pars[1].text, text+strlen("#PAR2="), 
-                                          sizeof(data->pars[1].text)) ;
-                                                           }
-       else if(!memicmp(text, "#PAR3=", strlen("#PAR3="))) {
-                 strncpy(data->pars[2].text, text+strlen("#PAR3="), 
-                                          sizeof(data->pars[2].text)) ;
-                                                           }
-       else if(!memicmp(text, "#PAR4=", strlen("#PAR4="))) {
-                 strncpy(data->pars[3].text, text+strlen("#PAR4="), 
-                                          sizeof(data->pars[3].text)) ;
-                                                           }
-       else if(!memicmp(text, "#PAR5=", strlen("#PAR5="))) {
-                 strncpy(data->pars[4].text, text+strlen("#PAR5="), 
-                                          sizeof(data->pars[4].text)) ;
-                                                           }
+       else if(!memicmp(text, "#PAR", strlen("#PAR"))) {
+
+               i=strtoul(text+strlen("#PAR"), &end, 10) ;
+
+            if(i>=1 && i<=_MODEL_PARS_MAX) {
+                 strncpy(data->pars[i-1].text, end+1, sizeof(data->pars[i-1].text)) ;
+                                           }
+                                                       }         
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
               }
 /*--------------------------------------------------- Закрытие файла */

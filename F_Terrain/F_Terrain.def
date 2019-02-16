@@ -1,0 +1,4 @@
+LIBRARY F_Terrain
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

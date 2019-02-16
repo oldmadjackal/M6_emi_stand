@@ -228,7 +228,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                         }
 /*--------------------------------------- Контроль списка параметров */
 
-     for(i=0 ; i<5 ; i++)
+     for(i=0 ; i<_MODEL_PARS_MAX ; i++)
        if((data->pars[i].text [0]==0 &&
            data->pars[i].value[0]!=0   ) ||
           (data->pars[i].text [0]!=0 &&
@@ -246,7 +246,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      }
 /*------------------------------------- Сохранения списка параметров */
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Заносим параметры */
-     for(i=0 ; i<5 ; i++)
+     for(i=0 ; i<_MODEL_PARS_MAX ; i++)
        if(data->pars[i].text[0]!=0) {
 
            PAR=(struct RSS_Parameter *)
@@ -577,11 +577,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  RSS_Module_Body::cCreate(char *cmd)
 
 {
+#define  _PARS_MAX  (_MODEL_PARS_MAX+5)
+
  RSS_Model_data  data ;
      RSS_Object *object ;
            char *name ;
            char *model ;
-           char *pars[10] ;
+           char *pars[_PARS_MAX] ;
            char *end ;
            char  tmp[1024] ;
         INT_PTR  status ;
@@ -589,8 +591,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------- Дешифровка командной строки */
 
-                             model ="" ;
-     for(i=0 ; i<10 ; i++)  pars[i]="" ;
+                                    model ="" ;
+     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]="" ;
 
    do {                                                             /* BLOCK.1 */
                   name=cmd ;                                        /* Извлекаем имя объекта */
@@ -603,12 +605,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 if(end==NULL)  break ;
                   *end=0 ;
           
-     for(i=0 ; i<10 ; i++) {                                        /* Извлекаем параметры */
+     for(i=0 ; i<_PARS_MAX ; i++) {                                 /* Извлекаем параметры */
                pars[i]=end+1 ;            
                    end=strchr(pars[i], ' ') ;
                 if(end==NULL)  break ;
                   *end=0 ;
-                           }
+                                  }
       } while(0) ;                                                  /* BLOCK.1 */
 
 /*--------------------------------- Подготовка блока данных создания */
@@ -643,6 +645,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
+
+#undef  _PARS_MAX
 
    return(0) ;
 }

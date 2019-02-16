@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Emi_root", "Emi_root\Emi_root.vcxproj", "{90DE8CE8-6E5A-4F65-BEB0-EE4252B3E233}"
 	ProjectSection(ProjectDependencies) = postProject
 		{D49E8E3A-A93E-4FE2-A036-485349A8DF43} = {D49E8E3A-A93E-4FE2-A036-485349A8DF43}
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44} = {D49E8E3A-A93E-4FE2-A036-485349A8DF44}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Matrix", "Matrix\Matrix.vcxproj", "{69EC1B80-B635-4727-9C61-E399286ACEDA}"
@@ -65,6 +66,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "U_Program", "U_Program\U_Program.vcxproj", "{8DA427B7-BAB4-4104-A41D-C856D94636B4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "F_Visibility", "F_Visibility\F_Visibility.vcxproj", "{D49E8E3A-A93E-4FE2-A036-485349A8DF43}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "F_Terrain", "F_Terrain\F_Terrain.vcxproj", "{D49E8E3A-A93E-4FE2-A036-485349A8DF44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -314,6 +317,14 @@ Global
 		{D49E8E3A-A93E-4FE2-A036-485349A8DF43}.Release|Win32.Build.0 = Release|Win32
 		{D49E8E3A-A93E-4FE2-A036-485349A8DF43}.Release|x64.ActiveCfg = Release|x64
 		{D49E8E3A-A93E-4FE2-A036-485349A8DF43}.Release|x64.Build.0 = Release|x64
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Debug|Win32.Build.0 = Debug|Win32
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Debug|x64.ActiveCfg = Debug|x64
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Debug|x64.Build.0 = Debug|x64
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Release|Win32.ActiveCfg = Release|Win32
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Release|Win32.Build.0 = Release|Win32
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Release|x64.ActiveCfg = Release|x64
+		{D49E8E3A-A93E-4FE2-A036-485349A8DF44}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

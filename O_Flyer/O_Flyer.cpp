@@ -1791,6 +1791,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              char  *end ;
               int   i ;
 
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
 /*---------------------------------------- Разборка командной строки */
 
                      trace_time=0. ;
@@ -1904,6 +1907,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               time_c=0. ;
               time_s=0. ;
 
+      for(i=0 ; i<OBJECTS_CNT ; i++) {                              /* Инициализация свойств объекта */ 
+                    OBJECTS[i]->vResetFeatures  (NULL) ;
+                    OBJECTS[i]->vPrepareFeatures(NULL) ;
+                                     }
+
          object->trace_on  =1 ;
          object->trace_time=0. ;
 
@@ -1924,8 +1932,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000.) ;
 #pragma warning(default : 4244)
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
-         object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
-         object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
+         object->vCalculate      (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
+         object->vPrepareFeatures(NULL) ;
+         object->vCheckFeatures  (NULL, NULL) ;
+         object->vCalculateShow  (time_c-RSS_Kernel::calc_time_step, time_c) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
        if(time_1-time_s>=this->kernel->show_time_step) {
@@ -1941,8 +1951,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------------------------------*/
 
-#undef  _COORD_MAX   
-#undef   _PARS_MAX    
+#undef    _COORD_MAX   
+#undef     _PARS_MAX    
+#undef   OBJECTS
+#undef   OBJECTS_CNT
 
    return(0) ;
 }
