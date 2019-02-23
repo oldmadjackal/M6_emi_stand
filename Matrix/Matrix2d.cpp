@@ -414,3 +414,20 @@
 
   return(0) ;
 }
+
+
+/********************************************************************/
+/*								    */
+/*		        Рассчет определителя                        */
+
+     int  Matrix2d::Determinant(double *value)
+{
+  if(this->mCols==2 &&
+     this->mRows==2   ) {
+
+              *value=CELL(0, 0)*CELL(1, 1)-CELL(0, 1)*CELL(1, 0) ;
+                                 return(0) ;
+                        }
+
+   return(-1) ;
+}

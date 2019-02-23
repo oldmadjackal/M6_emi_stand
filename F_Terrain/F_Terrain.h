@@ -85,6 +85,11 @@
 
                        int  vertexes[_VERTEX_PER_FACET_MAX] ; /* Список точек */
                        int  vertexes_cnt ;
+                    double  a ;                               /* Коеффициенты уравнения плоскости: Ax+By+Cz+D=0 */
+                    double  b ;
+                    double  c ;
+                    double  d ;
+                       int  abcd_formed ;
 
      RSS_Feature_Terrain_Dim  overall ;                    /* Габарит грани */
 
@@ -168,12 +173,10 @@
                      int  RecalcPoints  (void) ;                         /* Перерасчет точек тел объекта */
               RSS_Kernel *iGetCalculator(void) ;                         /* Определение нужного вычислителя */
                      int  iOverallTest  (RSS_Feature_Terrain *) ;        /* Проверка попадание точки в габарит участка */
-                     int  iFacetTest    (RSS_Feature_Terrain *, 
-                                                           int, int) ;   /* Проверка попадания точки внутрь элемента участка */
-                     int  iToFlat       (RSS_Feature_Terrain_Vertex *,   /* Расчет матрицы разворота плоскости x0z в плоскость точек P0-P1-P2 */
-                                         RSS_Feature_Terrain_Vertex *,
-                                         RSS_Feature_Terrain_Vertex *,
-                                                           Matrix2d * ) ;
+                     int  iFacetTest    (RSS_Feature_Terrain *,          /* Проверка попадания точки внутрь элемента участка */
+                                                           int, int) ;
+                     int  iPlaceObject  (RSS_Feature_Terrain *,          /* Расчет положения объекта по привязке к элементу местности */
+                                                           int, int) ;
 
 	                  RSS_Feature_Terrain() ;                          /* Конструктор */
 	                 ~RSS_Feature_Terrain() ;                          /* Деструктор */

@@ -117,6 +117,8 @@
 #define                        _ACTIVE_STATE  1
 #define                         _SPAWN_STATE  2
 
+                        int   land_state ;      /* Принадлежность объекта ландшафту */
+
                      double   x_base ;          /* Координаты базовой точки */
                      double   y_base ;
                      double   z_base ;

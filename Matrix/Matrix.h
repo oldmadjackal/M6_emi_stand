@@ -44,6 +44,8 @@
                 int  LoadMul    (Matrix2d *,           /* Перемножение матриц */ 
                                  Matrix2d * ) ;
 
+                int  Determinant(double *) ;           /* Рассчет определителя */
+
                      Matrix2d   () ;                   /* Конструктор */
                     ~Matrix2d   () ;                   /* Деструктор */
                  } ;

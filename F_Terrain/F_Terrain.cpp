@@ -713,6 +713,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                            }
 
                     F.vertexes_cnt=i+1 ;
+                    F.abcd_formed = 0 ;
 #undef   F
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                                          }
@@ -1133,6 +1134,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(terrain_last!=NULL) {
 
+         iPlaceObject(terrain_last, terrain_body, terrain_facet) ;
 
                           }
 /*-------------------------------------------------------------------*/
@@ -1176,7 +1178,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      double  y ;
                      double  v ;
                         int  cross ;
-                        int  n ;
                         int  i ;
 
 /*------------------------------------------------------- Подготовка */
@@ -1232,145 +1233,84 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 }
 
-#ifdef _REMARK
 
 /********************************************************************/
 /*								    */
-/*             Расчет матрицы разворота плоскости x0z               */ 
-/*                   в плоскость точек P0-P1-P2                     */
+/*     Расчет положения объекта по привязке к элементу местности    */ 
 
-    int RSS_Feature_Terrain::iToFlat(RSS_Feature_Terrain_Vertex *p0,
-                                     RSS_Feature_Terrain_Vertex *p1,
-                                     RSS_Feature_Terrain_Vertex *p2,
-                                                       Matrix2d *Transform)
+    int RSS_Feature_Terrain::iPlaceObject(RSS_Feature_Terrain *terrain, int  n_body, int  n_facet)
 
 {
-    Matrix2d  Summary ;
-    Matrix2d  Local ;
-    Matrix2d  Point ;
-      double  x1, y1, z1 ;
-      double  x2, y2, z2 ;
-      double  v ;
-      double  angle ;
+   RSS_Feature_Terrain_Body *body ;
+  RSS_Feature_Terrain_Facet *facet ;
+                     double  x0, y0, z0 ;
+                     double  x1, y1, z1 ;
+                     double  m21, m22, m23, m31, m32, m33 ;
+                     double  d1, d2, d3 ;
+                     double  r ;
 
-/*------------------------------------------------- Сдвиг в точку P0 */
+#define   DET(v11, v12, v21, v22)   (v11*v22-v12*v21) 
 
-                Summary.LoadE      (4, 4) ;
-                                                                    /* Точку 0 берем за базовую */ 
-                  Local.Load4d_base(-p0->x_abs,
-                                    -p0->y_abs,
-                                    -p0->z_abs ) ;
-                Summary.LoadMul    (&Local, &Summary) ;
+/*------------------------------------------------------- Подготовка */
 
-                      x1=p1->x_abs-p0->x_abs ;
-                      x2=p2->x_abs-p0->x_abs ;
-                      y1=p1->y_abs-p0->y_abs ;
-                      y2=p2->y_abs-p0->y_abs ;
-                      z1=p1->z_abs-p0->z_abs ;
-                      z2=p2->z_abs-p0->z_abs ;
+         body=&terrain->Bodies[n_body ] ;
+        facet=&   body->Facets[n_facet] ;
 
-   if(fabs(z1)<fabs(z2)) { 
-                            v=x1 ;  x1=x2 ; x2=v ;
-                            v=y1 ;  y1=y2 ; y2=v ;
-                            v=z1 ;  z1=z2 ; z2=v ;
-                         }
-/*----------------------------------------- Поворот вокруг Y к оси Z */
+         x0 =body->Vertexes[facet->vertexes[0]].x_abs ;
+         y0 =body->Vertexes[facet->vertexes[0]].y_abs ;
+         z0 =body->Vertexes[facet->vertexes[0]].z_abs ;
 
-   if(z1!=0.) {
-                          v=z1/sqrt(x1*x1+z1*z1) ;
-                      angle=asin(v)*_RAD_TO_GRD ;
+/*--------------------------------- Расчет уравнения плоскости грани */
 
-                  Local.Load4d_azim(-angle) ;
-                Summary.LoadMul    (&Local, &Summary) ;
+   if(facet->abcd_formed==0) {
 
-                      Point.LoadZero(4, 1) ;                        /* Перерассчитываем координаты точки 1 */
-                      Point.SetCell (0, 0, x1) ;
-                      Point.SetCell (1, 0, y1) ;
-                      Point.SetCell (2, 0, z1) ;
-                      Point.SetCell (3, 0,  1) ;
-                      Point.LoadMul (&Local, &Point) ;
-                   x1=Point.GetCell (0, 0) ;
-                   y1=Point.GetCell (1, 0) ;
-                   z1=Point.GetCell (2, 0) ;
+         m21=body->Vertexes[facet->vertexes[1]].x_abs-x0 ;
+         m22=body->Vertexes[facet->vertexes[1]].y_abs-y0 ;
+         m23=body->Vertexes[facet->vertexes[1]].z_abs-z0 ;
+         m31=body->Vertexes[facet->vertexes[2]].x_abs-x0 ;
+         m32=body->Vertexes[facet->vertexes[2]].y_abs-y0 ;
+         m33=body->Vertexes[facet->vertexes[2]].z_abs-z0 ;
 
-                      Point.LoadZero(4, 1) ;                        /* Перерассчитываем координаты точки 2 */
-                      Point.SetCell (0, 0, x2) ;
-                      Point.SetCell (1, 0, y2) ;
-                      Point.SetCell (2, 0, z2) ;
-                      Point.SetCell (3, 0,  1) ;
-                      Point.LoadMul (&Local, &Point) ;
-                   x2=Point.GetCell (0, 0) ;
-                   y2=Point.GetCell (1, 0) ;
-                   z2=Point.GetCell (2, 0) ;
-              }
-/*----------------------------------------- Поворот вокруг Z к оси X */
+         d1 =DET(m22, m23, m32, m33) ;
+         d2 =DET(m21, m23, m31, m33) ;
+         d3 =DET(m21, m22, m31, m32) ;
 
-   if(y1!=0.) {
-                          v=y1/sqrt(x1*x1+y1*y1) ;
-                      angle=asin(v)*_RAD_TO_GRD ;
+         r  =sqrt(d1*d1+d2*d2+d3*d3) ;           
 
-                  Local.Load4d_roll(-angle) ;
-                Summary.LoadMul    (&Local, &Summary) ;
+         facet->a          = d1/r ; 
+         facet->b          =-d2/r ; 
+         facet->c          = d3/r ; 
+         facet->d          = (-x0*d1+y0*d2-z0*d3)/r ; 
 
-                      Point.LoadZero(4, 1) ;                        /* Перерассчитываем координаты точки 2 */
-                      Point.SetCell (0, 0, x2) ;
-                      Point.SetCell (1, 0, y2) ;
-                      Point.SetCell (2, 0, z2) ;
-                      Point.SetCell (3, 0,  1) ;
-                      Point.LoadMul (&Local, &Point) ;
-                   x2=Point.GetCell (0, 0) ;
-                   y2=Point.GetCell (1, 0) ;
-                   z2=Point.GetCell (2, 0) ;
-              }
-/*----------------------------------------- Поворот вокруг X к оси Y */
+         facet->abcd_formed=1 ;
 
-   if(y2!=0.) {
-                          v=y2/sqrt(y2*y2+z2*z2) ;
-                      angle=asin(v)*_RAD_TO_GRD ;
+                             }
 
-                  Local.Load4d_elev(-angle) ;
-                Summary.LoadMul    (&Local, &Summary) ;
-              }
-/*--------------------------------------------------------- Проверка */
-/*
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p0->x_abs) ;
-                 Point.SetCell (1, 0, p0->y_abs) ;
-                 Point.SetCell (2, 0, p0->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
+/*---------------------- Определение положения базовой точки объекта */
 
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p1->x_abs) ;
-                 Point.SetCell (1, 0, p1->y_abs) ;
-                 Point.SetCell (2, 0, p1->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
+    if(fabs(facet->b)>0.01)
+          this->Object->y_base=-(facet->a*this->Object->x_base+
+                                 facet->c*this->Object->z_base+ 
+                                 facet->d                      )/
+                                 facet->b ; 
+    else  this->Object->y_base= y0 ;
 
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p2->x_abs) ;
-                 Point.SetCell (1, 0, p2->y_abs) ;
-                 Point.SetCell (2, 0, p2->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
-*/
+/*----------------------------------- Определение ориентации объекта */
+
+    if(fabs(facet->b)>0.01) {
+
+       x1=this->Object->x_base+sin(this->Object->a_azim*_GRD_TO_RAD) ;
+       z1=this->Object->z_base+cos(this->Object->a_azim*_GRD_TO_RAD) ;
+
+       y1=-(facet->a*x1+facet->c*z1+facet->d)/facet->b ; 
+
+          this->Object->a_elev=atan(y1-this->Object->y_base)*_RAD_TO_GRD ;
+
+                            }
 /*-------------------------------------------------------------------*/
-
-          Transform->Copy(&Summary) ;
 
    return(0) ;
 }
-
-#endif
 
 
 /********************************************************************/
@@ -1476,6 +1416,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               if(B[i].overall.z_min>V[j].z_abs)  B[i].overall.z_min=V[j].z_abs ;
          else if(B[i].overall.z_max<V[j].z_abs)  B[i].overall.z_max=V[j].z_abs ;
                                           }
+/*- - - - - - - - - - - - - - Сброс признака расчета уравнения грани */
+     for(j=0 ; j<B[i].Facets_cnt ; j++) B[i].Facets[j].abcd_formed=0 ; 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                        }                            /* CONTINUE.1 */
 /*---------------------------------------------- Перерсчет габаритов */
