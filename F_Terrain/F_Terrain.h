@@ -177,6 +177,10 @@
                                                            int, int) ;
                      int  iPlaceObject  (RSS_Feature_Terrain *,          /* Расчет положения объекта по привязке к элементу местности */
                                                            int, int) ;
+                     int  iPlaneByPoints(RSS_Feature_Terrain_Facet *,    /* Определение канонического уровнения плоскости по 3 точкам */
+                                         RSS_Feature_Terrain_Vertex *,
+                                         RSS_Feature_Terrain_Vertex *,
+                                         RSS_Feature_Terrain_Vertex * ) ;
 
 	                  RSS_Feature_Terrain() ;                          /* Конструктор */
 	                 ~RSS_Feature_Terrain() ;                          /* Деструктор */

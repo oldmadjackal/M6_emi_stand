@@ -842,6 +842,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             char *quotes ;
             char *word2 ;
             char *word3 ;
+          double  value ;
             char  work[1024] ;
             char  text[1024] ;
              int  size ;
@@ -996,24 +997,37 @@ typedef  struct {
 /*- - - - - - - - - - - - - - - - - Задание SHIFT-стрелочной команды */
    if(strstr(command, ">>")!=NULL) {
 
-         if(!strcmp(command, ">>"))          arrow_SHT_cmd[0]=0 ;
-         else                        strncpy(arrow_SHT_cmd, command, sizeof(arrow_SHT_cmd)) ;
+       if(!strcmp(command, ">>")) {
+                                      arrow_SHT_cmd[0]=0 ;
+                                  }
+       else                       {
 
-                                        SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
+               value=strtod(command+2, &end) ;
+            if(value>0. && *end==0) 
+                         strncpy(arrow_SHT_step, command+2, sizeof(arrow_SHT_step)) ;
+            else         strncpy(arrow_SHT_cmd,  command,   sizeof(arrow_SHT_cmd)) ;
+                                  }
 
-                                         EmiRoot_system() ;    
+                            SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
+                                       EmiRoot_system() ;    
                                             continue ;
                                    } 
 /*- - - - - - - - - - - - - - - - - - - - Задание стрелочной команды */
    if(strstr(command, ">")!=NULL) {
 
-     if(!strcmp(command, ">" ))         arrow_cmd[0]=0 ;
-     else                       strncpy(arrow_cmd, command, sizeof(arrow_cmd)) ;
+       if(!strcmp(command, ">" )) {
+                                     arrow_cmd[0]=0 ;
+                                  }
+       else                       {
 
-                                   SETs(IDC_CMD_ARROW,     arrow_cmd) ;
-                                   SETs(IDC_CMD_ARROW_ALT, arrow_SHT_cmd) ;
+               value=strtod(command+1, &end) ;
+            if(value>0. && *end==0) 
+                         strncpy(arrow_step, command+1, sizeof(arrow_step)) ;
+            else         strncpy(arrow_cmd,  command,   sizeof(arrow_cmd)) ;
+                                  }
 
-                                           EmiRoot_system() ;    
+                              SETs(IDC_CMD_ARROW,  arrow_cmd) ;
+                                         EmiRoot_system() ;    
                                               continue ;
                                   } 
 /*- - - - - - - - - - - - - - - - - - - -  Сохранение набора команд  */

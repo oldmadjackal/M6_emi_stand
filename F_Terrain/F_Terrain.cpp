@@ -1241,15 +1241,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int RSS_Feature_Terrain::iPlaceObject(RSS_Feature_Terrain *terrain, int  n_body, int  n_facet)
 
 {
-   RSS_Feature_Terrain_Body *body ;
-  RSS_Feature_Terrain_Facet *facet ;
-                     double  x0, y0, z0 ;
-                     double  x1, y1, z1 ;
-                     double  m21, m22, m23, m31, m32, m33 ;
-                     double  d1, d2, d3 ;
-                     double  r ;
-
-#define   DET(v11, v12, v21, v22)   (v11*v22-v12*v21) 
+    RSS_Feature_Terrain_Body *body ;
+   RSS_Feature_Terrain_Facet *facet ;
+  RSS_Feature_Terrain_Vertex  points[3];
+   RSS_Feature_Terrain_Facet  facet_o ;
+                    Matrix2d  Summary ;
+                    Matrix2d  Local ;
+                    Matrix2d  Point ;
+                      double  x0, y0, z0 ;
+                      double  x1, y1, z1 ;
+                         int  i ;
 
 /*------------------------------------------------------- Подготовка */
 
@@ -1264,28 +1265,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(facet->abcd_formed==0) {
 
-         m21=body->Vertexes[facet->vertexes[1]].x_abs-x0 ;
-         m22=body->Vertexes[facet->vertexes[1]].y_abs-y0 ;
-         m23=body->Vertexes[facet->vertexes[1]].z_abs-z0 ;
-         m31=body->Vertexes[facet->vertexes[2]].x_abs-x0 ;
-         m32=body->Vertexes[facet->vertexes[2]].y_abs-y0 ;
-         m33=body->Vertexes[facet->vertexes[2]].z_abs-z0 ;
-
-         d1 =DET(m22, m23, m32, m33) ;
-         d2 =DET(m21, m23, m31, m33) ;
-         d3 =DET(m21, m22, m31, m32) ;
-
-         r  =sqrt(d1*d1+d2*d2+d3*d3) ;           
-
-         facet->a          = d1/r ; 
-         facet->b          =-d2/r ; 
-         facet->c          = d3/r ; 
-         facet->d          = (-x0*d1+y0*d2-z0*d3)/r ; 
+        iPlaneByPoints(facet, &body->Vertexes[facet->vertexes[0]],
+                              &body->Vertexes[facet->vertexes[1]],
+                              &body->Vertexes[facet->vertexes[2]] ) ;
 
          facet->abcd_formed=1 ;
 
                              }
-
 /*---------------------- Определение положения базовой точки объекта */
 
     if(fabs(facet->b)>0.01)
@@ -1298,16 +1284,105 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------- Определение ориентации объекта */
 
     if(fabs(facet->b)>0.01) {
-
+/*- - - - - - - - - - - - - - - - - - -  Определение угла возвышения */
        x1=this->Object->x_base+sin(this->Object->a_azim*_GRD_TO_RAD) ;
        z1=this->Object->z_base+cos(this->Object->a_azim*_GRD_TO_RAD) ;
 
        y1=-(facet->a*x1+facet->c*z1+facet->d)/facet->b ; 
 
           this->Object->a_elev=atan(y1-this->Object->y_base)*_RAD_TO_GRD ;
+/*- - - - - - - - - - - - - - - - - - -  Определение угла возвышения */
+                Summary.LoadE      (4, 4) ;                         /* Определение матрицы пересчета в систему кординат объекта */
+                  Local.Load4d_elev(this->Object->a_elev) ;
+                Summary.LoadMul    (&Summary, &Local) ;
+                  Local.Load4d_azim(this->Object->a_azim) ;
+                Summary.LoadMul    (&Summary, &Local) ;
 
+       for(i=0 ; i<3 ; i++) {                                       /* Пересчитываем опорные точки плоскости в систему координат объекта */
+
+                           Point.LoadZero(4, 1) ;
+                           Point.SetCell (0, 0, body->Vertexes[facet->vertexes[i]].x_abs) ;
+                           Point.SetCell (1, 0, body->Vertexes[facet->vertexes[i]].y_abs) ;
+                           Point.SetCell (2, 0, body->Vertexes[facet->vertexes[i]].z_abs) ;
+                           Point.SetCell (3, 0,   1   ) ;
+
+                           Point.LoadMul (&Summary, &Point) ;            
+                                                                    
+           points[i].x_abs=Point.GetCell (0, 0) ;
+           points[i].y_abs=Point.GetCell (1, 0) ;
+           points[i].z_abs=Point.GetCell (2, 0) ;
+                            }
+
+        iPlaneByPoints(&facet_o, &points[0],                        /* Определение уравнения плоскости в системе координат объекта */
+                                 &points[1], &points[2]) ;
+
+if(points[0].y_abs!=0.) {
+                          points[0].y=points[0].y_abs ;
+                        } 
+
+          this->Object->a_roll=atan(facet_o.a/facet_o.b)*_RAD_TO_GRD ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                            }
+    else                    {
+                               this->Object->a_elev=0. ;
+                               this->Object->a_roll=0. ;
                             }
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*     Определение канонического уровнения плоскости по 3 точкам    */ 
+
+    int RSS_Feature_Terrain::iPlaneByPoints(RSS_Feature_Terrain_Facet  *facet,
+                                            RSS_Feature_Terrain_Vertex *point1,
+                                            RSS_Feature_Terrain_Vertex *point2,
+                                            RSS_Feature_Terrain_Vertex *point3 )
+
+{
+    double  x0, y0, z0 ;
+    double  m21, m22, m23, m31, m32, m33 ;
+    double  d1, d2, d3 ;
+    double  r ;
+
+#define   DET(v11, v12, v21, v22)   (v11*v22-v12*v21) 
+
+
+         x0 =point1->x_abs ;
+         y0 =point1->y_abs ;
+         z0 =point1->z_abs ;
+
+         m21=point2->x_abs-x0 ;
+         m22=point2->y_abs-y0 ;
+         m23=point2->z_abs-z0 ;
+         m31=point3->x_abs-x0 ;
+         m32=point3->y_abs-y0 ;
+         m33=point3->z_abs-z0 ;
+
+         d1 =DET(m22, m23, m32, m33) ;
+         d2 =DET(m21, m23, m31, m33) ;
+         d3 =DET(m21, m22, m31, m32) ;
+
+         r  =sqrt(d1*d1+d2*d2+d3*d3) ;           
+
+    if(r!=0.) {
+                facet->a= d1/r ; 
+                facet->b=-d2/r ; 
+                facet->c= d3/r ; 
+                facet->d= (-x0*d1+y0*d2-z0*d3)/r ; 
+              }
+    else      {
+                facet->a= 0. ; 
+                facet->b= 0. ; 
+                facet->c= 0. ; 
+                facet->d= 0. ;
+                 return(-1) ;  
+              }
+
+#undef   DET
 
    return(0) ;
 }
