@@ -1219,8 +1219,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      for(j=0 ; j<F_CNT ; j++) {                                     /* CIRCLE.1 - Перебор граней */
 
+       if(this->Object->land_state)  glColor3d(0.5, 0.5, 0.5) ;
+       else                          glColor3d(0.0, 0.0, 0.0) ;
+
           glPolygonMode(GL_FRONT_AND_BACK, GL_LINE) ;
-              glColor3d(0., 0., 0) ;
                 glBegin(GL_POLYGON) ;
       for(k=0 ; k<F[j].vertexes_cnt  ; k++)                         /* Перебор точек грани */
              glVertex3d(V[F[j].vertexes[k]].x,

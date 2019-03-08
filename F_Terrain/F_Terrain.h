@@ -27,6 +27,11 @@
     public:
                      int  cHelp         (char *) ;          /* Инструкция Help */
                      int  cSlave        (char *) ;          /* Инструкция Slave */
+                     int  cFlat         (char *) ;          /* Инструкция Flat */
+                     int  cLink         (char *) ;          /* Инструкция Link */
+                     int  cScan         (char *) ;          /* Инструкция Scan */
+                     int  cUp           (char *) ;          /* Инструкция Up */
+              RSS_Object *FindObject    (char *, int) ;     /* Поиск обьекта ландшафта по имени */
 
     public:
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
@@ -137,6 +142,8 @@
                                 int   terrain_body ;                /* ... индекс тела */
                                 int   terrain_facet ;               /* ... индекс грани */
                                 int   slave ;                       /* Признак следования по рельефу */
+
+                               char   link_object[128] ;            /* Связанный объект-маркер */
 
     public:       
            RSS_Feature_Terrain_Body  *Bodies ;                      /* Список тел */

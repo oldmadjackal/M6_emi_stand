@@ -21,6 +21,7 @@
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
+#include "..\F_Show\F_Show.h"
 
 #include "F_Terrain.h"
 
@@ -89,11 +90,35 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
  { "help",    "?",  "#HELP   - список доступных команд", 
                       NULL,
-                     &RSS_Module_Terrain::cHelp       },
- { "slave",    "c",  "#SLAVE (S) - задание привязки объекта ", 
+                     &RSS_Module_Terrain::cHelp      },
+ { "slave",    "sl", "#SLAVE (SL) - задание привязки объекта ", 
                      " SLAVE <Имя>\n"
                      "   задать объект как следующий рельефу местности\n",
                      &RSS_Module_Terrain::cSlave     },
+ { "flat",     "f",  "#FLAT (F) - задание привязки объекта ", 
+                     " FLAT <Базовое Имя> <X-base> <Z-base> <X-size> <Z-size> <step>\n"
+                     "   создать плоскую сетку рельефа с заданным шагом\n",
+                     &RSS_Module_Terrain::cFlat      },
+ { "link",     "l",  "#LINK (L) - 'посадить' объект на ближайшую точку элемента ландшафта", 
+                     " LINK <Имя объекта ландшафта> <Имя объекта>\n"
+                     "   'посадить' объект на ближайшую точку элемента ландшафта\n"
+                     " LINK+ <Имя объекта ландшафта> <Имя объекта>\n"
+                     "   ... точку, следующую за ближайшей точкой элемента ландшафта\n"
+                     " LINK- <Имя объекта ландшафта> <Имя объекта>\n"
+                     "   ... точку, предшествующую ближайшей точке элемента ландшафта\n",
+                     &RSS_Module_Terrain::cLink      },
+ { "scan",     "s",  "#SCAN (S) - перебор точек элемента ландшафта", 
+                     " SCAN+ <Имя объекта ландшафта>\n"
+                     "   перейти в следующую точку элемента ландшафта\n"
+                     " SCAN- <Имя объекта ландшафта> <Имя объекта>\n"
+                     "   перейти в предыдущую точку элемента ландшафта\n",
+                     &RSS_Module_Terrain::cScan      },
+ { "up",       "u",  "#UP (U) - изменить высоту последней привязанной точки", 
+                     " UP <Имя объекта ландшафта> <Высота>\n"
+                     "   установить абсолютное значение высоты точки элемента ландшафта\n"
+                     " UP+ <Имя объекта ландшафта> <Изменение высоты>\n"
+                     "   изменить высоту точки элемента ландшафта\n",
+                     &RSS_Module_Terrain::cUp        },
  {  NULL }
                                                               } ;
 
@@ -234,6 +259,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      for(end=instr ; *end!= 0  &&
                      *end!=' ' &&
                      *end!='>' &&
+                     *end!='+' &&
+                     *end!='-' &&
                      *end!='/'    ; end++) ;
 
       if(*end!= 0 &&
@@ -415,14 +442,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                            sprintf(text, "Объекта с именем '%s' "
                                          "НЕ существует", name) ;
                         SEND_ERROR(text) ;
-                            return(NULL) ;
+                            return(-1) ;
                        }
 /*--------------------------------------------- Назначение категории */
 
    for(i=0 ; i<object->Features_cnt ; i++)
      if(!stricmp(object->Features[i]->Type, "Terrain")) {
           ((RSS_Feature_Terrain *)(object->Features[i]))->slave=1 ;
-                                                    }
+                                                        }
 /*-------------------------------------------------------------------*/
 
 #undef    OBJECTS
@@ -430,6 +457,833 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   _PARS_MAX    
 
    return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции CREATE                  */
+/*								    */
+/*  FLAT <Базовое Имя> <X-base> <Z-base> <X-size> <Z-size> <step>   */
+
+  int  RSS_Module_Terrain::cFlat(char *cmd)
+
+{
+#define  _PARS_MAX  10
+
+          RSS_Object *object ;
+    RSS_Feature_Show *show ; 
+ RSS_Feature_Terrain *terrain ; 
+                char *name ;
+                char *pars[_PARS_MAX] ;
+              double  x_base, z_base ;
+              double  x_size, z_size ;
+              double  step ;
+                 int  i_x, i_z ;
+                 int  x_cnt, z_cnt ;
+                char *end ;
+                char  text[1024] ;
+                 int  n ;
+                 int  i ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*-------------------------------------- Дешифровка командной строки */
+
+     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]="" ;
+
+   do {                                                             /* BLOCK.1 */
+                  name=cmd ;                                        /* Извлекаем имя объекта */
+                   end=strchr(name, ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+          
+     for(i=0 ; i<_PARS_MAX ; i++) {                                 /* Извлекаем параметры */
+               pars[i]=end+1 ;            
+                   end=strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                  }
+      } while(0) ;                                                  /* BLOCK.1 */
+
+/*--------------------------- Проверка базового имени сетки объектов */
+
+/*-------------------------------------------- Извлечение параметров */
+
+          x_base=strtod(pars[0], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра X-base") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          z_base=strtod(pars[1], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра Z-base") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          x_size=strtod(pars[2], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра X-size") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          z_size=strtod(pars[3], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра Z-size") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+            step=strtod(pars[4], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра Step") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+/*------------------------------------------------- Создание объекта */
+
+           object=new RSS_Object ;
+        if(object==NULL) {
+              SEND_ERROR("Секция TERRAIN: Недостаточно памяти для создания объекта") ;
+                              return(-1) ;
+                         }
+
+               strcpy(object->Name, name) ;
+               strcpy(object->Type, "Terrain") ;
+                      object->Module=this ;
+                      object->x_base=x_base ;  
+                      object->y_base=0. ;  
+                      object->z_base=z_base ;  
+                      object->a_azim=0. ;  
+                      object->a_elev=0. ;  
+                      object->a_roll=0. ;  
+
+                      object->land_state=1 ;
+
+/*------------------------------------------------- Создание свойств */
+
+               object->Features_cnt=this->feature_modules_cnt ;
+               object->Features    =(RSS_Feature **)
+                                     calloc(this->feature_modules_cnt, sizeof(object->Features[0])) ;
+
+       for(i=0 ; i<this->feature_modules_cnt ; i++)
+         object->Features[i]=this->feature_modules[i]->vCreateFeature(object, NULL) ;
+
+                show=NULL ;
+             terrain=NULL ;
+
+       for(i=0 ; i<object->Features_cnt ; i++)
+         if(!stricmp(object->Features[i]->Type, "Show"))
+                      show=(RSS_Feature_Show *)object->Features[i] ;
+         else
+         if(!stricmp(object->Features[i]->Type, "Terrain"))
+                   terrain=(RSS_Feature_Terrain *)object->Features[i] ;
+
+/*----------------------------------------- Заполнение свойства SHOW */
+
+      if(show!=NULL) {
+
+#define    BODY          show->Bodies
+#define    BODIES_CNT    show->Bodies_cnt
+#define    FACETS        show->Bodies->Facets
+#define    FACETS_CNT    show->Bodies->Facets_cnt
+#define  VERTEXES        show->Bodies->Vertexes
+#define  VERTEXES_CNT    show->Bodies->Vertexes_cnt
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Создание тела */
+           BODIES_CNT=1 ;
+
+           BODY=(RSS_Feature_Show_Body *)calloc(1, sizeof(RSS_Feature_Show_Body)) ;
+        if(BODY==NULL) {
+                            sprintf(text, "Section TARRAIN, feature SHOW: Недостаточно памяти для списка тел") ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                       }
+
+                       strcpy(BODY->name, "Body.Body") ;
+                              BODY->x_base=x_base ;
+                              BODY->y_base=   0. ;
+                              BODY->z_base=z_base ;
+/*- - - - - - - - - - - - - - - - - - - - - - Создание списка вершин */
+                   x_cnt=(int)((x_size-step*0.5)/step+1) ;
+                   z_cnt=(int)((z_size-step*0.5)/step+1) ;
+            VERTEXES_CNT=(x_cnt+1)*(z_cnt+1)+1 ;
+
+           VERTEXES=(RSS_Feature_Show_Vertex *)calloc(VERTEXES_CNT, sizeof(*VERTEXES)) ;
+        if(VERTEXES==NULL) {
+                              sprintf(text, "Section TARRAIN, feature SHOW: Недостаточно памяти для списка вершин") ;
+                           SEND_ERROR(text) ;
+                                return(-1) ;
+                           }                    
+
+                  n=1 ;                                             /* Внимание! Номера точек отсчитываются от 1 */ 
+
+         for(i_z=0 ; i_z<=z_cnt ; i_z++)
+         for(i_x=0 ; i_x<=x_cnt ; i_x++) {
+
+           if(i_x==x_cnt)  VERTEXES[n].x=x_size ;
+           else            VERTEXES[n].x=i_x*step ;
+
+           if(i_z==z_cnt)  VERTEXES[n].z=z_size ;
+           else            VERTEXES[n].z=i_z*step ;
+
+                                    n++ ;
+
+                                         } 
+/*- - - - - - - - - - - - - - - - - - - - - - Создание списка граней */
+           FACETS_CNT=x_cnt*z_cnt*2 ;
+
+           FACETS=(RSS_Feature_Show_Facet *)calloc(FACETS_CNT, sizeof(RSS_Feature_Show_Facet)) ;
+        if(FACETS==NULL) {
+                              sprintf(text, "Section TARRAIN, feature SHOW: Недостаточно памяти для списка граней") ;
+                           SEND_ERROR(text) ;
+                                return(-1) ;
+                        }
+
+         for(i_z=0 ; i_z<z_cnt ; i_z++)
+         for(i_x=0 ; i_x<x_cnt ; i_x++) {                           /* Внимание! Номера точек отсчитываются от 1 */ 
+
+                 n=(i_z*x_cnt+i_x)*2 ;
+
+                 FACETS[n  ].vertexes_cnt=3 ;
+                 FACETS[n+1].vertexes_cnt=3 ;
+
+           if((i_x+i_z)%2) {
+                 FACETS[n  ].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n  ].vertexes[1] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n  ].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+
+                 FACETS[n+1].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n+1].vertexes[1] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+                         }
+           else          {  
+                 FACETS[n  ].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n  ].vertexes[1] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n  ].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+
+                 FACETS[n+1].vertexes[0] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[1] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+                         }
+                                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#undef    BODY
+#undef    BODIES_CNT
+#undef    FACETS
+#undef    FACETS_CNT
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+                     }
+/*-------------------------------------- Заполнение свойства TERRAIN */
+
+      if(terrain!=NULL) {
+
+#define    BODY          terrain->Bodies
+#define    BODIES_CNT    terrain->Bodies_cnt
+#define    FACETS        terrain->Bodies->Facets
+#define    FACETS_CNT    terrain->Bodies->Facets_cnt
+#define  VERTEXES        terrain->Bodies->Vertexes
+#define  VERTEXES_CNT    terrain->Bodies->Vertexes_cnt
+/*- - - - - - - - - - - - - - - - - - - - - - - - - -  Создание тела */
+           BODIES_CNT=1 ;
+
+           BODY=(RSS_Feature_Terrain_Body *)calloc(1, sizeof(RSS_Feature_Terrain_Body)) ;
+        if(BODY==NULL) {
+                            sprintf(text, "Section TARRAIN, feature TARRAIN: Недостаточно памяти для списка тел") ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                       }
+
+                       strcpy(BODY->name, "Body.Body") ;
+                              BODY->x_base=x_base ;
+                              BODY->y_base=   0. ;
+                              BODY->z_base=z_base ;
+/*- - - - - - - - - - - - - - - - - - - - - - Создание списка вершин */
+                   x_cnt=(int)((x_size-step*0.5)/step+1) ;
+                   z_cnt=(int)((z_size-step*0.5)/step+1) ;
+            VERTEXES_CNT=(x_cnt+1)*(z_cnt+1)+1 ;
+
+           VERTEXES=(RSS_Feature_Terrain_Vertex *)calloc(VERTEXES_CNT, sizeof(*VERTEXES)) ;
+        if(VERTEXES==NULL) {
+                              sprintf(text, "Section TARRAIN, feature TARRAIN: Недостаточно памяти для списка вершин") ;
+                           SEND_ERROR(text) ;
+                                return(-1) ;
+                           }                    
+
+                  n=1 ;                                             /* Внимание! Номера точек отсчитываются от 1 */ 
+
+         for(i_z=0 ; i_z<=z_cnt ; i_z++)
+         for(i_x=0 ; i_x<=x_cnt ; i_x++) {
+
+           if(i_x==x_cnt)  VERTEXES[n].x=x_size ;
+           else            VERTEXES[n].x=i_x*step ;
+
+           if(i_z==z_cnt)  VERTEXES[n].z=z_size ;
+           else            VERTEXES[n].z=i_z*step ;
+
+                                    n++ ;
+
+                                         } 
+/*- - - - - - - - - - - - - - - - - - - - - - Создание списка граней */
+           FACETS_CNT=x_cnt*z_cnt*2 ;
+
+           FACETS=(RSS_Feature_Terrain_Facet *)calloc(FACETS_CNT, sizeof(RSS_Feature_Terrain_Facet)) ;
+        if(FACETS==NULL) {
+                              sprintf(text, "Section TARRAIN, feature TARRAIN: Недостаточно памяти для списка граней") ;
+                           SEND_ERROR(text) ;
+                                return(-1) ;
+                        }
+
+         for(i_z=0 ; i_z<z_cnt ; i_z++)
+         for(i_x=0 ; i_x<x_cnt ; i_x++) {                           /* Внимание! Номера точек отсчитываются от 1 */ 
+
+                 n=(i_z*x_cnt+i_x)*2 ;
+
+                 FACETS[n  ].vertexes_cnt=3 ;
+                 FACETS[n+1].vertexes_cnt=3 ;
+
+           if((i_x+i_z)%2) {
+                 FACETS[n  ].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n  ].vertexes[1] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n  ].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+
+                 FACETS[n+1].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n+1].vertexes[1] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+                         }
+           else          {  
+                 FACETS[n  ].vertexes[0] = i_z   *(x_cnt+1)+i_x+1 ;
+                 FACETS[n  ].vertexes[1] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n  ].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+
+                 FACETS[n+1].vertexes[0] = i_z   *(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[1] =(i_z+1)*(x_cnt+1)+i_x+2 ;
+                 FACETS[n+1].vertexes[2] =(i_z+1)*(x_cnt+1)+i_x+1 ;
+                         }
+                                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+#undef    BODY
+#undef    BODIES_CNT
+#undef    FACETS
+#undef    FACETS_CNT
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+                        }
+/*--------------------------------- Включение объекта в общий список */
+
+       OBJECTS=(RSS_Object **)
+                 realloc(OBJECTS, (OBJECTS_CNT+1)*sizeof(*OBJECTS)) ;
+    if(OBJECTS==NULL) {
+              SEND_ERROR("Секция TERRAIN: Переполнение памяти") ;
+                                return(NULL) ;
+                      }
+
+              OBJECTS[OBJECTS_CNT]=object ;
+                      OBJECTS_CNT++ ;
+
+        SendMessage(this->kernel_wnd, WM_USER,
+                     (WPARAM)_USER_DEFAULT_OBJECT, (LPARAM)name) ;
+
+/*-------------------------------------------------- Отрисовка сцены */
+
+            this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   OBJECTS    
+#undef   OBJECTS_CNT
+
+#undef  _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции LINK                    */
+/*								    */
+/*       LINK  <Имя объекта ландшафта> <Имя объекта>                */
+/*       LINK+ <Имя объекта ландшафта> <Имя объекта>                */
+/*       LINK- <Имя объекта ландшафта> <Имя объекта>                */
+
+  int  RSS_Module_Terrain::cLink(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  int  delta_flag ;        /* Флаг режима приращений */
+                 char *pars[_PARS_MAX] ;
+                 char *t_name ;
+                 char *o_name ;
+           RSS_Object *terrain ;
+           RSS_Object *object ;
+  RSS_Feature_Terrain *land ; 
+                 char  command[256] ;
+               double  rad ;
+               double  rad_min ;
+                 char *end ;
+                  int  n ;
+                  int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      delta_flag=0 ;
+
+       if(*cmd=='-' ||
+          *cmd=='+'   ) {
+ 
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, '+')!=NULL   )  delta_flag= 1 ;
+                if(strchr(cmd, '-')!=NULL   )  delta_flag=-1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    t_name=pars[0] ;
+                    o_name=pars[1] ;   
+
+/*--------------------------------- Контроль имени объекта ландшафта */
+
+    if(t_name==NULL) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта ландшафта. \n"
+                                 "Например: LINK <Имя_объекта_ландшафта> ...") ;
+                                     return(-1) ;
+                     }
+
+       terrain=(RSS_Object *)FindObject(t_name, 1) ;                /* Ищем объект ландшафта по имени */
+    if(terrain==NULL)  return(-1) ;
+
+/*-------------------------------- Контроль имени маркерного объекта */
+
+    if(o_name==NULL) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя привязываемого объекта. \n"
+                                 "Например: LINK <Имя_объекта_ландшафта> <Имя объекта>") ;
+                                     return(-1) ;
+                     }
+
+       object=FindObject(o_name, 0) ;                               /* Ищем объект-носитель по имени */
+    if(object==NULL)  return(-1) ;
+       
+/*------------------------ Поиск ближайшей к объекту точки ландшафта */
+
+#define  VERTEXES        land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+            land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+
+      if(land==NULL) {
+                       SEND_ERROR("Объект ландшафта несодержит свойства TERRAIN") ;
+                                     return(-1) ;
+                     }
+
+       strncpy(land->link_object, o_name, sizeof(land->link_object)-1) ; 
+
+   for(i=1 ; i<VERTEXES_CNT ; i++) {
+
+           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
+               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+
+      if(i==1 || rad<rad_min) {
+                                 rad_min=rad ;
+                                      n = i ;
+                              }
+                                   }
+
+                             n+=delta_flag ;
+        if(n<  1          )  n = 1 ;
+        if(n>=VERTEXES_CNT)  n =VERTEXES_CNT-1 ;
+
+                     object->x_base=VERTEXES[n].x ;
+                     object->y_base=VERTEXES[n].y ;
+                     object->z_base=VERTEXES[n].z ;
+
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+/*------------------------------------------------ Отображение сцены */
+
+                        sprintf(command, "%s base %s %lf %lf %lf",
+                                            object->Type, o_name,
+                                            object->x_base, object->y_base, object->z_base) ;
+    object->Module->vExecuteCmd(command) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции SCAN                    */
+/*								    */
+/*       SCAN  <Имя объекта ландшафта>                              */
+/*       SCAN+ <Имя объекта ландшафта>                              */
+/*       SCAN- <Имя объекта ландшафта>                              */
+
+  int  RSS_Module_Terrain::cScan(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  int  delta_flag ;        /* Флаг режима приращений */
+                 char *pars[_PARS_MAX] ;
+                 char *t_name ;
+                 char *o_name ;
+           RSS_Object *terrain ;
+           RSS_Object *object ;
+  RSS_Feature_Terrain *land ; 
+                 char  command[256] ;
+               double  rad ;
+               double  rad_min ;
+                 char *end ;
+                  int  n ;
+                  int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      delta_flag=1 ;
+
+       if(*cmd=='-' ||
+          *cmd=='+'   ) {
+ 
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, '+')!=NULL   )  delta_flag= 1 ;
+                if(strchr(cmd, '-')!=NULL   )  delta_flag=-1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    t_name=pars[0] ;
+
+/*--------------------------------- Контроль имени объекта ландшафта */
+
+    if(t_name==NULL) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта ландшафта. \n"
+                                 "Например: SCAN <Имя_объекта_ландшафта> ...") ;
+                                     return(-1) ;
+                     }
+
+       terrain=(RSS_Object *)FindObject(t_name, 1) ;                /* Ищем объект ландшафта по имени */
+    if(terrain==NULL)  return(-1) ;
+
+/*-------------------------------------- Извлечение свойства Terrain */
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+            land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+
+      if(land==NULL) {
+                       SEND_ERROR("Объект ландшафта несодержит свойства TERRAIN") ;
+                                     return(-1) ;
+                     }
+
+       o_name=land->link_object ; 
+
+/*-------------------------------- Контроль имени маркерного объекта */
+
+    if(o_name[0]==0) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя маркерного объекта - используйте команду LINK. \n") ;
+                                     return(-1) ;
+                     }
+
+       object=FindObject(o_name, 0) ;                               /* Ищем объект-носитель по имени */
+    if(object==NULL)  return(-1) ;
+       
+/*------------------------ Поиск ближайшей к объекту точки ландшафта */
+
+#define  VERTEXES        land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+   for(i=1 ; i<VERTEXES_CNT ; i++) {
+
+           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
+               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+
+      if(i==1 || rad<rad_min) {
+                                 rad_min=rad ;
+                                      n = i ;
+                              }
+                                   }
+
+                             n+=delta_flag ;
+        if(n<  1          )  n = 1 ;
+        if(n>=VERTEXES_CNT)  n =VERTEXES_CNT-1 ;
+
+                     object->x_base=VERTEXES[n].x ;
+                     object->y_base=VERTEXES[n].y ;
+                     object->z_base=VERTEXES[n].z ;
+
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+/*------------------------------------------------ Отображение сцены */
+
+                        sprintf(command, "%s base %s %lf %lf %lf",
+                                            object->Type, o_name,
+                                            object->x_base, object->y_base, object->z_base) ;
+    object->Module->vExecuteCmd(command) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции UP                      */
+/*								    */
+/*       UP  <Имя объекта ландшафта> <Значение высоты>              */
+/*       UP+ <Имя объекта ландшафта> <Изменение высоты>             */
+
+  int  RSS_Module_Terrain::cUp(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  int  delta_flag ;        /* Флаг режима приращений */
+                 char *pars[_PARS_MAX] ;
+                 char *t_name ;
+                 char *o_name ;
+           RSS_Object *terrain ;
+           RSS_Object *object ;
+  RSS_Feature_Terrain *land ; 
+     RSS_Feature_Show *show ; 
+                 char  command[256] ;
+               double  y ;
+               double  rad ;
+               double  rad_min ;
+                 char *end ;
+                  int  n ;
+                  int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      delta_flag=0 ;
+
+       if(*cmd=='+'   ) {
+ 
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, '+')!=NULL   )  delta_flag= 1 ;
+
+                           cmd=end+1 ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    t_name=pars[0] ;
+
+/*--------------------------------- Контроль имени объекта ландшафта */
+
+    if(t_name==NULL) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта ландшафта. \n"
+                                 "Например: UP <Имя_объекта_ландшафта> ...") ;
+                                     return(-1) ;
+                     }
+
+       terrain=(RSS_Object *)FindObject(t_name, 1) ;                /* Ищем объект ландшафта по имени */
+    if(terrain==NULL)  return(-1) ;
+
+/*-------------------------------------- Извлечение свойства Terrain */
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+            land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+
+      if(land==NULL) {
+                       SEND_ERROR("Объект ландшафта несодержит свойства TERRAIN") ;
+                                     return(-1) ;
+                     }
+
+       o_name=land->link_object ; 
+
+/*-------------------------------- Контроль имени маркерного объекта */
+
+    if(o_name[0]==0) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя маркерного объекта - используйте команду LINK. \n") ;
+                                     return(-1) ;
+                     }
+
+       object=FindObject(o_name, 0) ;                               /* Ищем объект-носитель по имени */
+    if(object==NULL)  return(-1) ;
+       
+/*--------------------------------------- Извлечение числовых данных */
+
+    if(pars[1]==NULL) {                                             /* Если высота не задана... */
+                      SEND_ERROR("Не задано высота точки ландшафта. \n"
+                                 "Например: UP <Имя_объекта_ландшафта> <Высота>") ;
+                                     return(-1) ;
+                     }
+
+         y=strtod(pars[1], &end) ;
+
+    if(*end!=0) {                                                   /* Если высота не задана... */
+                      SEND_ERROR("Некорректное значение высоты.") ;
+                                     return(-1) ;
+                }
+/*------------------------ Поиск ближайшей к объекту точки ландшафта */
+
+#define  VERTEXES        land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+   for(i=1 ; i<VERTEXES_CNT ; i++) {
+
+           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
+               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+
+      if(i==1 || rad<rad_min) {
+                                 rad_min=rad ;
+                                      n = i ;
+                              }
+                                   }
+
+
+      if(delta_flag)  VERTEXES[n].y+=y ;
+      else            VERTEXES[n].y =y ;
+
+                     object->x_base=VERTEXES[n].x ;
+                     object->y_base=VERTEXES[n].y ;
+                     object->z_base=VERTEXES[n].z ;
+
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+                    land->Bodies->recalc=1 ;
+
+/*-------------------------------------- Корректировка видимой сцены */
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Show"))
+            show=(RSS_Feature_Show *)terrain->Features[i] ;
+
+     if(show!=NULL) {
+
+#define  VERTEXES        show->Bodies->Vertexes
+
+                     VERTEXES[n].y=object->y_base ;
+
+#undef  VERTEXES     
+
+//                       show->Bodies->recalc=1 ;
+
+                    }
+/*------------------------------------------------ Отображение сцены */
+
+                        sprintf(command, "%s base %s %lf %lf %lf",
+                                            object->Type, o_name,
+                                            object->x_base, object->y_base, object->z_base) ;
+    object->Module->vExecuteCmd(command) ;
+
+      this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		   Поиск обьекта ландшафта по имени                 */
+
+  RSS_Object *RSS_Module_Terrain::FindObject(char *name, int  check_type)
+
+{
+     char   text[1024] ;
+      int   i ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*------------------------------------------- Поиск объекта по имени */ 
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, name))  break ;
+
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
+                           sprintf(text, "Объекта с именем '%s' "
+                                         "НЕ существует", name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                       }
+/*-------------------------------------------- Контроль типа объекта */ 
+
+    if(check_type)
+     if(strcmp(OBJECTS[i]->Type, "Terrain")) {
+
+           SEND_ERROR("Объект не является объектом типа TERRAIN") ;
+                            return(NULL) ;
+                                             }
+/*-------------------------------------------------------------------*/ 
+
+   return(OBJECTS[i]) ;
+  
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
 }
 
 
@@ -460,9 +1314,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             slave=  0 ;
 
-    terrain_last =NULL ;
-    terrain_body = -1 ;
-    terrain_facet= -1 ;
+    memset(link_object, 0, sizeof(link_object)) ;
+
+      terrain_last =NULL ;
+      terrain_body = -1 ;
+      terrain_facet= -1 ;
 }
 
 
