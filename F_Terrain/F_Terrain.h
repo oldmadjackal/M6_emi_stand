@@ -31,6 +31,8 @@
                      int  cLink         (char *) ;          /* Инструкция Link */
                      int  cScan         (char *) ;          /* Инструкция Scan */
                      int  cUp           (char *) ;          /* Инструкция Up */
+                     int  cExport       (char *) ;          /* Инструкция Export */
+                     int  cImport       (char *) ;          /* Инструкция Import */
               RSS_Object *FindObject    (char *, int) ;     /* Поиск обьекта ландшафта по имени */
 
     public:

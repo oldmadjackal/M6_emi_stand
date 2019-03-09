@@ -96,7 +96,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      "   задать объект как следующий рельефу местности\n",
                      &RSS_Module_Terrain::cSlave     },
  { "flat",     "f",  "#FLAT (F) - задание привязки объекта ", 
-                     " FLAT <Базовое Имя> <X-base> <Z-base> <X-size> <Z-size> <step>\n"
+                     " FLAT <Имя> <X-base> <Z-base> <X-size> <Z-size> <step>\n"
                      "   создать плоскую сетку рельефа с заданным шагом\n",
                      &RSS_Module_Terrain::cFlat      },
  { "link",     "l",  "#LINK (L) - 'посадить' объект на ближайшую точку элемента ландшафта", 
@@ -119,6 +119,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      " UP+ <Имя объекта ландшафта> <Изменение высоты>\n"
                      "   изменить высоту точки элемента ландшафта\n",
                      &RSS_Module_Terrain::cUp        },
+ { "export",   "e",  "#EXPORT (E) - сохранение структуры объекта ландшафта в файле", 
+                     " EXPORT <Имя объекта ландшафта> <Путь к файлу>\n"
+                     "   сохранение структуры объекта ландшафта в файле\n",
+                     &RSS_Module_Terrain::cExport        },
+ { "import",   "i",  "#IMPORT (I) - восстановить объект ландшафта по файлу", 
+                     " IMPORT <Имя> <X-base> <Z-base> <Путь к файлу>\n"
+                     "   восстановить объект ландшафта по файлу\n",
+                     &RSS_Module_Terrain::cImport        },
  {  NULL }
                                                               } ;
 
@@ -507,7 +515,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                   }
       } while(0) ;                                                  /* BLOCK.1 */
 
-/*--------------------------- Проверка базового имени сетки объектов */
+/*------------------- Проверка существования имени объекта ландшафта */
 
 /*-------------------------------------------- Извлечение параметров */
 
@@ -565,6 +573,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                       object->land_state=1 ;
 
+/*------------------------------------------- Регистрация параметров */
+
+                   x_cnt=(int)((x_size-step*0.5)/step+1) ;
+                   z_cnt=(int)((z_size-step*0.5)/step+1) ;
+
+          object->Parameters_cnt= 3 ;
+          object->Parameters    =(RSS_Parameter *)
+                                   calloc(object->Parameters_cnt, sizeof(object->Parameters[0])) ;
+
+          strcpy(object->Parameters[0].name, "DoubleTrianglesNet") ;
+          strcpy(object->Parameters[1].name, "x-size") ;
+                 object->Parameters[1].value= x_cnt ; 
+          strcpy(object->Parameters[2].name, "z-size") ;
+                 object->Parameters[2].value= z_cnt ; 
+
 /*------------------------------------------------- Создание свойств */
 
                object->Features_cnt=this->feature_modules_cnt ;
@@ -609,8 +632,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               BODY->y_base=   0. ;
                               BODY->z_base=z_base ;
 /*- - - - - - - - - - - - - - - - - - - - - - Создание списка вершин */
-                   x_cnt=(int)((x_size-step*0.5)/step+1) ;
-                   z_cnt=(int)((z_size-step*0.5)/step+1) ;
             VERTEXES_CNT=(x_cnt+1)*(z_cnt+1)+1 ;
 
            VERTEXES=(RSS_Feature_Show_Vertex *)calloc(VERTEXES_CNT, sizeof(*VERTEXES)) ;
@@ -705,8 +726,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               BODY->y_base=   0. ;
                               BODY->z_base=z_base ;
 /*- - - - - - - - - - - - - - - - - - - - - - Создание списка вершин */
-                   x_cnt=(int)((x_size-step*0.5)/step+1) ;
-                   z_cnt=(int)((z_size-step*0.5)/step+1) ;
             VERTEXES_CNT=(x_cnt+1)*(z_cnt+1)+1 ;
 
            VERTEXES=(RSS_Feature_Terrain_Vertex *)calloc(VERTEXES_CNT, sizeof(*VERTEXES)) ;
@@ -1225,8 +1244,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #undef  VERTEXES     
 
-//                       show->Bodies->recalc=1 ;
-
                     }
 /*------------------------------------------------ Отображение сцены */
 
@@ -1240,6 +1257,353 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------------------------------*/
 
 #undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции EXPORT                  */
+/*								    */
+/*       EXPORT <Имя объекта ландшафта>                             */
+/*       EXPORT <Имя объекта ландшафта> <Путь к файлу>              */
+ 
+  int  RSS_Module_Terrain::cExport(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                 char *pars[_PARS_MAX] ;
+                 char *t_name ;
+                 char  path[FILENAME_MAX] ;
+         OPENFILENAME  file_choice ;
+                 FILE *file ;
+           RSS_Object *terrain ;
+  RSS_Feature_Terrain *land ; 
+                 char  text[1024] ;
+                 char *end ;
+                  int  status ;
+                  int  i ;
+
+                 char *dat_filter="Terrain-файлы\0*.terrain\0"
+                                  "\0\0" ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    t_name=pars[0] ;
+
+/*--------------------------------- Контроль имени объекта ландшафта */
+
+    if(t_name==NULL) {                                              /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта ландшафта. \n"
+                                 "Например: EXPORT <Имя_объекта_ландшафта> ...") ;
+                                     return(-1) ;
+                     }
+
+       terrain=(RSS_Object *)FindObject(t_name, 1) ;                /* Ищем объект ландшафта по имени */
+    if(terrain==NULL)  return(-1) ;
+
+
+    if(       terrain->Parameters_cnt==0                        ||
+       strcmp(terrain->Parameters[0].name, "DoubleTrianglesNet")  ) {
+
+          SEND_ERROR("Объект ландшафта имеет нестандартную структуру поля точек") ;
+                                     return(-1) ;
+                                                                   }
+/*-------------------------------------- Извлечение свойства Terrain */
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+            land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+
+      if(land==NULL) {
+                       SEND_ERROR("Объект ландшафта несодержит свойства TERRAIN") ;
+                                     return(-1) ;
+                     }
+/*----------------------------------------------- Запрос имени файла */
+
+                          memset(path, 0, sizeof(path)) ;
+
+    if(*pars[1]!=NULL &&
+        pars[1]!=  0    ) {                                         /* Если файл задан... */
+
+                       strncpy(path, pars[1], sizeof(path)-1) ;                         
+
+                          }
+    else                  {                                         /* Если файл не задан... */
+
+	   memset(&file_choice, 0, sizeof(file_choice))  ;
+  		   file_choice.lStructSize =sizeof(file_choice) ;   /* Форм.описание диалога */
+		   file_choice.hwndOwner   = NULL ;
+		   file_choice.hInstance   =GetModuleHandle(NULL) ;
+		   file_choice.lpstrFilter =dat_filter ;
+		   file_choice.nFilterIndex=  1  ;
+  		   file_choice.lpstrFile   = path ;
+		   file_choice.nMaxFile    =sizeof(path) ;
+		   file_choice.lpstrTitle  ="Укажите файл для сохранения" ;
+		   file_choice.Flags       =  0 ;
+
+               status=GetSaveFileName(&file_choice) ;	            /* Запрос пути */
+            if(status==0)  return(-1) ;                             /* Если путь не выбран... */
+
+                          }
+/*--------------------------------------------------- Открытие файла */
+
+         file=fopen(path, "wb") ;
+      if(file==NULL) {
+                          sprintf(text, "Ошибка открытия файла %d : %s", errno, path) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+
+          sprintf(text, "%s,%lf,%lf\r\n", terrain->Parameters[0].name, 
+                                          terrain->Parameters[1].value,
+                                          terrain->Parameters[2].value) ;
+           fwrite(text, 1, strlen(text), file) ;
+
+/*----------------------------------------------------- Запись файла */
+
+#define  VERTEXES        land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+   for(i=1 ; i<VERTEXES_CNT ; i++) {
+
+          sprintf(text, "%lf,%lf,%lf\r\n", VERTEXES[i].x, VERTEXES[i].y, VERTEXES[i].z) ;
+           fwrite(text, 1, strlen(text), file) ;
+                                   }
+
+#undef  VERTEXES     
+#undef  VERTEXES_CNT 
+
+/*--------------------------------------------------- Закрытие файла */
+
+                          fclose(file) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции IMPORT                  */
+/*								    */
+/*       IMPORT <Имя объекта ландшафта>                             */
+/*       IMPORT <Имя объекта ландшафта> <Путь к файлу>              */
+ 
+  int  RSS_Module_Terrain::cImport(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                 char *pars[_PARS_MAX] ;
+                 char *name ;
+                 char  path[FILENAME_MAX] ;
+         OPENFILENAME  file_choice ;
+                 FILE *file ;
+           RSS_Object *terrain ;
+  RSS_Feature_Terrain *land ; 
+     RSS_Feature_Show *show ; 
+                 char  text[1024] ;
+                 char  command[1024] ;
+                 char  error[1024] ;
+                 char *end ;
+                  int  status ;
+                  int  n ;
+                  int  i ;
+
+                 char *dat_filter="Terrain-файлы\0*.terrain\0"
+                                  "\0\0" ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    name=pars[0] ;
+
+/*------------------- Контроль существования имени объекта ландшафта */
+
+/*----------------------------------------------- Запрос имени файла */
+
+                          memset(path, 0, sizeof(path)) ;
+
+    if( pars[3]!=NULL &&
+       *pars[3]!=  0    ) {                                         /* Если файл задан... */
+
+                       strncpy(path, pars[3], sizeof(path)-1) ;                         
+
+                          }
+    else                  {                                         /* Если файл не задан... */
+
+	   memset(&file_choice, 0, sizeof(file_choice))  ;
+  		   file_choice.lStructSize =sizeof(file_choice) ;   /* Форм.описание диалога */
+		   file_choice.hwndOwner   = NULL ;
+		   file_choice.hInstance   =GetModuleHandle(NULL) ;
+		   file_choice.lpstrFilter =dat_filter ;
+		   file_choice.nFilterIndex=  1  ;
+  		   file_choice.lpstrFile   = path ;
+		   file_choice.nMaxFile    =sizeof(path) ;
+		   file_choice.lpstrTitle  ="Выбирете файл для загрузки объекта ландшафта" ;
+		   file_choice.Flags       = OFN_FILEMUSTEXIST ;
+
+  	       status=GetOpenFileName(&file_choice) ;	            /* Запрос пути */
+            if(status==0)  return(-1) ;                             /* Если путь не выбран... */
+
+                          }
+/*--------------------------------------------------- Открытие файла */
+
+         file=fopen(path, "rb") ;
+      if(file==NULL) {
+                          sprintf(text, "Ошибка открытия файла %d : %s", errno, path) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+/*------------------------------------------------- Считывание файла */
+
+                   terrain=NULL ;
+                      land=NULL ;
+
+               memset(text,  0, sizeof(text)) ;
+               memset(error, 0, sizeof(error)) ;
+
+   do {
+/*- - - - - - - - - - - - - - - -  Считывание очередной строки файла */
+          end=fgets(text, sizeof(text)-1, file) ;
+       if(end==NULL)  break ;
+
+          end=strchr(text, '\r') ; 
+       if(end!=NULL)  *end=0 ;
+          end=strchr(text, '\n') ; 
+       if(end!=NULL)  *end=0 ;
+/*- - - - - - - - - - - - - - - - - - - - Создание объекта ландшафта */
+       if(terrain==NULL) {
+
+             end=strchr(text, ',') ; 
+          if(end==NULL) {
+                          sprintf(error, "Некорректная структура заголовка файла") ;
+                            break ;
+                        }
+            *end=0 ;
+
+          if(strcmp(text, "DoubleTrianglesNet")) {
+                          sprintf(text, "Некорректный тип terrain-объекта") ;
+                            break ;
+                                                 }
+
+                 memmove(text, end+1, strlen(end+1)+1) ;
+
+             end=strchr(text, ',') ;
+          if(end==NULL) {
+                          sprintf(error, "Некорректная структура заголовка файла") ;
+                            break ;
+                        }
+            *end=' ' ;
+
+                sprintf(command, "terrain flat %s %s %s %s 1", name, pars[1], pars[2], text) ;
+
+              status=ProgramModule.vExecuteCmd(command) ;           /* Создаём объект ландшафта */
+           if(status) {
+                          sprintf(error, "Ошибка создания шаблона объекта") ;
+                            break ;
+                      } 
+
+              terrain=(RSS_Object *)FindObject(name, 1) ;           /* Ищем объект ландшафта по имени */
+           if(terrain==NULL)  return(-1) ;
+
+          for(i=0 ; i<terrain->Features_cnt ; i++)                  /* Извлекаем ссылки на свойства */
+            if(!stricmp(terrain->Features[i]->Type, "Show"))
+                   show=(RSS_Feature_Show *)terrain->Features[i] ;
+            else
+            if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+                   land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+
+                             n=1 ;
+                         }
+/*- - - - - - - - - - - - - - - - - - - - -  Задание положения точек */
+       else              {
+
+#define  VERTEXES_S      show->Bodies->Vertexes
+#define  VERTEXES_L      land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+          if(n>=VERTEXES_CNT) {
+                              sprintf(error, "Слишком много точек - более %d", VERTEXES_CNT) ;
+                                    break ;
+                              }
+
+                      VERTEXES_S[n].x=strtod(text, &end) ;
+                      VERTEXES_L[n].x= VERTEXES_S[n].x ;
+
+              if(*end!=',') {
+                              sprintf(error, "Неверный формат строки %d", n) ;
+                                    break ;
+                            }
+
+                      VERTEXES_S[n].y=strtod(end+1, &end) ;
+                      VERTEXES_L[n].y= VERTEXES_S[n].y ;
+
+              if(*end!=',') {
+                              sprintf(error, "Неверный формат строки %d", n) ;
+                                    break ;
+                            }
+
+                      VERTEXES_S[n].z=strtod(end+1, &end) ;
+                      VERTEXES_L[n].z= VERTEXES_S[n].z ;
+
+              if(*end!= 0 ) {
+                              sprintf(error, "Неверный формат строки %d", n) ;
+                                    break ;
+                            }
+
+                                   n++ ;
+
+#undef  VERTEXES_S
+#undef  VERTEXES_L
+#undef  VERTEXES_CNT
+                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+      } while(1) ;
+
+/*--------------------------------------------------- Закрытие файла */
+
+                          fclose(file) ;
+
+/*------------------------------------------------ Перерисовка сцены */
+
+           if(land!=NULL)  land->Bodies->recalc=1 ;
+
+                      this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+  if(error[0]!=0) {
+                       SEND_ERROR(error) ;
+                            return(-1) ;
+                  }
 
    return(0) ;
 }
@@ -1948,7 +2312,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                             } while(0) ;
 
-/*------------------------------------------------- Обсчет поражения */
+/*------------------------------ Обсчет попадания на элемент рельефа */
 
   if(terrain_last==NULL) {
 

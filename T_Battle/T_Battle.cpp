@@ -1004,9 +1004,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define   OBJECTS       RSS_Kernel::kernel->kernel_objects
 #define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt
 
-     if(attempt>0) {
 
-       for(i=0 ; i<OBJECTS_CNT ; i++) {
+    for(i=0 ; i<OBJECTS_CNT ; i++) {
+
+     if(attempt>0) {
 
          if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
 
@@ -1022,10 +1023,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                            OBJECTS_CNT-- ;
                                      i-- ;
                                                      }
-                                      }
+                   }
+
+           OBJECTS[i]->vResetFeatures(NULL) ;
+           OBJECTS[i]->vPrepareFeatures(NULL) ;
+
+                                   }
 
                        this->kernel->vShow("REFRESH") ;
-                   }
 
 #undef    OBJECTS
 #undef    OBJECTS_CNT
