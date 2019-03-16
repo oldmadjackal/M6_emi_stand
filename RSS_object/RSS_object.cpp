@@ -308,11 +308,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   int  status ;
   int  i ;
 
+           status=0 ;
 
    for(i=0 ; i<this->Features_cnt ; i++) {
-           status=this->Features[i]->vCheck(data, checked) ;
-        if(status)  break ;
+           status|=this->Features[i]->vCheck(data, checked) ;
                                          }
+
    return(status) ;
 }
 

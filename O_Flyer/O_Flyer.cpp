@@ -962,6 +962,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   }
 /*---------------------------------------------- Перенос на Свойства */
 
+         object->vPrepareFeatures(NULL) ;
+         object->vCheckFeatures  (NULL, NULL) ;
+
    for(i=0 ; i<object->Features_cnt ; i++)
      object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
                                                object->y_base, 
@@ -1168,6 +1171,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
 /*---------------------------------------------- Перенос на Свойства */
+
+         object->vPrepareFeatures(NULL) ;
+         object->vCheckFeatures  (NULL, NULL) ;
+         object->vCheckFeatures  (NULL, NULL) ;
 
    for(i=0 ; i<object->Features_cnt ; i++)
      object->Features[i]->vBodyAngles(NULL, object->a_azim, 

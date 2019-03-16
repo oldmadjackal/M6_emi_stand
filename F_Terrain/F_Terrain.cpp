@@ -99,6 +99,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      " FLAT <Имя> <X-base> <Z-base> <X-size> <Z-size> <step>\n"
                      "   создать плоскую сетку рельефа с заданным шагом\n",
                      &RSS_Module_Terrain::cFlat      },
+ { "generate", "g",  "#GENERATE (G) - генерировать форму объекта рельефа ", 
+                     " GENERATE <Имя> SIMPLE <Перепад> <Максимальный перепад>\n"
+                     "   сфромировать сетку рельефа методом ...\n",
+                     &RSS_Module_Terrain::cGenerate    },
+/*
+ { "place",    "p",  "#PLACE (L) - 'посадить' объект на ландшафт", 
+                     " PLACE <Имя объекта>\n"
+                     "   'посадить' объект на ландшафт\n",
+                     &RSS_Module_Terrain::cPlace      },
+*/
  { "link",     "l",  "#LINK (L) - 'посадить' объект на ближайшую точку элемента ландшафта", 
                      " LINK <Имя объекта ландшафта> <Имя объекта>\n"
                      "   'посадить' объект на ближайшую точку элемента ландшафта\n"
@@ -470,7 +480,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции CREATE                  */
+/*		      Реализация инструкции FLAT                    */
 /*								    */
 /*  FLAT <Базовое Имя> <X-base> <Z-base> <X-size> <Z-size> <step>   */
 
@@ -812,6 +822,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------------- Отрисовка сцены */
 
+         object->vResetFeatures  (NULL) ;
+         object->vPrepareFeatures(NULL) ;
+
             this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
@@ -820,6 +833,194 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #undef   OBJECTS_CNT
 
 #undef  _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции GENERATE                */
+/*								    */
+/*   GENERATE <Имя> SIMPLE <Перепад> <Максимальный перепад>         */
+
+  int  RSS_Module_Terrain::cGenerate(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                 char *pars[_PARS_MAX] ;
+                 char *name ;
+                 char *method ;
+               double  dy_step ;
+               double  dy_max ;
+           RSS_Object *terrain ;
+  RSS_Feature_Terrain *land ; 
+     RSS_Feature_Show *show ; 
+                  int  x_cnt ;
+                  int  z_cnt ;
+               double  y ;
+               double  dy ;
+               double  ddy ;
+                 char  text[1024] ;
+                 char *end ;
+                  int  n ;
+                  int  i ;
+                  int  j ;
+
+#define  VERTEXES_S      show->Bodies->Vertexes
+#define  VERTEXES_L      land->Bodies->Vertexes
+#define  VERTEXES_CNT    land->Bodies->Vertexes_cnt
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                    name=pars[0] ;
+                  method=pars[1] ;
+
+/*--------------------------------- Контроль имени объекта ландшафта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта ландшафта. \n"
+                                 "Например: GENERATE <Имя_объекта_ландшафта> ...") ;
+                                     return(-1) ;
+                   }
+
+       terrain=(RSS_Object *)FindObject(name, 1) ;                  /* Ищем объект ландшафта по имени */
+    if(terrain==NULL)  return(-1) ;
+
+    if(       terrain->Parameters_cnt==0                        ||
+       strcmp(terrain->Parameters[0].name, "DoubleTrianglesNet")  ) {
+
+          SEND_ERROR("Объект ландшафта имеет нестандартную структуру поля точек") ;
+                                     return(-1) ;
+                                                                    }
+
+             x_cnt=(int)(terrain->Parameters[1].value+0.1) ;
+             z_cnt=(int)(terrain->Parameters[2].value+0.1) ;
+
+/*------------------------------------ Извлечение настроек генерации */
+
+      if(!stricmp(method, "SIMPLE")) {
+
+            dy_step=strtod(pars[2], &end) ;
+        if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра 'Норма шага изменения высоты'") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                    }
+
+            dy_max=strtod(pars[3], &end) ;
+        if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра 'Максимальный шаг изменения высоты'") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                    }
+
+                                     }
+      else                           {
+
+                          sprintf(text, "Неизвестный метод генерации: %s", method) ;
+                       SEND_ERROR(text) ;
+                                     return(-1) ;
+                                     }
+/*-------------------------------------- Извлечение свойства Terrain */
+
+   for(i=0 ; i<terrain->Features_cnt ; i++)
+     if(!stricmp(terrain->Features[i]->Type, "Terrain"))
+            land=(RSS_Feature_Terrain *)terrain->Features[i] ;
+     else
+     if(!stricmp(terrain->Features[i]->Type, "Show"))
+            show=(RSS_Feature_Show *)terrain->Features[i] ;
+
+      if(land==NULL) {
+                       SEND_ERROR("Объект ландшафта несодержит свойства TERRAIN") ;
+                                     return(-1) ;
+                     }
+/*------------------------------- Генерация ландшафта методом SIMPLE */
+
+   if(!stricmp(method, "SIMPLE")) {
+             
+     for(i=0 ; i<=z_cnt ; i++)
+     for(j=0 ; j<=x_cnt ; j++) {
+
+                  n=i*(x_cnt+1)+j+1 ;
+
+           ddy=kernel->gLinearValue(-dy_step, dy_step) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - Начальная точка ряда */
+       if(j==0) { 
+
+        if(i==0) {
+                        y=0. ;
+                 }
+        else     {
+
+          if(i==1) {
+                       dy=ddy ;
+                   }
+          else     {
+                      dy=VERTEXES_S[n-x_cnt].y-VERTEXES_S[n-2*x_cnt].y+ddy ;
+                   }
+
+                     if(dy> dy_max)  dy= dy_max ;
+                     if(dy<-dy_max)  dy=-dy_max ;
+
+                       y=VERTEXES_S[n-x_cnt].y+dy ;
+                 }
+
+                }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - Линейная точка */
+       else     {
+
+          if(j==1) {
+                       dy=ddy ;
+                   }
+          else     {
+                       dy=VERTEXES_S[n-2].y-VERTEXES_S[n-1].y+ddy ;
+                   }
+
+                     if(dy> dy_max)  dy= dy_max ;
+                     if(dy<-dy_max)  dy=-dy_max ;
+
+                         y=VERTEXES_S[n-1].y+dy ;
+
+           if(i!=0) {
+                        dy=y-VERTEXES_S[n-x_cnt].y ;
+                     if(dy> dy_max)  y=VERTEXES_S[n-x_cnt].y+dy_max ;
+                     if(dy<-dy_max)  y=VERTEXES_S[n-x_cnt].y-dy_max ;
+                    }
+                }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                    VERTEXES_S[n].y=y ;
+                                    VERTEXES_L[n].y=y ;
+                               }
+
+                                  }       
+/*------------------------------------------------ Отображение сцены */
+
+                    land->Bodies->recalc=1 ;
+
+                 terrain->vResetFeatures  (NULL) ;
+                 terrain->vPrepareFeatures(NULL) ;
+
+                    this->kernel->vShow(NULL) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+#undef  VERTEXES_S
+#undef  VERTEXES_L
+#undef  VERTEXES_CNT
 
    return(0) ;
 }
@@ -1314,7 +1515,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        terrain=(RSS_Object *)FindObject(t_name, 1) ;                /* Ищем объект ландшафта по имени */
     if(terrain==NULL)  return(-1) ;
 
-
     if(       terrain->Parameters_cnt==0                        ||
        strcmp(terrain->Parameters[0].name, "DoubleTrianglesNet")  ) {
 
@@ -1594,7 +1794,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(land!=NULL)  land->Bodies->recalc=1 ;
 
-                      this->kernel->vShow(NULL) ;
+                        terrain->vResetFeatures  (NULL) ;
+                        terrain->vPrepareFeatures(NULL) ;
+
+                           this->kernel->vShow(NULL) ;
 
 /*-------------------------------------------------------------------*/
 

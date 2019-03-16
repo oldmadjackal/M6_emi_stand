@@ -247,6 +247,7 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
 
     public:
 
+                  double  gLinearValue  (double, double) ;     /* Линейное распределение */
                   double  gGaussianValue(double, double) ;     /* Нормальное распределение */
 
     public:

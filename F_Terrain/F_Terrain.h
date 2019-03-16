@@ -28,6 +28,8 @@
                      int  cHelp         (char *) ;          /* Инструкция Help */
                      int  cSlave        (char *) ;          /* Инструкция Slave */
                      int  cFlat         (char *) ;          /* Инструкция Flat */
+                     int  cGenerate     (char *) ;          /* Инструкция Generate */
+                     int  cPlace        (char *) ;          /* Инструкция Place */
                      int  cLink         (char *) ;          /* Инструкция Link */
                      int  cScan         (char *) ;          /* Инструкция Scan */
                      int  cUp           (char *) ;          /* Инструкция Up */
