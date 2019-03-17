@@ -965,11 +965,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object->vPrepareFeatures(NULL) ;
          object->vCheckFeatures  (NULL, NULL) ;
 
-   for(i=0 ; i<object->Features_cnt ; i++)
+   for(i=0 ; i<object->Features_cnt ; i++) {
      object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
                                                object->y_base, 
                                                object->z_base ) ;
-
+     object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
+                                               object->a_elev, 
+                                               object->a_roll ) ;
+                                           }
 /*------------------------------------------------------ Отображение */
 
                       this->kernel->vShow(NULL) ;
@@ -1173,7 +1176,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Перенос на Свойства */
 
          object->vPrepareFeatures(NULL) ;
-         object->vCheckFeatures  (NULL, NULL) ;
          object->vCheckFeatures  (NULL, NULL) ;
 
    for(i=0 ; i<object->Features_cnt ; i++)

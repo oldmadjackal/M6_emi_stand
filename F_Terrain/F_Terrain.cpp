@@ -179,14 +179,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void  RSS_Module_Terrain::vStart(void)
 
 {
+   int  show_idx ;
+   int  i ;
+
+/*-------------------------------------------- Приоритезация свойств */
+
+            show_idx=-1 ;  
+
+     for(i=0 ; i<feature_modules_cnt ; i++)
+       if(!stricmp(feature_modules[i]->identification, "Show"))  show_idx=i ;  
+
 /*-------------------------------------------- Регистрируем свойство */
 
    feature_modules=(RSS_Kernel **)
                      realloc(feature_modules, 
                               (feature_modules_cnt+1)*sizeof(feature_modules[0])) ;
 
-      feature_modules[feature_modules_cnt]=&ProgramModule ;
-                      feature_modules_cnt++ ;
+   if(show_idx>=0) {
+
+      memmove(&feature_modules[show_idx+1], &feature_modules[show_idx], 
+                     (feature_modules_cnt-show_idx)*sizeof(feature_modules[0])) ;
+
+                       feature_modules[show_idx]= &ProgramModule ;
+                   }
+   else            {  
+                       feature_modules[feature_modules_cnt]=&ProgramModule ;
+                   }
+
+                       feature_modules_cnt++ ;
 
 /*-------------------------------------------------------------------*/
 }
@@ -2641,9 +2661,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               y=(z1-z_b)*(x2-x1)-(x1-x_b)*(z2-z1) ;
 
+         if(y!=0.) { 
            if(v*y<0)  cross=0 ;
-
-                v=y ; 
+              v=y ; 
+                   }
 
            if(cross==0)  break ;         
                                            }
