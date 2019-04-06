@@ -972,6 +972,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
                                                object->a_elev, 
                                                object->a_roll ) ;
+     object->Features[i]->vShow         (NULL) ;
                                            }
 /*------------------------------------------------------ Отображение */
 
@@ -1178,11 +1179,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object->vPrepareFeatures(NULL) ;
          object->vCheckFeatures  (NULL, NULL) ;
 
-   for(i=0 ; i<object->Features_cnt ; i++)
+   for(i=0 ; i<object->Features_cnt ; i++) {
      object->Features[i]->vBodyAngles(NULL, object->a_azim, 
                                             object->a_elev, 
                                             object->a_roll ) ;
+     object->Features[i]->vShow      (NULL) ;
 
+                                           }
 /*------------------------------------------------------ Отображение */
 
                 this->kernel->vShow(NULL) ;
@@ -3099,7 +3102,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
                                              this->a_elev, 
                                              this->a_roll ) ;
-                                            }
+     this->Features[i]->vShow         (NULL) ;
+                                         }
 /*--------------------------------------------- Обработка телеметрии */
 
    if(this->stream_path[0]!=0) {

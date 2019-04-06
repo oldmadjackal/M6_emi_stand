@@ -32,6 +32,7 @@
                virtual  int  vPreCheck     (void *) ;                 /* Подготовка к проверке непротиворечивости свойства */  
                virtual  int  vCheck        (void *,                   /* Проверка непротиворечивости свойства */  
                                             class RSS_Objects_List *) ;
+               virtual  int  vShow         (void *) ;                 /* Отображение данных по свойству */ 
                virtual void  vBodyAdd      (char *) ;                 /* Добавить тело */
                virtual void  vBodyDelete   (char *) ;                 /* Удалить тело */
                virtual void  vBodyBasePoint(char *,                   /* Задание базовой точки тела */

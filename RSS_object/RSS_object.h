@@ -71,6 +71,7 @@
                       char  action[1024] ;
                       char  details[1024] ;
                 RSS_Object *object ;
+               RSS_Feature *feature ;
 
     public:
              virtual   int  vExecute(void) ;             /* Исполнение действия */

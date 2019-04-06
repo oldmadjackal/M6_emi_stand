@@ -12,7 +12,7 @@
 
 /*---------------------------------------------- Параметры генерации */
 
-/*---------------- Описание класса управления объектом "Пересечение" */
+/*----------------- Описание класса управления свойством "Видимость" */
 
   class F_VISIBILITY_API RSS_Module_Visibility : public RSS_Kernel {
 
@@ -26,8 +26,8 @@
 
     public:
                      int  cHelp         (char *) ;          /* Инструкция Help */
-                     int  cRadius       (char *) ;          /* Инструкция Radius */
-                     int  cCategory     (char *) ;          /* Инструкция Category */
+                     int  cAdd          (char *) ;          /* Инструкция Add */
+                     int  cView         (char *) ;          /* Инструкция View */
 
     public:
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
@@ -35,6 +35,8 @@
                                          RSS_Feature *) ;
      virtual        void  vWriteSave    (std::string *) ;   /* Записать данные в строку */
      virtual        void  vReadSave     (std::string *) ;   /* Считать данные из строки */
+
+              RSS_Object *FindObject    (char *, class RSS_Feature_Visibility **) ;
 
 	                  RSS_Module_Visibility() ;              /* Конструктор */
 	                 ~RSS_Module_Visibility() ;              /* Деструктор */
@@ -50,6 +52,19 @@
            char                         *help_full ;         /* HELP - полный */
             int (RSS_Module_Visibility::*process)(char *) ;  /* Процедура выполнения команды */
                                     }  ;
+
+/*------------------- Описание класса контекста свойства "Видимость" */
+
+  class F_VISIBILITY_API RSS_Transit_Visibility : public RSS_Transit {
+
+    public:
+             virtual   int  vExecute(void) ;             /* Исполнение действия */
+                                             
+    public:
+                            RSS_Transit_Visibility() ;        /* Конструктор */
+                           ~RSS_Transit_Visibility() ;        /* Деструктор */
+
+                                                           } ;
 
 /*---------------------------------------------- Компоненты описания */
 
@@ -124,7 +139,29 @@
                                 int  list_idx ;               /* Индекс дисплейного списка */
                 }  RSS_Feature_Visibility_Body ;
 
-/*----------------------------- Описание класса свойства "Поражение" */
+ typedef struct {                                            /* Описание точки наблюдения */
+                       char  name[128] ;
+
+                     double  x_base ;                         /* Координаты базовой точки */
+                     double  y_base ;
+                     double  z_base ;
+
+                     double  a_azim ;                         /* Углы ориентации */
+                     double  a_elev ;
+                     double  a_azim_min ;                     /* Диапазоны изменения углов ориентации */
+                     double  a_azim_max ;
+                     double  a_elev_min ;
+                     double  a_elev_max ;
+                        int  s_azim ;                         /* Признак стабилизированного поля зрения */
+                        int  s_elev ;
+
+                     double  v_azim ;                         /* Углы поля зрения */
+                     double  v_elev ;
+                     double  range ;                          /* Дальность наблюдения */
+
+                }  RSS_Feature_Visibility_Observer ;
+
+/*----------------------------- Описание класса свойства "Видимость" */
 
   class F_VISIBILITY_API RSS_Feature_Visibility : public RSS_Feature {
 
@@ -140,9 +177,13 @@
 
          RSS_Feature_Visibility_Dim   overall ;                     /* Габарит объекта */
 
-                          RSS_Point   track_s ;                     /* Собственное положение текущее */
-                          RSS_Point   track_s_prv ;                 /* Собственное положение предыдущее */
-                                int   track_flag ;                  /* Флаг возможности проверки */
+    RSS_Feature_Visibility_Observer  *Observers ;                   /* Список точек налюдения */
+                                int   Observers_cnt ;
+
+                        RSS_Transit  *Context ;                     /* Интерфейс передачи контекстов */
+
+                           COLORREF  Sector_color ;
+                                int  Sector_dlist ;
 
     public:
             virtual void  vReadSave     (char *, std::string *,     /* Считать данные из строки */
@@ -152,6 +193,7 @@
             virtual  int  vPreCheck     (void *) ;                  /* Подготовка к проверке непротиворечивости свойства */  
             virtual  int  vCheck        (void *,                    /* Проверка непротиворечивости свойства */  
                                          RSS_Objects_List *) ;
+            virtual  int  vShow         (void *) ;                  /* Отображение данных по свойству */ 
             virtual void  vBodyDelete   (char *) ;                  /* Удалить тело */
             virtual void  vBodyBasePoint(char *,                    /* Задание базовой точки тела */
                                          double, double, double) ;
@@ -165,6 +207,7 @@
                                              struct RSS_Parameter *) ;
 
                      int  RecalcPoints  (void) ;                    /* Перерасчет точек тел объекта */
+                    void  iShow         (void) ;                    /* Отображение данных по свойству */
               RSS_Kernel *iGetCalculator(void) ;                    /* Определение нужного вычислителя */
                      int  iOverallTest  (RSS_Feature_Visibility *) ;       /* Проверка пересечение "габаритов" трасс */
                      int  iFacetsTest   (RSS_Feature_Visibility_Body *) ;  /* Проверка пересечения граней */

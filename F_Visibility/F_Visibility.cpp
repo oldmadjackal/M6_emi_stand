@@ -16,6 +16,9 @@
 #include <math.h>
 #include <sys\stat.h>
 
+#include "gl\gl.h"
+#include "gl\glu.h"
+
 #include "..\Matrix\Matrix.h"
 
 #include "..\RSS_Feature\RSS_Feature.h"
@@ -90,6 +93,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",     "?",  "#HELP   - список доступных команд", 
                       NULL,
                      &RSS_Module_Visibility::cHelp       },
+ { "add",      "a",  "#ADD (A) - добавление точки наблюдения ", 
+                     " ADD <Имя объекта> <Имя точки> <X-base> <Z-base> <Z-base>\n"
+                     "   зарегистрировать точку наблюдение с заданными координатами относительно базы объекта\n",
+                     &RSS_Module_Visibility::cAdd      },
+ { "view",     "v",  "#VIEW (V) - поле зрения точки наблюдения ", 
+                     " VIEW <Имя объекта> <Имя точки> <Ширина> <Высота> <Глубина>\n"
+                     "   задать угловые размеры и глубину поля зрения точки наблюдения\n",
+                     &RSS_Module_Visibility::cView     },
  {  NULL }
                                                               } ;
 
@@ -358,9 +369,251 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
 /********************************************************************/
+/*								    */
+/*		      Реализация инструкции ADD                     */
+/*								    */
+/*  ADD <Имя объекта> <Имя точки> <X-base> <Z-base> <Z-base>        */
+
+  int  RSS_Module_Visibility::cAdd(char *cmd)
+
+{
+#define  _PARS_MAX  10
+
+                RSS_Object *object ;
+    RSS_Feature_Visibility *vis ; 
+                      char *pars[_PARS_MAX] ;
+                      char *object_name ;
+                      char *point_name ;
+                    double  x_base, y_base, z_base ;
+                      char *end ;
+                      char  text[1024] ;
+                       int  n ;
+                       int  i ;
+
+/*-------------------------------------- Дешифровка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+              object_name=pars[0] ;
+               point_name=pars[1] ;
+
+/*-------------------------------------------- Извлечение параметров */
+
+          x_base=strtod(pars[2], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра X-base") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          y_base=strtod(pars[3], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра Y-base") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          z_base=strtod(pars[4], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат параметра Z-base") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+/*---------------------------------------------------- Поиск объекта */
+
+        object=FindObject(object_name, &vis) ;
+     if(object==NULL)  return(-1) ;
+
+/*------------------------------------------- Поиск точки наблюдения */
+
+    for(n=0 ; n<vis->Observers_cnt ; n++)
+      if(!stricmp(vis->Observers[n].name, point_name))  break ;
+
+/*---------------------------------------- Создание точки наблюдения */
+
+    if(n==vis->Observers_cnt) {
+
+         vis->Observers_cnt++ ;
+
+         vis->Observers=(RSS_Feature_Visibility_Observer *)
+                          realloc(vis->Observers, vis->Observers_cnt*sizeof(vis->Observers[0])) ;
+
+         memset(&vis->Observers[n], 0, sizeof(vis->Observers[n]));
+
+                              }
+/*------------------------------------------- Регистрация параметров */
+
+   strncpy(vis->Observers[n].name, point_name, sizeof(vis->Observers[n])-1) ;
+           vis->Observers[n].x_base=x_base ;
+           vis->Observers[n].y_base=y_base ;
+           vis->Observers[n].z_base=z_base ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции VIEW                    */
+/*								    */
+/*  VIEW <Имя объекта> <Имя точки> <Ширина> <Высота> <Глубина>      */
+
+  int  RSS_Module_Visibility::cView(char *cmd)
+
+{
+#define  _PARS_MAX  10
+
+                RSS_Object *object ;
+    RSS_Feature_Visibility *vis ; 
+                      char *pars[_PARS_MAX] ;
+                      char *object_name ;
+                      char *point_name ;
+                    double  a_view, e_view, range ;
+                      char *end ;
+                      char  text[1024] ;
+                       int  n ;
+                       int  i ;
+
+/*-------------------------------------- Дешифровка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+              object_name=pars[0] ;
+               point_name=pars[1] ;
+
+/*-------------------------------------------- Извлечение параметров */
+
+          a_view=strtod(pars[2], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат ширины поля зрения") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          e_view=strtod(pars[3], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат высоты поля зрения") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+
+          range=strtod(pars[4], &end) ;
+      if(*end!=0) {
+                        sprintf(text, "Некорректный формат глубины поля зрения") ;
+                     SEND_ERROR(text) ;
+                          return(-1) ;
+                  }
+/*---------------------------------------------------- Поиск объекта */
+
+        object=FindObject(object_name, &vis) ;
+     if(object==NULL)  return(-1) ;
+
+/*------------------------------------------- Поиск точки наблюдения */
+
+    for(n=0 ; n<vis->Observers_cnt ; n++)
+      if(!stricmp(vis->Observers[n].name, point_name))  break ;
+
+    if(n==vis->Observers_cnt) {
+                                 sprintf(text, "Неизвестная точка наблюдения") ;
+                              SEND_ERROR(text) ;
+                                  return(-1) ;
+                              }
+/*------------------------------------------- Регистрация параметров */
+
+           vis->Observers[n].v_azim=a_view ;
+           vis->Observers[n].v_elev=e_view ;
+           vis->Observers[n].range =range ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _PARS_MAX
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*                       Поиск обьекта по имени                     */
+
+  RSS_Object *RSS_Module_Visibility::FindObject(char *name, RSS_Feature_Visibility **vis)
+
+{
+  RSS_Object *object ;
+        char  text[1024] ;
+         int  i ;
+
+#define   OBJECTS       this->kernel->kernel_objects 
+#define   OBJECTS_CNT   this->kernel->kernel_objects_cnt 
+
+/*------------------------------------------- Поиск объекта по имени */ 
+
+               object=NULL ;
+
+   for(i=0 ; i<OBJECTS_CNT ; i++)                                   /* Ищем объект по имени */
+     if(!stricmp(OBJECTS[i]->Name, name)) {
+                                              object=OBJECTS[i] ;
+                                                 break ;
+                                          }
+
+    if(object==NULL) {                                              /* Если имя не найдено... */
+                           sprintf(text, "Объекта с именем '%s' "
+                                         "НЕ существует", name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                     }
+/*---------------------------------------------- Извлечение свойства */
+
+               *vis=NULL ;
+
+      for(i=0 ; i<object->Features_cnt ; i++)                       /* Извлекаем ссылки на свойства */
+        if(!stricmp(object->Features[i]->Type, "Visibility")) {
+               *vis=(RSS_Feature_Visibility *)object->Features[i] ;
+                                    break ;
+                                                              }                                                   
+
+    if(*vis==NULL) {                                                /* Если свойство не найдено... */
+                           sprintf(text, "Объекта с именем '%s' "
+                                         "НЕ поддерживает свойство Visibility", name) ;
+                        SEND_ERROR(text) ;
+                            return(NULL) ;
+                   }
+/*-------------------------------------------------------------------*/ 
+
+   return(object) ;
+  
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+}
+
+
+/********************************************************************/
 /********************************************************************/
 /**							           **/
-/**           ОПИСАНИЕ КЛАССА ВИДИМОСТИ ОБЪЕКТА           **/
+/**               ОПИСАНИЕ КЛАССА ВИДИМОСТИ ОБЪЕКТА                **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -381,12 +634,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    strcpy(Type, "Visibility") ;
 
-     hit_done  =  0 ;
+    Context         =new RSS_Transit_Visibility ;
+    Context->feature=this ;
 
-     Bodies    =NULL ;
-     Bodies_cnt=  0 ;
+    Observers    =NULL ;
+    Observers_cnt=  0 ;
 
-      track_flag=0 ;
+       Bodies    =NULL ;
+       Bodies_cnt=  0 ;
+
+      Sector_color=  0 ;  
+      Sector_dlist=  0 ;  
+
 }
 
 
@@ -397,6 +656,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     RSS_Feature_Visibility::~RSS_Feature_Visibility(void)
 
 {
+   delete Context ;
 }
 
 
@@ -674,6 +934,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void RSS_Feature_Visibility::vGetInfo(std::string *text)
 
 {
+  int  i ;
+
+
+     *text="Visibility: " ;
+
+  for(i=0 ; i<this->Observers_cnt ; i++) {
+
+      if(i!=0)  text->append("            ") ;
+                text->append(Observers[i].name) ;
+                text->append("\r\n") ;
+                                         }
 }
 
 
@@ -944,9 +1215,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
            hit_done=0 ;
 
-   track_s    .mark=0 ;
-   track_s_prv.mark=0 ;
-
    return(0) ;
 }
 
@@ -963,11 +1231,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //         this->any_target==0 &&
 //         this->target[0] ==0   )  return(0) ;
 
-      if(track_s.mark)  track_s_prv=track_s ;
+//      if(track_s.mark)  track_s_prv=track_s ;
 
          this->RecalcPoints() ;
 
-              track_s.mark=1 ;
+//              track_s.mark=1 ;
 
    return(0) ;
 }
@@ -995,8 +1263,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //      if(this->any_weapon==0 &&                                     /* Если цель не назначена... */
 //         this->target[0] ==0   )  return(0) ;
 
-      if(this->track_s_prv.mark==0)  return(0)  ;                   /* Если стартовая точка трассировки... */
-
 /*------------------------------------------------- Обсчет поражения */
 
                                       hit_flag=0 ;
@@ -1012,8 +1278,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       if(!strcmp(object->Features[m]->Type, this->Type ))  break ;  /*  свойство "Пересечение", если нет - обходим его */
 
       if(m==object->Features_cnt)  continue ;                       /* Если объект-цель не обладает своиством Visibility... */
-
-     if(VIS->track_s_prv.mark==0)  continue  ;                      /* Если стартовая точка трассировки для цели... */
 
      if(VIS->Bodies_cnt==0)  continue ;                             /* Если свойство Visibility - пустое */
 
@@ -1051,10 +1315,143 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                    Отображение данных по свойству                */  
+
+    int RSS_Feature_Visibility::vShow(void *data)
+
+{
+       strcpy(Context->action, "SHOW") ;
+
+  SendMessage(RSS_Kernel::kernel_wnd, 
+                WM_USER, (WPARAM)_USER_CHANGE_CONTEXT, 
+                         (LPARAM) this->Context       ) ;
+
+   return(0) ;
+}
+
+
+    void  RSS_Feature_Visibility::iShow(void)
+
+{
+    Matrix2d  Summary ;
+    Matrix2d  Local ;
+    Matrix2d  Point ;
+   RSS_Point  points[5] ;
+         int  status ;
+         int  i ;
+         int  j ;
+
+#define  BS  points[0]
+#define  LU  points[1]
+#define  LD  points[2]
+#define  RU  points[3]
+#define  RD  points[4]
+
+/*------------------------------------------------- Входной контроль */
+
+     if(this->Observers_cnt==0)  return ;
+
+/*-------------------------------- Резервирование дисплейного списка */
+
+     if(Sector_dlist==0) {
+           Sector_dlist=RSS_Kernel::display.GetList(2) ;
+                         }
+
+     if(Sector_dlist==0)  return ;
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetFirstContext("Show") ;
+    while(status==0) {                                              /* CIRCLE.1 */
+
+/*---------------------------------- Настройка контекста отображения */
+
+             glNewList(Sector_dlist, GL_COMPILE) ;                  /* Открытие группы */
+          glMatrixMode(GL_MODELVIEW) ;
+              glEnable(GL_BLEND) ;                                  /* Вкл.смешивание цветов */
+
+/*------------------------------------ Отрисовка секторов наблюдения */
+
+      for(i=0 ; i<Observers_cnt ; i++) {
+/*- - - - - - - - - - - - - - - - - - - - -  Рассчет границы сектора */
+             BS.x= 0. ;
+             BS.y= 0. ;
+             BS.z= 0. ;
+             LU.x=-Observers[i].range*sin(Observers[i].v_azim/2.*_GRD_TO_RAD) ;
+             LU.y= Observers[i].range*sin(Observers[i].v_elev/2.*_GRD_TO_RAD) ;
+             LU.z= Observers[i].range ;
+             LD.x= LU.x ;
+             LD.y=-LU.y ;
+             LD.z= LU.z ;
+             RU.x=-LU.x ;
+             RU.y= LU.y ;
+             RU.z= LU.z ;
+             RD.x=-LU.x ;
+             RD.y=-LU.y ;
+             RD.z= LU.z ;
+/*- - - - - - - - - - - - - - - - - - Рассчет матрицы преобразования */
+                Summary.LoadE      (4, 4) ;
+                  Local.Load4d_base(Observers[i].x_base, 
+                                    Observers[i].y_base, 
+                                    Observers[i].z_base ) ;
+                Summary.LoadMul    (&Summary, &Local) ;
+                  Local.Load4d_azim(-this->Object->a_azim) ;
+                Summary.LoadMul    (&Summary, &Local) ;
+                  Local.Load4d_elev(-this->Object->a_elev) ;
+                Summary.LoadMul    (&Summary, &Local) ;
+                  Local.Load4d_roll(-this->Object->a_roll) ;
+                Summary.LoadMul    (&Summary, &Local) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - Перерасчет координат */
+         for(j=0 ; j<5 ; j++) {
+
+                          Point.LoadZero(4, 1) ;
+                          Point.SetCell (0, 0, points[j].x) ;
+                          Point.SetCell (1, 0, points[j].y) ;
+                          Point.SetCell (2, 0, points[j].z) ;
+                          Point.SetCell (3, 0,  1) ;
+                          Point.LoadMul (&Summary, &Point) ;
+              points[j].x=Point.GetCell (0, 0)+this->Object->x_base ;
+              points[j].y=Point.GetCell (1, 0)+this->Object->y_base ;
+              points[j].z=Point.GetCell (2, 0)+this->Object->z_base ;
+                              }
+/*- - - - - - - - - - - - - - - - - - - - - Отрисовка границ сектора */
+             glColor4d(GetRValue(Sector_color)/256., 
+                       GetGValue(Sector_color)/256.,
+                       GetBValue(Sector_color)/256., 0.2) ;
+
+               glBegin(GL_TRIANGLE_FAN) ;
+
+            glVertex3d(BS.x, BS.y, BS.z) ;
+            glVertex3d(LU.x, LU.y, LU.z) ;
+            glVertex3d(LD.x, LD.y, LD.z) ;
+            glVertex3d(RD.x, RD.y, RD.z) ;
+            glVertex3d(RU.x, RU.y, RU.z) ;
+            glVertex3d(LU.x, LU.y, LU.z) ;
+
+                 glEnd() ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                       }
+
+/*----------------------------- Восстановление контекста отображения */
+
+             glEndList() ;                                          /* Закрытие группы */
+
+/*----------------------------------- Перебор контекстов отображения */
+
+          status=RSS_Kernel::display.SetNextContext("Show") ;
+                     }                                              /* CONTINUE.1 */
+/*-------------------------------------------------------------------*/
+
+}
+
+
+/********************************************************************/
+/*								    */
 /*                    Проверка пересечения габаритов                */ 
 
     int RSS_Feature_Visibility::iOverallTest(RSS_Feature_Visibility *trgt)
 {
+/*
    double  s_min, s_max ;
 // double  d_min, d_max ;
    double  t_min, t_max ;
@@ -1103,7 +1500,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                t_max+=(trgt->overall.z_max-trgt->track_s.z) ;
  
   if(s_min>t_max || s_max<t_min)  return(0) ;     
-
+*/
      return(1) ;
 }
 
@@ -1536,38 +1933,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   Local.Load4d_elev(-angle) ;
                 Summary.LoadMul    (&Local, &Summary) ;
               }
-/*--------------------------------------------------------- Проверка */
-/*
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p0->x_abs) ;
-                 Point.SetCell (1, 0, p0->y_abs) ;
-                 Point.SetCell (2, 0, p0->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
-
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p1->x_abs) ;
-                 Point.SetCell (1, 0, p1->y_abs) ;
-                 Point.SetCell (2, 0, p1->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
-
-                 Point.LoadZero(4, 1) ;
-                 Point.SetCell (0, 0, p2->x_abs) ;
-                 Point.SetCell (1, 0, p2->y_abs) ;
-                 Point.SetCell (2, 0, p2->z_abs) ;
-                 Point.SetCell (3, 0,  1) ;
-                 Point.LoadMul (&Summary, &Point) ;
-              x1=Point.GetCell (0, 0) ;
-              y1=Point.GetCell (1, 0) ;
-              z1=Point.GetCell (2, 0) ;
-*/
 /*-------------------------------------------------------------------*/
 
           Transform->Copy(&Summary) ;
@@ -1610,12 +1975,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         overall_recalc=1 ;
 /*- - - - - - - - - - - - - - - - - - Рассчет матрицы преобразования */
    if(i==0) {
+/*
                 track_s.x   =B[i].x_base ;
                 track_s.y   =B[i].y_base ;
                 track_s.z   =B[i].z_base ;
                 track_s.azim=B[i].a_azim ;
                 track_s.elev=B[i].a_elev ;
                 track_s.roll=B[i].a_roll ;
+*/
             }
 /*- - - - - - - - - - - - - - - - - - Рассчет матрицы преобразования */
        if(B[i].Matrix_flag) {                                       /* Если задана матрица... */
@@ -1713,4 +2080,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   return(0) ;
 }
+
+/*********************************************************************/
+/*								     */
+/*	      Компоненты класса "ТРАНЗИТ КОНТЕКСТА"	             */
+/*								     */
+/*********************************************************************/
+
+/*********************************************************************/
+/*								     */
+/*	       Конструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+     RSS_Transit_Visibility::RSS_Transit_Visibility(void)
+
+{
+}
+
+
+/*********************************************************************/
+/*								     */
+/*	        Деструктор класса "ТРАНЗИТ КОНТЕКСТА"      	     */
+
+    RSS_Transit_Visibility::~RSS_Transit_Visibility(void)
+
+{
+}
+
+
+/********************************************************************/
+/*								    */
+/*	              Исполнение действия                           */
+
+    int  RSS_Transit_Visibility::vExecute(void)
+
+{
+   if(!stricmp(action, "SHOW"))  ((RSS_Feature_Visibility *)feature)->iShow() ;
+
+   return(0) ;
+}
+
 
