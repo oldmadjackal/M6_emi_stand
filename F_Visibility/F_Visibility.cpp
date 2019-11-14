@@ -101,8 +101,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      " VIEW <Имя объекта> <Имя точки> <Ширина> <Высота> <Глубина>\n"
                      "   задать угловые размеры и глубину поля зрения точки наблюдения\n",
                      &RSS_Module_Visibility::cView     },
+ { "look",     "l",  "#LOOK (L) - направление взгляда точки наблюдения ", 
+                     " LOOK <Имя объекта> <Имя точки> <Азимут> <Угол возвышения>\n"
+                     "   задать угловые координаты направления взгляда точки наблюдения\n",
+                     NULL    },
+//                   &RSS_Module_Visibility::cLook     },
  {  NULL }
                                                               } ;
+
 
 /*********************************************************************/
 /*								     */
@@ -682,7 +688,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         char  error[1024] ;
         char  text[1024] ;
          int  status ;
-         int  i ;
 
 #define    VERTEXES      Bodies[body_num].Vertexes
 #define    VERTEXES_CNT  Bodies[body_num].Vertexes_cnt
@@ -854,52 +859,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                                            }
-/*------------------------------------------------------------ Грань */
-  
-     else if(!memicmp(work, "$FACET", strlen("$FACET"))) {
-
-           if(body_num==-1)  continue ; ;
-/*- - - - - - - - - - - - - - - - - - - - - - - - Проход на описание */
-              decl=strchr(work, '=') ;
-           if(decl==NULL) {
-                sprintf(text, "Section FEATURE VISIBILITY: "
-                              "Неверный формат спецификатора FACET\n - %s", work) ;
-             SEND_ERROR(text) ;
-                                 break ;
-                          }
-
-              decl++ ;
-/*- - - - - - - - - - - - - - - - - - - - - - Добавление новой грани */
-              FACETS=(RSS_Feature_Visibility_Facet *)
-                       realloc(FACETS, (FACETS_CNT+1)*sizeof(*FACETS)) ;
-           if(FACETS==NULL) {
-                  SEND_ERROR("Section FEATURE VISIBILITY: Недостаточно памяти") ;
-                                break ;
-                            }
-
-                memset(&FACETS[FACETS_CNT], 0, sizeof(FACETS[0])) ;
-
-                               FACETS_CNT++ ;
-/*- - - - - - - - - - - - - - - - - - - - Формирование списка вершин */
-#define  F    FACETS[FACETS_CNT-1]
-
-          for(i=0 ; i<_VERTEX_PER_FACET_MAX ; i++) {
-
-                    F.vertexes[i]=strtol(decl, &decl, 10) ;
-
-               if(*decl==0)  break ;
-                   decl++ ;
-                                                   }
-
-              if(i==_VERTEX_PER_FACET_MAX) {
-                  SEND_ERROR("Section FEATURE VISIBILITY: Слишком много вершин у грани") ;
-                                break ;
-                                           }
-
-                    F.vertexes_cnt=i+1 ;
-#undef   F
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                                                         }
 /*----------------------------------------- Неизвестный спецификатор */
 
      else                                                {
@@ -976,9 +935,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(this->Bodies[n_body].Vertexes_cnt)                        /* Освобождаем список вершин */
             free(this->Bodies[n_body].Vertexes) ;
-
-       if(this->Bodies[n_body].Facets_cnt)                          /* Освобождаем список граней */
-            free(this->Bodies[n_body].Facets) ;
 
        if(this->Bodies_cnt>1) {                                     /* Если более одного тела - */
                                                                     /*   - поджимаем список тел */
@@ -1252,6 +1208,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         int  n ;            /* Индекс объекта в списке объектов*/
         int  m ;            /* Индекс свойства "Пересечение" в списке свойств */
         int  hit_flag ;
+        int  k ;
         int  i ;
 
 #define  OBJECTS_CNT                     RSS_Kernel::kernel_objects_cnt
@@ -1259,8 +1216,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  VIS         ((RSS_Feature_Visibility *)object->Features[m])
 
 /*------------------------------------------------ Входной контроль  */
+return(0) ;
 
-//      if(this->any_weapon==0 &&                                     /* Если цель не назначена... */
+        if(this->Observers_cnt==0)  return(0) ;                     /* Если нетточек наблюдения... */
+
+//      if(this->any_weapon==0 &&                                   /* Если цель не назначена... */
 //         this->target[0] ==0   )  return(0) ;
 
 /*------------------------------------------------- Обсчет поражения */
@@ -1274,19 +1234,23 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //     if(this->target[0]!=0)                                         /* Если пересечение только с заданной целью... */
 //      if(strcmp(object->Name, this->target))  continue ;            
 
-    for(m=0 ; m<object->Features_cnt ; m++)                         /* Проверяем, связано ли с данным объектом         */
-      if(!strcmp(object->Features[m]->Type, this->Type ))  break ;  /*  свойство "Пересечение", если нет - обходим его */
+    for(m=0 ; m<object->Features_cnt ; m++)                         /* Проверяем, связано ли с данным объектом       */
+      if(!strcmp(object->Features[m]->Type, this->Type ))  break ;  /*  свойство "Видимость", если нет - обходим его */
 
       if(m==object->Features_cnt)  continue ;                       /* Если объект-цель не обладает своиством Visibility... */
 
-     if(VIS->Bodies_cnt==0)  continue ;                             /* Если свойство Visibility - пустое */
-
-//     if(this->target[0]==0)                                         /* Если пересечение с произвольной целью и это не цель */
-//      if(VIS->any_target==0)  continue ;
-     
-      if(!iOverallTest(VIS))  continue ;                            /* Если габариты объектов не пересекаются... */
-/*- - - - - - - - - - - - - - - - - - - - - - Контроль поражения тел */
+      if(VIS->Bodies_cnt==0)  continue ;                            /* Если свойство Visibility - пустое */
+/*- - - - - - - - - - - - - - - - - - - - - Перебор точек наблюдения */
+     for(k=0 ; k<this->Observers_cnt ; k++) {
+ /*- - - - - - - - - - - - - - - - - - - - - - - - Перебор "маячков" */
      for(i=0 ; i< VIS->Bodies_cnt ; i++) {                          /* CIRCLE.2 - Перебор тел цели  */
+ /*- - - - - - - - - - Пересчет в систему координат точки наблюдения */
+
+ /*- - - - - - - - - - - - - - - -  Проверка попадания в поле зрения */
+
+ /*- - - - - - - - - - - - - - - - - Проверка отсутствия препятствий */
+
+      if(!iOverallTest(VIS))  continue ;                            /* Если габариты объектов не пересекаются... */
 
 //       if(!iFacetsTest(VIS->Bodies[i] ))  continue;     
 
@@ -1299,9 +1263,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                        hit_flag=1 ;
                           break ;
+ /*- - - - - - - - - - - - - - - - - - - - - - - - -Перебор "маячков" */
                                          }                          /* CONTINUE.2 */
+/*- - - - - - - - - - - - - - - - - - - - - Перебор точек наблюдения */
+                                            }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                                          break ;
                                   }                                 /* CONTINUE.1 */
 /*-------------------------------------------------------------------*/
 
@@ -2039,43 +2005,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            V[j].z_abs=Point.GetCell (2, 0) ;
            
                                           }
-/*- - - - - - - - - - - - - - - - - - - - - - Рассчет габаритов тела */
-                        B[i].overall.x_min=V[1].x_abs ;
-                        B[i].overall.x_max=V[1].x_abs ;
-                        B[i].overall.y_min=V[1].y_abs ;
-                        B[i].overall.y_max=V[1].y_abs ;
-                        B[i].overall.z_min=V[1].z_abs ;
-                        B[i].overall.z_max=V[1].z_abs ;
-
-     for(j=1 ; j<B[i].Vertexes_cnt ; j++) {
-              if(B[i].overall.x_min>V[j].x_abs)  B[i].overall.x_min=V[j].x_abs ;
-         else if(B[i].overall.x_max<V[j].x_abs)  B[i].overall.x_max=V[j].x_abs ;
-              if(B[i].overall.y_min>V[j].y_abs)  B[i].overall.y_min=V[j].y_abs ;
-         else if(B[i].overall.y_max<V[j].y_abs)  B[i].overall.y_max=V[j].y_abs ;
-              if(B[i].overall.z_min>V[j].z_abs)  B[i].overall.z_min=V[j].z_abs ;
-         else if(B[i].overall.z_max<V[j].z_abs)  B[i].overall.z_max=V[j].z_abs ;
-                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                        }                            /* CONTINUE.1 */
-/*---------------------------------------------- Перерсчет габаритов */
-
-    if(overall_recalc) {
-                              overall.x_min= 1.e+99 ;
-                              overall.x_max=-1.e+99 ;
-                              overall.y_min= 1.e+99 ;
-                              overall.y_max=-1.e+99 ;
-                              overall.z_min= 1.e+99 ;
-                              overall.z_max=-1.e+99 ;
-
-      for(i=0 ; i<Bodies_cnt ; i++) {
-        if(overall.x_min>B[i].overall.x_min)  overall.x_min=B[i].overall.x_min ;
-        if(overall.x_max<B[i].overall.x_max)  overall.x_max=B[i].overall.x_max ;
-        if(overall.y_min>B[i].overall.y_min)  overall.y_min=B[i].overall.y_min ;
-        if(overall.y_max<B[i].overall.y_max)  overall.y_max=B[i].overall.y_max ;
-        if(overall.z_min>B[i].overall.z_min)  overall.z_min=B[i].overall.z_min ;
-        if(overall.z_max<B[i].overall.z_max)  overall.z_max=B[i].overall.z_max ;
-                                    }
-                       }
 /*-------------------------------------------------------------------*/
 
   return(0) ;

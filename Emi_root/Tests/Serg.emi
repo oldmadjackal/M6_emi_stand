@@ -1,0 +1,115 @@
+#step 0.
+
+#file tests\keys.keys
+
+marker cr m1 cross red
+m1 base -400 0 0
+
+marker cr m2 cross red
+m2 base 500 100 10000
+
+marker cr m3 cross red
+m3 base 500 100 10000
+
+;------------------------- Бак-гроунд
+
+body cr b1 плоскость 4000 25000
+sc color b1 green
+b1 angle/e 90
+b1 base -2000 0 24000 
+
+zoom 5000
+lf m1
+eye>50
+
+!save l
+
+;------------------------- Носитель
+
+flyer cr bla бла-рогов
+bla unit radar SearchRadar
+bla.radar range 500 30000
+bla unit control Program
+;bla.control program tests\serg.dcl
+bla.control embeded tests\serg.pgm
+
+bla base 0 600 0
+bla angle/a 0
+bla v 200
+
+z 1000
+la bla
+
+;------------------------- Ракета
+
+missile cr r1 ракета-1 0.2 3
+hit radius r1 3
+r1 v 400
+r1 c/g 50
+r1 owner bla
+
+missile cr r2 ракета-1 0.2 3
+hit radius r2 3
+r2 v 400
+r2 c/g 50
+r2 owner bla
+
+;r1 copy r2
+
+scene visible r1 0
+scene visible r2 0
+
+;rocket-lego cr kas1 ракета-1 0.45 2.5
+;kas1 lego engine EngineSimple
+;kas1 lego warhead WarHeadSimple
+;kas1 lego model ModelSimple
+;kas1.engine p tests/dummy.dat
+;kas1.warhead tripping/a 250
+;kas1.warhead stripe sb 2 20
+;kas1.warhead pancakes sb 15 20 5 25
+;kas1 owner bla
+
+;kas1 copy kas2
+
+;scene visible kas1 0
+;scene visible kas2 0
+
+;------------------------- Танки
+flyer cr tank1 танк
+flyer cr tank2 танк
+flyer cr tank3 танк
+tank1 base    0 0 23000
+tank2 base  100 0 23200
+tank3 base -200 0 23300
+tank1 angle/a 90
+tank2 angle/a 90
+tank3 angle/a 90
+tank1 v 10
+tank2 v 10
+tank3 v 10
+tank1 path 0
+tank2 path 0
+tank3 path 0
+tank1 program tests\hited_tank.pgm
+tank2 program tests\hited_tank.pgm
+tank3 program tests\hited_tank.pgm
+tank1 event HITED hited_tank
+tank2 event HITED hited_tank
+tank3 event HITED hited_tank
+hit category/t tank1
+hit category/t tank2
+hit category/t tank3
+
+show
+
+;------------------------- Прочие цели
+
+;------------------------- Бой
+
+bla.radar show 0
+bla.control show 9
+battle map 8
+battle map/c bla green
+battle map/cq tank# blue
+battle map/t bla
+battle program tests\Serg.battle

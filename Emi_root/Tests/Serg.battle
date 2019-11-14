@@ -1,0 +1,7 @@
+ T=0   start tank1
+ T=0   start tank2
+ T=0   start tank3
+ T=0   start bla
+DT=0   exec la/q bla
+DT=0   exec zoom/q 1000
+ T=120 exit

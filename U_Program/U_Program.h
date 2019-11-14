@@ -68,6 +68,61 @@ typedef  struct {
 
                 } RSS_Unit_Program_Embeded_ColumnHunter ;
 
+typedef  struct {
+                   char  program_name[128] ;
+
+       struct {
+                 double  x ;
+                 double  z ;
+              }          route[_ROUTE_MAX] ;
+                    int  route_cnt ;
+                    int  route_idx ;
+                    int  route_dir ;
+
+                 double  g ;
+                 double  e_max ;
+                 double  e_rate ;
+                 double  h_min ;
+                 double  jump_distance ;
+                 double  drop_height ;
+                 double  drop_distance ;
+                    int  drops_number ;
+                 double  drops_interval ;
+       struct {
+                   char  weapon[64] ;
+              }          drops[_DROPS_MAX] ;
+                    int  drops_cnt ;
+
+                   char  stage_0_event[1024] ;
+                   char  stage_1_event[1024] ;
+                   char  stage_4_event[1024] ;                  
+                 double  stage_4_after ;
+                   char  stage_1_radar[1024] ;
+                 double  stage_2_time ;
+                   char  stage_4_radar[1024] ;
+
+                 double  stage ;
+                 double  x_0 ;
+                 double  z_0 ;
+                   char  target[64] ;
+                 double  vx_target ;
+                 double  vz_target ;
+                 double  x_direct ;
+                 double  z_direct ;
+                 double  a_direct ;
+                 double  e_direct ;
+                 double  check_time ;
+                 double  lock_min ;
+                 double  lock_max ;
+                 double  lock_angle ;
+                   char  lock_target[128] ;
+                   char  fired[512] ;
+                    int  dropped ;
+                    int  stage_1_event_done ;
+                    int  stage_4_event_done ;
+
+                } RSS_Unit_Program_Embeded_LoneHunter ;
+
 /*---- Описание класса контекста компонента "Программное управление" */
 
   class U_PROGRAM_API RSS_Transit_Program : public RSS_Transit {
@@ -108,6 +163,7 @@ typedef  struct {
                virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
 
                         int  EmbededColumnHunter(double, double, char *, int) ;
+                        int  EmbededLoneHunter  (double, double, char *, int) ;
 
 	                     RSS_Unit_Program() ;           /* Конструктор */
 	                    ~RSS_Unit_Program() ;           /* Деструктор */

@@ -1162,8 +1162,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
              for(cmd=callback ; *cmd!=0 ; cmd=end+1) {
 
-                end=strchr(cmd, ';') ;
-               *end= 0 ;
+                  end=strchr(cmd, ';') ;
+                 *end= 0 ;
+
+                if(*cmd==0)  continue ;
 
                       memset(&frame, 0, sizeof(frame)) ;
 
@@ -1186,11 +1188,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      strcpy(frame.action, "EXEC") ;
                      strcpy(frame.command, cmd+strlen("EXEC ")) ;
                                                             }
+                else                                        {
+
+                      sprintf(text, "BATTLE - Неизвестная операция: %s", cmd) ;
+                   SEND_ERROR(text) ;
+                          exit_flag=1 ;
+                                break ;
+                                                            }
 
                     iFrameExecute(&frame, time_c, 0) ;
                                                      }
                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+               if(exit_flag)  break ;
+
                                }
 /*------------------------------------------------ Обработка спаунов */
 
@@ -1501,7 +1512,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(_EXIT_FRAME) ;
 
                                          }
-/*---------------------------------------------------- Операция EXIT */
+/*---------------------------------------------------- Операция EXЕC */
     else
     if(!stricmp(frame->action, "EXEC" )) {
 

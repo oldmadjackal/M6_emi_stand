@@ -28,6 +28,7 @@
                      int  cHelp         (char *) ;          /* Инструкция Help */
                      int  cAdd          (char *) ;          /* Инструкция Add */
                      int  cView         (char *) ;          /* Инструкция View */
+                     int  cLook         (char *) ;          /* Инструкция Look */
 
     public:
      virtual        void  vStart        (void) ;            /* Стартовая разводка */
@@ -112,8 +113,6 @@
 
       RSS_Feature_Visibility_Vertex *Vertexes ;               /* Список вершин */
                                 int  Vertexes_cnt ; 
-       RSS_Feature_Visibility_Facet *Facets ;                 /* Список вершин */
-                                int  Facets_cnt ;
 
          RSS_Feature_Visibility_Dim  overall ;                /* Габарит тела */
 
