@@ -1284,7 +1284,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
   int  status ;
 
-
 /*-------------------------------- Резервирование дисплейного списка */
 
      if(dlist2_idx==0)  dlist2_idx=RSS_Kernel::display.GetList(1) ;
@@ -1397,7 +1396,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   double  zoom ;  
      int  status ;
 
-
 /*-------------------------------- Резервирование дисплейного списка */
 
      if(dlist1_idx==0)  dlist1_idx=RSS_Kernel::display.GetList(0) ;
@@ -1421,7 +1419,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        zoom=zoom/size ;
               glScaled(zoom, zoom, zoom) ;
 
-            glCallList(dlist2_idx) ;                                /* Отрисовка маркера */
+        if(this!=RSS_Kernel::eye_object)  glCallList(dlist2_idx) ;  /* Отрисовка маркера */
 
              glEndList() ;                                          /* Закрытие группы */
 

@@ -2583,6 +2583,10 @@ typedef  struct {
      int   quiet_flag ;        /* Флаг отображения изменений */
     char   look_at[128] ; 
     char  *end ;
+     int   i ;
+
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
 /*---------------------------------------------------- Анализ ключей */
 
@@ -2605,15 +2609,32 @@ typedef  struct {
                                      return(-1) ;
                                }
                  } 
+/*-------------------------------------------- Идентификация объекта */
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(!stricmp(OBJECTS[i]->Name, cmd))  break ;
+
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
+             SEND_ERROR("Объект установки камеры НЕ существует") ;
+                             return(0) ;
+                       }
+
+                 RSS_Kernel::eye_object=OBJECTS[i] ;
+   
 /*-------------------------------------------------- Пропись на окно */
 
                         EmiRoot_lookfrom("Main", "Set", cmd) ;
 
 /*------------------------------------------------------ Перерисовка */
 
+                           this->vShow("ZOOM") ;
+
      if(quiet_flag==0)  EmiRoot_redraw("Main") ;
 
 /*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
 
    return(0) ;
 }

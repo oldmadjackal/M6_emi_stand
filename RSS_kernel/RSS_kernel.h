@@ -152,6 +152,8 @@ typedef  int (CALLBACK *RSS_Kernel_CallBack)(int, void *)  ;
     static   RSS_Object **kernel_objects ;          /* Список объектов */
     static          int   kernel_objects_cnt ;
 
+    static   RSS_Object  *eye_object ;              /* Объект, с которого ведется наблюдение */
+
     static     RSS_Name  *kernel_names ;            /* Список связанных имен */
     static          int   kernel_names_cnt ;
 

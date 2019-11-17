@@ -6,10 +6,10 @@ marker cr m1 cross red
 m1 base -400 0 0
 
 marker cr m2 cross red
-m2 base 500 100 10000
+m2 base 2000 100 10000
 
 marker cr m3 cross red
-m3 base 500 100 10000
+m3 base  500 100 12000
 
 ;------------------------- Бак-гроунд
 

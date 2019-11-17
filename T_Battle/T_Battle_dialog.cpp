@@ -553,7 +553,7 @@
 
 /*********************************************************************/
 /*                                                                   */
-/*            Элемент - индикатор круговых диаграмм                  */
+/*            Элемент - карта тактической обстановки                 */
 
  LRESULT CALLBACK  Task_Battle_Map_prc(
                                          HWND  hWnd,     UINT  Msg,
@@ -594,6 +594,10 @@
 
 #pragma warning(disable : 4244)
 
+#define   MARKERS       data->kernel->kernel_objects 
+#define   MARKERS_CNT   data->kernel->kernel_objects_cnt 
+#define   EYE_OBJECT    data->kernel->eye_object 
+
 /*------------------------------------------------ Извлечение данных */
 
    if(Msg==WM_PAINT        ||
@@ -625,40 +629,54 @@
                               break ;
                        }
 /*- - - - - - - - - - - - - - - - - - - Определение зоны отображения */
-                     x_min=-1.0 ;
-                     x_max= 1.0 ;
-                     z_min=-1.0 ;
-                     z_max= 1.0 ;
+                     x_min= 1000000.0 ;
+                     x_max=-1000000.0 ;
+                     z_min= 1000000.0 ;
+                     z_max=-1000000.0 ;
 
-       for(i=0 ; i<data->mObjects_cnt ; i++) {
+       for(i=0 ; i<data->mObjects_cnt ; i++) {                      /* Obъекты поля боя */
 
          if(data->mObjects[i].object==NULL)  continue ;
 
                      x=data->mObjects[i].object->x_base ;
                      z=data->mObjects[i].object->z_base ;
 
-         if(i==0) {
-                     x_min=x ;
-                     x_max=x ;
-                     z_min=z ;
-                     z_max=z ;
-                  }
-         else     {
                     if(x<x_min)  x_min=x ;
                     if(x>x_max)  x_max=x ;
                     if(z<z_min)  z_min=z ;
                     if(z>z_max)  z_max=z ;
-                  }
+
                                              }
 
-     if(x_min==x_max) {
-                         x_min-=1.0 ;
-                         x_max+=1.0 ;
-                      }   
-     if(z_min==z_max) {
-                         z_min-=1.0 ;
-                         z_max+=1.0 ;
-                      }   
+       for(i=0 ; i<MARKERS_CNT ; i++ ) {                            /* Маркеры */
+
+         if(stricmp(MARKERS[i]->Type, "Marker"))  break ;
+
+                     x=MARKERS[i]->x_base ;
+                     z=MARKERS[i]->z_base ;
+
+                    if(x<x_min)  x_min=x ;
+                    if(x>x_max)  x_max=x ;
+                    if(z<z_min)  z_min=z ;
+                    if(z>z_max)  z_max=z ;
+
+                                       }
+
+         if(x_min>x_max) {                                          /* Если объектов для отображения нет */
+                           x_min=-1.0 ;
+                           x_max= 1.0 ;
+                           z_min=-1.0 ;
+                           z_max= 1.0 ;
+                         }      
+
+         if(x_min==x_max) {                                         /* Если вырожденный диапазон орображения */
+                             x_min-=1.0 ;
+                             x_max+=1.0 ;
+                          }   
+         if(z_min==z_max) {
+                             z_min-=1.0 ;
+                             z_max+=1.0 ;
+                          }   
 
      if(data->mMapRegime & _MAP_KEEP_RANGE) {                       /* Режим сохранения максимального охвата */
 
@@ -838,6 +856,37 @@
                                SelectObject(hDC, Pen_prv) ;
                                DeleteObject(Pen) ;
                                                 }
+/*- - - - - - - - - Отображение маркеров на карте и точки наблюдения */
+                            color = RGB(255, 0, 0) ;
+                           Pen    =           CreatePen(PS_SOLID, 0, color) ;
+                           Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;
+                         Brush    =    CreateSolidBrush(color) ;
+                         Brush_prv=(HBRUSH)SelectObject(hDC, Brush) ;
+
+       for(i=0 ; i<MARKERS_CNT ; i++ ) {
+
+                     x_scr=(MARKERS[i]->x_base-x_min)/dx ;
+                     z_scr=(MARKERS[i]->z_base-z_min)/dx ;
+
+         if(!stricmp(MARKERS[i]->Type, "Marker")) {
+                  MoveToEx(hDC, x_scr,   z_scr-3, NULL) ;
+                  LineTo  (hDC, x_scr,   z_scr+3) ;
+                  MoveToEx(hDC, x_scr-3, z_scr  , NULL) ;
+                  LineTo  (hDC, x_scr+3, z_scr) ;
+                                                  }
+
+         if(EYE_OBJECT==MARKERS[i]) {
+//                    Ellipse(hDC, x_scr-4, z_scr-4, x_scr+4, z_scr+4) ;
+                     AngleArc(hDC, x_scr, z_scr, 4, 0., 360.) ;
+                                    }
+
+                                       }
+
+                               SelectObject(hDC, Brush_prv) ;
+                               SelectObject(hDC, Pen_prv) ;
+                               DeleteObject(Brush) ;
+                               DeleteObject(Pen) ;
+/*- - - - - - - - - - - - - - - - - - - Отображение точки наблюдения */
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Вывод диаграммы */
             BitBlt(hDC_wnd, 
                    Rect.left, Rect.top, 

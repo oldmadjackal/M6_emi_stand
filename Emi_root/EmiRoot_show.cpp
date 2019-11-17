@@ -778,7 +778,7 @@
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, name))  break ;
 
-    if(i==OBJECTS_CNT) {                                            /* Если имя не задано... */
+    if(i==OBJECTS_CNT) {                                            /* Если имя не найдено... */
              SEND_ERROR("Объект установки камеры НЕ существует") ;
                   context->FromObject[0]=0 ;
                              return(0) ;
