@@ -42,14 +42,10 @@ la bla
 
 ;------------------------- Ракета
 
-missile-lego cr r1 ракета-1 0.2 3
-r1 lego engine EngineSimple
-r1 lego warhead WarHeadSimple
-r1 lego model ModelSimple
-r1.engine p tests\serg.engine
-;kas1.warhead tripping/a 250
-;kas1.warhead stripe sb 2 20
-;kas1.warhead pancakes sb 15 20 5 25
+missile cr r1 ракета-1 0.2 3
+hit radius r1 3
+r1 v 400
+r1 c/g 50
 r1 owner bla
 
 missile cr r2 ракета-1 0.2 3
@@ -62,6 +58,16 @@ r2 owner bla
 
 scene visible r1 0
 scene visible r2 0
+
+;rocket-lego cr kas1 ракета-1 0.45 2.5
+;kas1 lego engine EngineSimple
+;kas1 lego warhead WarHeadSimple
+;kas1 lego model ModelSimple
+;kas1.engine p tests/dummy.dat
+;kas1.warhead tripping/a 250
+;kas1.warhead stripe sb 2 20
+;kas1.warhead pancakes sb 15 20 5 25
+;kas1 owner bla
 
 ;kas1 copy kas2
 
