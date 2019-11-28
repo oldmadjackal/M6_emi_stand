@@ -1,0 +1,4 @@
+LIBRARY U_HomingHub
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA
