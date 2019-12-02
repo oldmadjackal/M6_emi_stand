@@ -1,19 +1,19 @@
 
 /********************************************************************/
 /*								    */
-/*         МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"      */
+/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИОННАЯ ГСН"         */
 /*								    */
 /********************************************************************/
 
-#ifdef U_HOMING_HUB_EXPORTS
-#define U_HOMING_HUB_API __declspec(dllexport)
+#ifdef U_HOMING_POINT_EXPORTS
+#define U_HOMING_POINT_API __declspec(dllexport)
 #else
-#define U_HOMING_HUB_API __declspec(dllimport)
+#define U_HOMING_POINT_API __declspec(dllimport)
 #endif
 
-/*-------------------- Описание класса объекта "Комбинированная ГСН" */
+/*---------------------------- Описание класса объекта "Простая ГСН" */
 
-  class U_HOMING_HUB_API RSS_Unit_HomingHub : public RSS_Unit_Homing {
+  class U_HOMING_POINT_API RSS_Unit_HomingPoint : public RSS_Unit_Homing {
 
     public:
 
@@ -45,18 +45,18 @@
          virtual        int  vGetHomingDistance    (double *) ;                         /* Дистанция до цели */
          virtual        int  vGetHomingClosingSpeed(double *) ;                         /* Скорость сближения с целью */
 
-	                     RSS_Unit_HomingHub() ;                /* Конструктор */
-	                    ~RSS_Unit_HomingHub() ;                /* Деструктор */
+	                     RSS_Unit_HomingPoint() ;                /* Конструктор */
+	                    ~RSS_Unit_HomingPoint() ;                /* Деструктор */
                                                         } ;
 
-/*-------- Описание класса управления объектом "Комбинированная ГСН" */
+/*---------------- Описание класса управления объектом "Простая ГСН" */
 
-  class U_HOMING_HUB_API RSS_Module_HomingHub : public RSS_Kernel {
+  class U_HOMING_POINT_API RSS_Module_HomingPoint : public RSS_Kernel {
 
     public:
 
      static
-      struct RSS_Module_HomingHub_instr *mInstrList ;          /* Список команд */
+      struct RSS_Module_HomingPoint_instr *mInstrList ;          /* Список команд */
 
     public:
      virtual  RSS_Object *vCreateObject (RSS_Model_data *) ;                 /* Создание объекта */ 
@@ -67,30 +67,29 @@
                      int  cHelp         (char *) ;                           /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cConfig       (char *) ;                           /* Инструкция CONFIG */ 
-                     int  cPlugin       (char *) ;                           /* Инструкция PLUGIN */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 
     public:
-	                  RSS_Module_HomingHub() ;              /* Конструктор */
-	                 ~RSS_Module_HomingHub() ;              /* Деструктор */
+	                  RSS_Module_HomingPoint() ;              /* Конструктор */
+	                 ~RSS_Module_HomingPoint() ;              /* Деструктор */
                                                        } ;
 
 /*-------------------------------------------- Инструкции управления */
 
- struct RSS_Module_HomingHub_instr {
+ struct RSS_Module_HomingPoint_instr {
 
-           char                        *name_full ;          /* Полное имя команды */
-           char                        *name_shrt ;          /* Короткое имя команды */
-           char                        *help_row ;           /* HELP - строка */
-           char                        *help_full ;          /* HELP - полный */
-            int (RSS_Module_HomingHub::*process)(char *) ;   /* Процедура выполнения команды */
-                                   }  ;
+           char                          *name_full ;          /* Полное имя команды */
+           char                          *name_shrt ;          /* Короткое имя команды */
+           char                          *help_row ;           /* HELP - строка */
+           char                          *help_full ;          /* HELP - полный */
+            int (RSS_Module_HomingPoint::*process)(char *) ;   /* Процедура выполнения команды */
+                                     }  ;
 
 /*--------------------------------------------- Диалоговые процедуты */
 
-/* Файл  U_HomingHub.cpp */
+/* Файл  U_HomingPoint.cpp */
 
-/* Файл  U_HomingHub_dialog.cpp */
-  INT_PTR CALLBACK  Unit_HomingHub_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  INT_PTR CALLBACK  Unit_HomingHub_Config_dialog(HWND, UINT, WPARAM, LPARAM) ;
+/* Файл  U_HomingPoint_dialog.cpp */
+  INT_PTR CALLBACK  Unit_HomingPoint_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_HomingPoint_Config_dialog(HWND, UINT, WPARAM, LPARAM) ;

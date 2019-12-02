@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"        */
+/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИОННАЯ ГСН"         */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -19,7 +19,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "U_HomingHub.h"
+#include "U_HomingPoint.h"
 
 #pragma warning(disable : 4996)
 
@@ -34,10 +34,10 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-  INT_PTR CALLBACK  Unit_HomingHub_Help_dialog(  HWND hDlg,     UINT Msg, 
-                                               WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_HomingPoint_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
-      RSS_Module_HomingHub  Module ;
+    RSS_Module_HomingPoint  Module ;
                        int  elm ;         /* Идентификатор элемента диалога */
                    LRESULT  status ;
                    LRESULT  index ;
@@ -135,20 +135,19 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CONFIG            */
 
-  INT_PTR CALLBACK  Unit_HomingHub_Config_dialog(  HWND hDlg,     UINT Msg, 
+  INT_PTR CALLBACK  Unit_HomingPoint_Config_dialog(  HWND hDlg,     UINT Msg, 
                                                    WPARAM wParam, LPARAM lParam) 
 {
- static                  HFONT  font ;         /* Шрифт */
- static   RSS_Module_HomingHub *Module ;
- static     RSS_Unit_HomingHub *hub ;
-                      RSS_Unit *unit ;
-                           int  elm ;          /* Идентификатор элемента диалога */
-                           int  status ;
-                          char *unit_name ;
-                          char  unit_type[1024] ;
-                          char  text[1024] ;
-                          char *end ;
-                           int  i ;
+ static                     HFONT  font ;         /* Шрифт */
+ static    RSS_Module_HomingPoint *Module ;
+ static      RSS_Unit_HomingPoint *unit ;
+                              int  elm ;          /* Идентификатор элемента диалога */
+                              int  status ;
+                             char *unit_name ;
+                             char  unit_type[1024] ;
+                             char  text[1024] ;
+                             char *end ;
+                              int  i ;
      
 /*------------------------------------------------- Большая разводка */
 
@@ -158,7 +157,7 @@
 
     case WM_INITDIALOG: {
 
-              hub=(RSS_Unit_HomingHub *)lParam ;
+              unit=(RSS_Unit_HomingPoint *)lParam ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Пропись шрифтов */
         if(font==NULL)
            font=CreateFont(14, 0, 0, 0, FW_THIN, 

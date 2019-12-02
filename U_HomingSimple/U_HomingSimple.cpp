@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"        */
+/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ПРОСТАЯ ГСН"                */
 /*								    */
 /********************************************************************/
 
@@ -24,7 +24,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "U_HomingHub.h"
+#include "U_HomingSimple.h"
 
 #pragma warning(disable : 4996)
 
@@ -55,21 +55,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_HomingHub  ProgramModule ;
+     static   RSS_Module_HomingSimple  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- U_HOMING_HUB_API char *Identify(void)
+ U_HOMING_SIMPLE_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- U_HOMING_HUB_API RSS_Kernel *GetEntry(void)
+ U_HOMING_SIMPLE_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -88,19 +88,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_HomingHub_instr  RSS_Module_HomingHub_InstrList[]={
+  struct RSS_Module_HomingSimple_instr  RSS_Module_HomingSimple_InstrList[]={
 
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
-                    &RSS_Module_HomingHub::cHelp   },
+                    &RSS_Module_HomingSimple::cHelp   },
  { "config",  "c",  "#CONFIG - задать параметры компонента в диалоговом режиме",
                     " CONFIG <Имя> \n"
                     "   Задать параметры компонента в диалоговом режиме\n",
-                    &RSS_Module_HomingHub::cConfig },
- { "plugin",  "p",  "#PLUGIN - задать параметры компонента в диалоговом режиме",
-                    " PLUGIN <Имя> <Очередность> <>\n"
-                    "   Задать параметры компонента в диалоговом режиме\n",
-                    &RSS_Module_HomingHub::cPlugin },
+                    &RSS_Module_HomingSimple::cConfig },
  {  NULL }
                                                             } ;
 
@@ -109,25 +105,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_HomingHub_instr *RSS_Module_HomingHub::mInstrList=NULL ;
+    struct RSS_Module_HomingSimple_instr *RSS_Module_HomingSimple::mInstrList=NULL ;
 
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_HomingHub::RSS_Module_HomingHub(void)
+     RSS_Module_HomingSimple::RSS_Module_HomingSimple(void)
 
 {
 
 /*---------------------------------------------------- Инициализация */
 
 	   keyword="EmiStand" ;
-    identification="HomingHub" ;
+    identification="HomingSimple" ;
           category="Unit" ;
          lego_type="Homing" ;
 
-        mInstrList=RSS_Module_HomingHub_InstrList ;
+        mInstrList=RSS_Module_HomingSimple_InstrList ;
 
 /*-------------------------------------------------------------------*/
 }
@@ -137,7 +133,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_HomingHub::~RSS_Module_HomingHub(void)
+    RSS_Module_HomingSimple::~RSS_Module_HomingSimple(void)
 
 {
 }
@@ -147,17 +143,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  RSS_Object *RSS_Module_HomingHub::vCreateObject(RSS_Model_data *data)
+  RSS_Object *RSS_Module_HomingSimple::vCreateObject(RSS_Model_data *data)
 
 {
-   RSS_Unit_HomingHub *unit ;
-                  int  i ;
+   RSS_Unit_HomingSimple *unit ;
+                     int  i ;
  
 /*---------------------------------------------- Создание компонента */
 
-       unit=new RSS_Unit_HomingHub ;
+       unit=new RSS_Unit_HomingSimple ;
     if(unit==NULL) {
-               SEND_ERROR("Секция HomingHub: Недостаточно памяти для создания компонента") ;
+               SEND_ERROR("Секция HomingSimple: Недостаточно памяти для создания компонента") ;
                         return(NULL) ;
                    }
 
@@ -185,14 +181,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Получить параметр       		    */
 
-     int  RSS_Module_HomingHub::vGetParameter(char *name, char *value)
+     int  RSS_Module_HomingSimple::vGetParameter(char *name, char *value)
 
 {
 /*-------------------------------------------------- Описание модуля */
 
     if(!stricmp(name, "$$MODULE_NAME")) {
 
-         sprintf(value, "%-20.20s -  Комбинированная ГСН", identification) ;
+         sprintf(value, "%-20.20s -  Простая ГСН", identification) ;
                                         }
 /*-------------------------------------------------------------------*/
 
@@ -204,7 +200,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_HomingHub::vExecuteCmd(const char *cmd)
+  int  RSS_Module_HomingSimple::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -214,8 +210,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "HOMINGHUB"
-#define  _SECTION_SHRT_NAME   "HOMINGHUB"
+#define  _SECTION_FULL_NAME   "HOMINGSIMPLE"
+#define  _SECTION_SHRT_NAME   "HOMINGSIMPLE"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -241,7 +237,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object HomingHub:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object HomingSimple:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -281,7 +277,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция HomingHub: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция HomingSimple: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -299,12 +295,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_HomingHub::cHelp(char *cmd)
+  int  RSS_Module_HomingSimple::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Unit_HomingHub_Help_dialog) ;
+			   GetActiveWindow(), Unit_HomingSimple_Help_dialog) ;
 
    return(0) ;
 }
@@ -317,11 +313,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_HomingHub::cInfo(char *cmd)
+  int  RSS_Module_HomingSimple::cInfo(char *cmd)
 
 {
                      char  *name ;
-       RSS_Unit_HomingHub  *unit ;
+    RSS_Unit_HomingSimple  *unit ;
                       int   all_flag ;   /* Флаг режима полной информации */
                      char  *end ;
               std::string   info ;
@@ -358,7 +354,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       unit=(RSS_Unit_HomingHub *)FindUnit(name) ;                  /* Ищем компонент по имени */
+       unit=(RSS_Unit_HomingSimple *)FindUnit(name) ;               /* Ищем компонент по имени */
     if(unit==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
@@ -403,14 +399,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*     CONFIG <Имя комонента>                                       */
 
-  int  RSS_Module_HomingHub::cConfig(char *cmd)
+  int  RSS_Module_HomingSimple::cConfig(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
                     char *pars[_PARS_MAX] ;
                     char *name ;
-      RSS_Unit_HomingHub *unit ;
+   RSS_Unit_HomingSimple *unit ;
                  INT_PTR  status ;
                     char *end ;
                      int  i ;
@@ -445,7 +441,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       unit=(RSS_Unit_HomingHub *)FindUnit(name) ;                  /* Ищем компонент по имени */
+       unit=(RSS_Unit_HomingSimple *)FindUnit(name) ;               /* Ищем компонент по имени */
     if(unit==NULL)  return(-1) ;
 
 /*--------------------------------------- Переход в диалоговый режим */
@@ -453,7 +449,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                      (LPCDLGTEMPLATE)Resource("IDD_CONFIG", RT_DIALOG),
                                       GetActiveWindow(), 
-                                      Unit_HomingHub_Config_dialog, 
+                                      Unit_HomingSimple_Config_dialog, 
                                      (LPARAM)unit                    ) ;
     if(status)  return(-1) ;
 
@@ -467,72 +463,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции PLUGIN                  */
-/*								    */
-/*    PLUGIN <Имя компонента> <Этап> <Тип компонента>               */
+/*	           Поиск обьекта типа HomingSimple по имени             */
 
-  int  RSS_Module_HomingHub::cPlugin(char *cmd)
-
-{
-#define   _PARS_MAX  10
-
-                   char *pars[_PARS_MAX] ;
-                   char *name ;
-                   char *unit_name ;
-                   char *unit_type ;
-             RSS_Object *unit ;
-        RSS_Unit_Homing *object ;
-                INT_PTR  status ;
-                   char  error[1024] ;
-                   char *end ;
-                    int  i ;
-
-/*---------------------------------------- Разборка командной строки */
-
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-      
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-           if( pars[0]==NULL ||
-              *pars[0]==  0    ) {
-                                     SEND_ERROR("Не задан компонент") ;
-                                         return(-1) ;
-                                 }
-
-                     name=pars[0] ;
-
-/*---------------------------------------- Контроль имени компонента */
-
-    if(name   ==NULL ||
-       name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя компонентa. \n"
-                                      "Например: PLUGIN <Имя_компонентa> ...") ;
-                                     return(-1) ;
-                         }
-
-       unit=(RSS_Unit_HomingHub *)FindUnit(name) ;              /* Ищем компонент по имени */
-    if(unit==NULL)  return(-1) ;
-
-/*-------------------------------------------------------------------*/
-
-#undef   _PARS_MAX    
-
-   return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*	           Поиск обьекта типа HomingHub по имени                */
-
-  RSS_Unit *RSS_Module_HomingHub::FindUnit(char *name)
+  RSS_Unit *RSS_Module_HomingSimple::FindUnit(char *name)
 
 {
  RSS_Object *object ;
@@ -590,11 +523,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    }
 /*-------------------------------------------- Контроль типа объекта */ 
 
-     if(strcmp(unit->Type, "HomingHub")) {
+     if(strcmp(unit->Type, "HomingSimple")) {
 
-           SEND_ERROR("Компонент не является компонентом типа HomingHub") ;
+           SEND_ERROR("Компонент не является компонентом типа HomingSimple") ;
                             return(NULL) ;
-                                         }
+                                            }
 /*-------------------------------------------------------------------*/ 
 
    return((RSS_Unit *)unit) ;
@@ -608,7 +541,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	       ОПИСАНИЕ КЛАССА КОМПОНЕНТА "КОМБИНИРОВАННАЯ ГСН"	       **/
+/**	         ОПИСАНИЕ КЛАССА КОМПОНЕНТА "ПРОСТАЯ ГСН"              **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -617,10 +550,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Unit_HomingHub::RSS_Unit_HomingHub(void)
+     RSS_Unit_HomingSimple::RSS_Unit_HomingSimple(void)
 
 {
-   strcpy(Type, "HomingHub") ;
+   strcpy(Type, "HomingSimple") ;
           Module=&ProgramModule ;
 
    Parameters    =NULL ;
@@ -647,7 +580,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Unit_HomingHub::~RSS_Unit_HomingHub(void)
+    RSS_Unit_HomingSimple::~RSS_Unit_HomingSimple(void)
 
 {
       vFree() ;
@@ -658,7 +591,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Unit_HomingHub::vFree(void)
+  void   RSS_Unit_HomingSimple::vFree(void)
 
 {
   int  i ;
@@ -682,17 +615,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_HomingHub::vCopy(char *name)
+    class RSS_Object *RSS_Unit_HomingSimple::vCopy(char *name)
 
 {
-         RSS_Model_data  create_data ;
-     RSS_Unit_HomingHub *unit ;
+            RSS_Model_data  create_data ;
+     RSS_Unit_HomingSimple *unit ;
    
 /*------------------------------------- Копирование базового объекта */
 
       memset(&create_data, 0, sizeof(create_data)) ;
 
-       unit=(RSS_Unit_HomingHub *)this->Module->vCreateObject(&create_data) ;
+       unit=(RSS_Unit_HomingSimple *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
 /*
@@ -719,7 +652,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Специальные действия                      */
 
-     int  RSS_Unit_HomingHub::vSpecial(char *oper, void *data)
+     int  RSS_Unit_HomingSimple::vSpecial(char *oper, void *data)
 {
 /*------------------------------------------ Ссылка на модуль BATTLE */
 
@@ -738,7 +671,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Unit_HomingHub::vCalculateStart(double  t)
+     int  RSS_Unit_HomingSimple::vCalculateStart(double  t)
 {
 /*
         blast=        0 ;
@@ -754,7 +687,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Unit_HomingHub::vCalculate(double t1, double t2, char *callback, int cb_size)
+     int  RSS_Unit_HomingSimple::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
 
 /*------------------------------------------------- Входной контроль */
@@ -774,7 +707,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_HomingHub::vCalculateShow(double  t1, double  t2)
+     int  RSS_Unit_HomingSimple::vCalculateShow(double  t1, double  t2)
 {
   return(0) ;
 }
@@ -783,7 +716,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*              	  Управление режимами ГСН         	     */
 
-    int  RSS_Unit_HomingHub::vSetHomingControl(char *regime)
+    int  RSS_Unit_HomingSimple::vSetHomingControl(char *regime)
 
 {
    return(0) ;
@@ -794,7 +727,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*              	  Направление на цель            	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingDirection(RSS_Point *direction)
+    int  RSS_Unit_HomingSimple::vGetHomingDirection(RSS_Point *direction)
 
 {
    return(0) ;
@@ -805,7 +738,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*             	 Относительное положение цели           	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingPosition(RSS_Point *position)
+    int  RSS_Unit_HomingSimple::vGetHomingPosition(RSS_Point *position)
 
 {
    return(0) ;
@@ -816,7 +749,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Дистанция до цели                 	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingDistance(double *distance)
+    int  RSS_Unit_HomingSimple::vGetHomingDistance(double *distance)
 
 {
    return(0) ;
@@ -827,7 +760,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Скорость сближения с целью            	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingClosingSpeed(double *velocity)
+    int  RSS_Unit_HomingSimple::vGetHomingClosingSpeed(double *velocity)
 
 {
    return(0) ;

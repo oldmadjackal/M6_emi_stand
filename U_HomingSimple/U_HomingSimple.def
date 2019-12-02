@@ -1,0 +1,4 @@
+LIBRARY U_HomingSimple
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

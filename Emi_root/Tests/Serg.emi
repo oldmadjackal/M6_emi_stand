@@ -42,9 +42,14 @@ la bla
 
 ;------------------------- Ракета
 
+;missile cr r1 ракета-1 0.2 3
+;hit radius r1 3
+;r1 v 400
+;r1 c/g 50
 missile-lego cr r1 ракета-1 0.2 3
 r1 lego engine EngineSimple
 r1 lego warhead WarHeadSimple
+r1 lego homing HomingHub
 r1 lego model ModelSimple
 r1.engine p tests\serg.engine
 ;kas1.warhead tripping/a 250

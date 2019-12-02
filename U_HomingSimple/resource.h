@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Включаемый файл, созданный в Microsoft Visual C++.
-// Используется U_HomingHub.rc
+// Используется U_HomingSimple.rc
 //
 #define IDC_HELP_LIST                   1000
 #define IDC_SET                         1018
