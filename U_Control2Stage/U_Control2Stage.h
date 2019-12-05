@@ -1,19 +1,19 @@
 
 /********************************************************************/
 /*								    */
-/*         МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"      */
+/*        МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"     */
 /*								    */
 /********************************************************************/
 
-#ifdef U_HOMING_HUB_EXPORTS
-#define U_HOMING_HUB_API __declspec(dllexport)
+#ifdef U_CONTROL_2STAGE_EXPORTS
+#define U_CONTROL_2STAGE_API __declspec(dllexport)
 #else
-#define U_HOMING_HUB_API __declspec(dllimport)
+#define U_CONTROL_2STAGE_API __declspec(dllimport)
 #endif
 
-/*-------------------- Описание класса объекта "Комбинированная ГСН" */
+/*------------------ Описание класса объекта "2-х этапное наведение" */
 
-  class U_HOMING_HUB_API RSS_Unit_HomingHub : public RSS_Unit_Homing {
+  class U_CONTROL_2STAGE_API RSS_Unit_Control2Stage : public RSS_Unit_Control {
 
     public:
 
@@ -21,9 +21,13 @@
 
                        int  stage ;
            RSS_Unit_Homing *units_1[_UNITS_BY_STAGE_MAX] ;
+                       int  switch_1 ;
            RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
 
                        time_t  start_time ;                      /* Время запуска */
+//                     double  x, y, z ;                         /* Последние проаналазированные координаты */
+
+//                     int  blast ;                           /* Флаг отработки срабатывания */  
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
@@ -41,18 +45,18 @@
          virtual        int  vGetHomingDistance    (double *) ;                         /* Дистанция до цели */
          virtual        int  vGetHomingClosingSpeed(double *) ;                         /* Скорость сближения с целью */
 
-	                     RSS_Unit_HomingHub() ;                /* Конструктор */
-	                    ~RSS_Unit_HomingHub() ;                /* Деструктор */
+	                     RSS_Unit_Control2Stage() ;                /* Конструктор */
+	                    ~RSS_Unit_Control2Stage() ;                /* Деструктор */
                                                         } ;
 
-/*-------- Описание класса управления объектом "Комбинированная ГСН" */
+/*---------------- Описание класса управления объектом "Простая ГСН" */
 
-  class U_HOMING_HUB_API RSS_Module_HomingHub : public RSS_Kernel {
+  class U_CONTROL_2STAGE_API RSS_Module_Control2Stage : public RSS_Kernel {
 
     public:
 
      static
-      struct RSS_Module_HomingHub_instr *mInstrList ;          /* Список команд */
+      struct RSS_Module_Control2Stage_instr *mInstrList ;          /* Список команд */
 
     public:
      virtual  RSS_Object *vCreateObject (RSS_Model_data *) ;                 /* Создание объекта */ 
@@ -63,32 +67,29 @@
                      int  cHelp         (char *) ;                           /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cConfig       (char *) ;                           /* Инструкция CONFIG */ 
-                     int  cPlugin       (char *) ;                           /* Инструкция PLUGIN */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
-   class RSS_Unit_Homing *AddUnit       (RSS_Object *,                       /* Добавление компонента к объекту */
-                                          char *, char *, char *) ;
 
     public:
-	                  RSS_Module_HomingHub() ;              /* Конструктор */
-	                 ~RSS_Module_HomingHub() ;              /* Деструктор */
+	                  RSS_Module_Control2Stage() ;              /* Конструктор */
+	                 ~RSS_Module_Control2Stage() ;              /* Деструктор */
                                                        } ;
 
 /*-------------------------------------------- Инструкции управления */
 
- struct RSS_Module_HomingHub_instr {
+ struct RSS_Module_Control2Stage_instr {
 
-           char                        *name_full ;          /* Полное имя команды */
-           char                        *name_shrt ;          /* Короткое имя команды */
-           char                        *help_row ;           /* HELP - строка */
-           char                        *help_full ;          /* HELP - полный */
-            int (RSS_Module_HomingHub::*process)(char *) ;   /* Процедура выполнения команды */
-                                   }  ;
+           char                            *name_full ;          /* Полное имя команды */
+           char                            *name_shrt ;          /* Короткое имя команды */
+           char                            *help_row ;           /* HELP - строка */
+           char                            *help_full ;          /* HELP - полный */
+            int (RSS_Module_Control2Stage::*process)(char *) ;   /* Процедура выполнения команды */
+                                       } ;
 
 /*--------------------------------------------- Диалоговые процедуты */
 
-/* Файл  U_HomingHub.cpp */
+/* Файл  U_Control2Stage.cpp */
 
-/* Файл  U_HomingHub_dialog.cpp */
-  INT_PTR CALLBACK  Unit_HomingHub_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
-  INT_PTR CALLBACK  Unit_HomingHub_Config_dialog(HWND, UINT, WPARAM, LPARAM) ;
+/* Файл  U_Control2Stage_dialog.cpp */
+  INT_PTR CALLBACK  Unit_Control2Stage_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;
+  INT_PTR CALLBACK  Unit_Control2Stage_Config_dialog(HWND, UINT, WPARAM, LPARAM) ;

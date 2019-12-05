@@ -1,0 +1,4 @@
+LIBRARY U_Control2Stage
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

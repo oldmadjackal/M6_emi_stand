@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"        */
+/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИОННАЯ ГСН"         */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -19,7 +19,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "U_HomingHub.h"
+#include "U_HomingPoint.h"
 
 #pragma warning(disable : 4996)
 
@@ -34,10 +34,10 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна HELP	             */
 
-  INT_PTR CALLBACK  Unit_HomingHub_Help_dialog(  HWND hDlg,     UINT Msg, 
-                                               WPARAM wParam, LPARAM lParam) 
+  INT_PTR CALLBACK  Unit_HomingPoint_Help_dialog(  HWND hDlg,     UINT Msg, 
+                                                 WPARAM wParam, LPARAM lParam) 
 {
-      RSS_Module_HomingHub  Module ;
+    RSS_Module_HomingPoint  Module ;
                        int  elm ;         /* Идентификатор элемента диалога */
                    LRESULT  status ;
                    LRESULT  index ;
@@ -135,23 +135,19 @@
 /*								     */
 /* 	     Обработчик сообщений диалогового окна CONFIG            */
 
-  INT_PTR CALLBACK  Unit_HomingHub_Config_dialog(  HWND hDlg,     UINT Msg, 
+  INT_PTR CALLBACK  Unit_HomingPoint_Config_dialog(  HWND hDlg,     UINT Msg, 
                                                    WPARAM wParam, LPARAM lParam) 
 {
- static                  HFONT  font ;         /* Шрифт */
-          RSS_Module_HomingHub *Module ;
- static     RSS_Unit_HomingHub *hub ;
-                    RSS_Object *object ;
-               RSS_Unit_Homing *unit ;
- static                    int  n1 ;
- static                    int  n2 ;
-                           int  elm ;          /* Идентификатор элемента диалога */
-                           int  status ;
-                          char  unit_name[1024] ;
-                          char  unit_type[1024] ;
-                          char  text[1024] ;
-                          char *end ;
-                           int  i ;
+ static                     HFONT  font ;         /* Шрифт */
+ static    RSS_Module_HomingPoint *Module ;
+ static      RSS_Unit_HomingPoint *unit ;
+                              int  elm ;          /* Идентификатор элемента диалога */
+                              int  status ;
+                             char *unit_name ;
+                             char  unit_type[1024] ;
+                             char  text[1024] ;
+                             char *end ;
+                              int  i ;
      
 /*------------------------------------------------- Большая разводка */
 
@@ -161,8 +157,7 @@
 
     case WM_INITDIALOG: {
 
-              hub=(RSS_Unit_HomingHub   *)lParam ;
-           Module=(RSS_Module_HomingHub *)hub->Module ;
+              unit=(RSS_Unit_HomingPoint *)lParam ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Пропись шрифтов */
         if(font==NULL)
            font=CreateFont(14, 0, 0, 0, FW_THIN, 
@@ -174,7 +169,7 @@
                                       VARIABLE_PITCH,
                                        "Courier New Cyr") ;
 //         SendMessage(ITEM(IDC_LIST), WM_SETFONT, (WPARAM)font, 0) ;
-/*- - - - - - - - - - - - -  Инициализация списков типов компонентов */
+/*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
 #define   MODULES       RSS_Kernel::kernel->modules 
 #define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt 
 
@@ -184,6 +179,7 @@
                                           CB_CLEAR(IDC_TYPE_2_1) ;
                                           CB_CLEAR(IDC_TYPE_2_2) ;
                                           CB_CLEAR(IDC_TYPE_2_3) ;
+                                          CB_CLEAR(IDC_SWITCH_1_2) ;
 
    for(i=0 ; i<MODULES_CNT ; i++) 
      if(MODULES[i].entry->category      !=NULL &&
@@ -191,8 +187,6 @@
       if(!stricmp("Unit", MODULES[i].entry->category)) {
 
         if(MODULES[i].entry->lego_type==NULL)  continue ;
-
-        if(!stricmp(MODULES[i].entry->identification, Module->identification))  continue ;
 
              MODULES[i].entry->vGetParameter("$$MODULE_NAME", text) ;
 
@@ -208,91 +202,29 @@
 
 #undef    MODULES
 #undef    MODULES_CNT
-/*- - - - - - - - - - - - - - - - - - - - - -  Инициализация доступа */
-                 DISABLE(IDC_TYPE_1_1) ;
-                 DISABLE(IDC_NAME_1_2) ;
-                 DISABLE(IDC_TYPE_1_2) ;
-                 DISABLE(IDC_NAME_1_3) ;
-                 DISABLE(IDC_TYPE_1_3) ;
-
-                 DISABLE(IDC_NAME_2_1) ;
-                 DISABLE(IDC_TYPE_2_1) ;
-                 DISABLE(IDC_NAME_2_2) ;
-                 DISABLE(IDC_TYPE_2_2) ;
-                 DISABLE(IDC_NAME_2_3) ;
-                 DISABLE(IDC_TYPE_2_3) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
-#define U(p)  hub->units_1[p-1]
-
-                                   n1=0 ;
-
-        if(U(1)!=NULL) {
-                            SETs(IDC_NAME_1_1, U(1)->Name) ;
-                                               U(1)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_1_1, text) ;
-                                   n1=1 ;
-
-                         DISABLE(IDC_TYPE_1_1) ;
-                         DISABLE(IDC_NAME_1_1) ;
-                          ENABLE(IDC_NAME_1_2) ;
-                          ENABLE(IDC_NAME_2_1) ;
-                       }
-        if(U(2)!=NULL) {
-                            SETs(IDC_NAME_1_2, U(2)->Name) ;
-                                               U(2)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_1_2, text) ;
-                                   n1=2 ;
-
-                         DISABLE(IDC_TYPE_1_2) ;
-                         DISABLE(IDC_NAME_1_2) ;
-                          ENABLE(IDC_NAME_1_3) ;
-                       }
-        if(U(3)!=NULL) {
-                            SETs(IDC_NAME_1_3, U(3)->Name) ;
-                                               U(3)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_1_3, text) ;
-                                   n1=3 ;
-
-                         DISABLE(IDC_TYPE_1_3) ;
-                         DISABLE(IDC_NAME_1_3) ;
-                       }
-
-#undef  U
-#define U(p)  hub->units_2[p-1]
-
-                                   n2=0 ;
-
-        if(U(1)!=NULL) {
-                            SETs(IDC_NAME_2_1, U(1)->Name) ;
-                                               U(1)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_2_1, text) ;
-                                   n2=1 ;
-
-                         DISABLE(IDC_TYPE_2_1) ;
-                         DISABLE(IDC_NAME_2_1) ;
-                          ENABLE(IDC_NAME_2_2) ;
-                       }
-        if(U(2)!=NULL) {
-                            SETs(IDC_NAME_2_2, U(2)->Name) ;
-                                               U(2)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_2_2, text) ;
-                                   n2=2 ;
-
-                         DISABLE(IDC_TYPE_2_2) ;
-                         DISABLE(IDC_NAME_2_2) ;
-                          ENABLE(IDC_NAME_2_3) ;
-                       }
-        if(U(3)!=NULL) {
-                            SETs(IDC_NAME_2_3, U(3)->Name) ;
-                                               U(3)->Module->vGetParameter("$$MODULE_NAME", text) ;
-                            SETc(IDC_TYPE_2_3, text) ;
-                                   n2=3 ;
-
-                         DISABLE(IDC_TYPE_2_3) ;
-                         DISABLE(IDC_NAME_2_3) ;
-                       }
-
-#undef  U
+/*
+         if(object->unit_warhead!=NULL) {
+             object->unit_warhead->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                    SETc(IDC_TYPE_W, text) ;
+                                        }
+         if(object->unit_engine !=NULL) {
+             object->unit_engine->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                   SETc(IDC_TYPE_E, text) ;
+                                        }
+         if(object->unit_homing !=NULL) {
+             object->unit_homing->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                   SETc(IDC_TYPE_H, text) ;
+                                        }
+         if(object->unit_control!=NULL) {
+             object->unit_control->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                    SETc(IDC_TYPE_C, text) ;
+                                        }
+         if(object->unit_model  !=NULL) {
+             object->unit_model->Module->vGetParameter("$$MODULE_NAME", text) ;
+                                                  SETc(IDC_TYPE_M, text) ;
+                                        }
+*/
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
   			     break ;
@@ -304,91 +236,23 @@
 
 	status=HIWORD(wParam) ;
 	   elm=LOWORD(wParam) ;
-/*- - - - - - - - - - - - - - - - - - - - - -  Добавление компонента */
-     if(status==EN_UPDATE) {
-
-          if(elm==IDC_NAME_1_1) {
-                                      ENABLE(IDC_TYPE_1_1) ;
-                                } 
-          if(elm==IDC_NAME_1_2) {
-                                      ENABLE(IDC_TYPE_1_2) ;
-                                } 
-          if(elm==IDC_NAME_1_3) {
-                                      ENABLE(IDC_TYPE_1_3) ;
-                                } 
-          if(elm==IDC_NAME_2_1) {
-                                      ENABLE(IDC_TYPE_2_1) ;
-                                } 
-          if(elm==IDC_NAME_2_2) {
-                                      ENABLE(IDC_TYPE_2_2) ;
-                                } 
-          if(elm==IDC_NAME_2_3) {
-                                      ENABLE(IDC_TYPE_2_3) ;
-                                } 
-
-                                      return(FALSE) ;
-                        }
-/*- - - - - - - - - - - - - - - - - - - - - -  Выбор типа компонента */
-     if(status==CBN_SELCHANGE) {
-
-          if(elm==IDC_TYPE_1_1) {
-                                      ENABLE(IDC_NAME_1_2) ;
-                                      ENABLE(IDC_NAME_2_1) ;
-                                } 
-          if(elm==IDC_TYPE_1_2) {
-                                      ENABLE(IDC_NAME_1_3) ;
-                                } 
-          if(elm==IDC_TYPE_2_1) {
-                                      ENABLE(IDC_NAME_2_2) ;
-                                      ENABLE(IDC_SWITCH_1_2) ;
-                                } 
-          if(elm==IDC_TYPE_2_2) {
-                                      ENABLE(IDC_NAME_2_3) ;
-                                } 
-
-                                      return(FALSE) ;
-                               }
 /*- - - - - - - - - - - - - - - - - - - - - - Добавление компонентов */
      if(elm==IDC_SET) {
+/*
+        for(i=0 ; i<5 ; i++) {
 
-                Module=(RSS_Module_HomingHub *)hub->Module ;
-                object=                        hub->Owner ;
+          if(i==0)  {  GETc(IDC_TYPE_W, unit_type) ;
+                                        unit_name="warhead" ;  }
+          if(i==1)  {  GETc(IDC_TYPE_E, unit_type) ;
+                                        unit_name="engine" ;  }
+          if(i==2)  {  GETc(IDC_TYPE_H, unit_type) ;
+                                        unit_name="homing" ;  }
+          if(i==3)  {  GETc(IDC_TYPE_C, unit_type) ;
+                                        unit_name="control" ;  }
+          if(i==4)  {  GETc(IDC_TYPE_M, unit_type) ;
+                                        unit_name="model" ;  }
 
-        for(i=n1 ; i<3 ; i++) {
-
-          if(i==0)  {   GETs(IDC_NAME_1_1, unit_name) ;
-                        GETc(IDC_TYPE_1_1, unit_type) ;   }
-          if(i==1)  {   GETs(IDC_NAME_1_2, unit_name) ;
-                        GETc(IDC_TYPE_1_2, unit_type) ;   }
-          if(i==2)  {   GETs(IDC_NAME_1_3, unit_name) ;
-                        GETc(IDC_TYPE_1_3, unit_type) ;   }
-
-          if(unit_name[0]==0 ||
-             unit_type[0]==0   )  continue ;
-
-             end=strchr(unit_type, ' ') ;
-          if(end!=NULL)  *end=0 ;
-
-             unit=Module->AddUnit(object, unit_name, unit_type, text) ;
-          if(unit==NULL) {
-                            SEND_ERROR(text) ;
-                              return(FALSE) ;
-                         }
-
-                hub->units_1[i]=unit ;
-                            }
-
-        for(i=n2 ; i<3 ; i++) {
-
-          if(i==0)  {   GETs(IDC_NAME_2_1, unit_name) ;
-                        GETc(IDC_TYPE_2_1, unit_type) ;   }
-          if(i==1)  {   GETs(IDC_NAME_2_2, unit_name) ;
-                        GETc(IDC_TYPE_2_2, unit_type) ;   }
-          if(i==2)  {   GETs(IDC_NAME_2_3, unit_name) ;
-                        GETc(IDC_TYPE_2_3, unit_type) ;   }
-
-          if(unit_name[0]==0 ||
-             unit_type[0]==0   )  continue ;
+          if(unit_type[0]==0)  continue ;
 
              end=strchr(unit_type, ' ') ;
           if(end!=NULL)  *end=0 ;
@@ -398,10 +262,8 @@
                             SEND_ERROR(text) ;
                               return(FALSE) ;
                          }
-
-                hub->units_2[i]=unit ;
-                            }
-
+                             }
+*/
                             EndDialog(hDlg, 0) ;
 
                               return(FALSE) ;

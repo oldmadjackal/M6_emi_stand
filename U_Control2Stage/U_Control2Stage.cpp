@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КОМБИНИРОВАННАЯ ГСН"        */
+/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"      */
 /*								    */
 /********************************************************************/
 
@@ -24,7 +24,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 
-#include "U_HomingHub.h"
+#include "U_Control2Stage.h"
 
 #pragma warning(disable : 4996)
 
@@ -55,21 +55,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		    	Программный модуль                          */
 
-     static   RSS_Module_HomingHub  ProgramModule ;
+     static   RSS_Module_Control2Stage  ProgramModule ;
 
 
 /********************************************************************/
 /*								    */
 /*		    	Идентификационный вход                      */
 
- U_HOMING_HUB_API char *Identify(void)
+ U_CONTROL_2STAGE_API char *Identify(void)
 
 {
 	return(ProgramModule.keyword) ;
 }
 
 
- U_HOMING_HUB_API RSS_Kernel *GetEntry(void)
+ U_CONTROL_2STAGE_API RSS_Kernel *GetEntry(void)
 
 {
 	return(&ProgramModule) ;
@@ -79,7 +79,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /**							           **/
 /**            ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ          **/
-/**                      "КОМБИНИРОВАННАЯ ГСН"	                   **/
+/**                      "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"	               **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -88,19 +88,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                            Список команд                         */
 
-  struct RSS_Module_HomingHub_instr  RSS_Module_HomingHub_InstrList[]={
+  struct RSS_Module_Control2Stage_instr  RSS_Module_Control2Stage_InstrList[]={
 
  { "help",    "?",  "#HELP   - список доступных команд", 
                      NULL,
-                    &RSS_Module_HomingHub::cHelp   },
+                    &RSS_Module_Control2Stage::cHelp   },
  { "config",  "c",  "#CONFIG - задать параметры компонента в диалоговом режиме",
                     " CONFIG <Имя> \n"
                     "   Задать параметры компонента в диалоговом режиме\n",
-                    &RSS_Module_HomingHub::cConfig },
- { "plugin",  "p",  "#PLUGIN - задать параметры компонента в диалоговом режиме",
-                    " PLUGIN <Имя> <Очередность> <>\n"
-                    "   Задать параметры компонента в диалоговом режиме\n",
-                    &RSS_Module_HomingHub::cPlugin },
+                    &RSS_Module_Control2Stage::cConfig },
  {  NULL }
                                                             } ;
 
@@ -109,25 +105,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		     Общие члены класса             		    */
 
-    struct RSS_Module_HomingHub_instr *RSS_Module_HomingHub::mInstrList=NULL ;
+    struct RSS_Module_Control2Stage_instr *RSS_Module_Control2Stage::mInstrList=NULL ;
 
 
 /********************************************************************/
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Module_HomingHub::RSS_Module_HomingHub(void)
+     RSS_Module_Control2Stage::RSS_Module_Control2Stage(void)
 
 {
 
 /*---------------------------------------------------- Инициализация */
 
 	   keyword="EmiStand" ;
-    identification="HomingHub" ;
+    identification="Control2Stage" ;
           category="Unit" ;
-         lego_type="Homing" ;
+         lego_type="Control" ;
 
-        mInstrList=RSS_Module_HomingHub_InstrList ;
+        mInstrList=RSS_Module_Control2Stage_InstrList ;
 
 /*-------------------------------------------------------------------*/
 }
@@ -137,7 +133,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Module_HomingHub::~RSS_Module_HomingHub(void)
+    RSS_Module_Control2Stage::~RSS_Module_Control2Stage(void)
 
 {
 }
@@ -147,23 +143,23 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Создание объекта                              */
 
-  RSS_Object *RSS_Module_HomingHub::vCreateObject(RSS_Model_data *data)
+  RSS_Object *RSS_Module_Control2Stage::vCreateObject(RSS_Model_data *data)
 
 {
-   RSS_Unit_HomingHub *unit ;
-                  int  i ;
+   RSS_Unit_Control2Stage *unit ;
+                      int  i ;
  
 /*---------------------------------------------- Создание компонента */
 
-       unit=new RSS_Unit_HomingHub ;
+       unit=new RSS_Unit_Control2Stage ;
     if(unit==NULL) {
-               SEND_ERROR("Секция HomingHub: Недостаточно памяти для создания компонента") ;
+               SEND_ERROR("Секция Control2Stage: Недостаточно памяти для создания компонента") ;
                         return(NULL) ;
                    }
 
              unit->Module=this ;
 
-      strcpy(unit->Decl, "Комбинированная ГСН") ;
+      strcpy(unit->Decl, "Система управления с 2-х этапным наведением") ;
 
 /*------------------------------- Создание списка свойств компонента */
 
@@ -185,14 +181,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Получить параметр       		    */
 
-     int  RSS_Module_HomingHub::vGetParameter(char *name, char *value)
+     int  RSS_Module_Control2Stage::vGetParameter(char *name, char *value)
 
 {
 /*-------------------------------------------------- Описание модуля */
 
     if(!stricmp(name, "$$MODULE_NAME")) {
 
-         sprintf(value, "%-20.20s -  Комбинированная ГСН", identification) ;
+         sprintf(value, "%-20.20s -  СУ с 2-х этапным наведением", identification) ;
                                         }
 /*-------------------------------------------------------------------*/
 
@@ -204,7 +200,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Выполнить команду       		    */
 
-  int  RSS_Module_HomingHub::vExecuteCmd(const char *cmd)
+  int  RSS_Module_Control2Stage::vExecuteCmd(const char *cmd)
 
 {
   static  int  direct_command ;   /* Флаг режима прямой команды */
@@ -214,8 +210,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           int  status ;
           int  i ;
 
-#define  _SECTION_FULL_NAME   "HOMINGHUB"
-#define  _SECTION_SHRT_NAME   "HOMINGHUB"
+#define  _SECTION_FULL_NAME   "CONTROL2STAGE"
+#define  _SECTION_SHRT_NAME   "CONTROL2"
 
 /*--------------------------------------------- Идентификация секции */
 
@@ -241,7 +237,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             direct_command=1 ;
 
         SendMessage(this->kernel_wnd, WM_USER,
-                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object HomingHub:") ;
+                     (WPARAM)_USER_COMMAND_PREFIX, (LPARAM)"Object Control2Stage:") ;
         SendMessage(this->kernel_wnd, WM_USER,
                      (WPARAM)_USER_DIRECT_COMMAND, (LPARAM)identification) ;
                          }
@@ -281,7 +277,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(mInstrList[i].name_full==NULL) {                            /* Если такой команды нет... */
 
           status=this->kernel->vExecuteCmd(cmd) ;                   /*  Пытаемся передать модулю ядра... */
-       if(status)  SEND_ERROR("Секция HomingHub: Неизвестная команда") ;
+       if(status)  SEND_ERROR("Секция Control2Stage: Неизвестная команда") ;
                                             return(-1) ;
                                        }
  
@@ -299,12 +295,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции HELP                    */
 
-  int  RSS_Module_HomingHub::cHelp(char *cmd)
+  int  RSS_Module_Control2Stage::cHelp(char *cmd)
 
 { 
     DialogBoxIndirect(GetModuleHandle(NULL),
 			(LPCDLGTEMPLATE)Resource("IDD_HELP", RT_DIALOG),
-			   GetActiveWindow(), Unit_HomingHub_Help_dialog) ;
+			   GetActiveWindow(), Unit_Control2Stage_Help_dialog) ;
 
    return(0) ;
 }
@@ -317,11 +313,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*        INFO   <Имя>                                              */
 /*        INFO/  <Имя>                                              */
 
-  int  RSS_Module_HomingHub::cInfo(char *cmd)
+  int  RSS_Module_Control2Stage::cInfo(char *cmd)
 
 {
                      char  *name ;
-       RSS_Unit_HomingHub  *unit ;
+   RSS_Unit_Control2Stage  *unit ;
                       int   all_flag ;   /* Флаг режима полной информации */
                      char  *end ;
               std::string   info ;
@@ -358,7 +354,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       unit=(RSS_Unit_HomingHub *)FindUnit(name) ;                  /* Ищем компонент по имени */
+       unit=(RSS_Unit_Control2Stage *)FindUnit(name) ;              /* Ищем компонент по имени */
     if(unit==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
@@ -403,14 +399,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*     CONFIG <Имя комонента>                                       */
 
-  int  RSS_Module_HomingHub::cConfig(char *cmd)
+  int  RSS_Module_Control2Stage::cConfig(char *cmd)
 
 {
 #define   _PARS_MAX  10
 
                     char *pars[_PARS_MAX] ;
                     char *name ;
-      RSS_Unit_HomingHub *unit ;
+  RSS_Unit_Control2Stage *unit ;
                  INT_PTR  status ;
                     char *end ;
                      int  i ;
@@ -445,7 +441,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       unit=(RSS_Unit_HomingHub *)FindUnit(name) ;                  /* Ищем компонент по имени */
+       unit=(RSS_Unit_Control2Stage *)FindUnit(name) ;              /* Ищем компонент по имени */
     if(unit==NULL)  return(-1) ;
 
 /*--------------------------------------- Переход в диалоговый режим */
@@ -453,7 +449,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        status=DialogBoxIndirectParam( GetModuleHandle(NULL),
                                      (LPCDLGTEMPLATE)Resource("IDD_CONFIG", RT_DIALOG),
                                       GetActiveWindow(), 
-                                      Unit_HomingHub_Config_dialog, 
+                                      Unit_Control2Stage_Config_dialog, 
                                      (LPARAM)unit                    ) ;
     if(status)  return(-1) ;
 
@@ -467,117 +463,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*		      Реализация инструкции PLUGIN                  */
-/*								    */
-/*    PLUGIN <Имя компонента> <Этап> <Тип компонента>               */
+/*	           Поиск обьекта типа Control2Stage по имени            */
 
-  int  RSS_Module_HomingHub::cPlugin(char *cmd)
-
-{
-#define   _PARS_MAX  10
-
-                   char *pars[_PARS_MAX] ;
-                   char *name ;
-     RSS_Unit_HomingHub *hub ;
-                   char *stage ;
-                   char *unit_name ;
-                   char *unit_type ;
-        RSS_Unit_Homing *unit ;
-             RSS_Object *object ;
-                INT_PTR  status ;
-                   char  error[1024] ;
-                   char *end ;
-                    int  i ;
-
-/*---------------------------------------- Разборка командной строки */
-
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-      
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-           if( pars[0]==NULL ||
-              *pars[0]==  0    ) {
-                                     SEND_ERROR("Не задан объект управления") ;
-                                         return(-1) ;
-                                 }
-
-                     name=pars[0] ;
-                    stage=pars[1] ;
-                unit_name=pars[2] ;
-                unit_type=pars[3] ;
-
-/*---------------------------------------- Контроль имени компонента */
-
-    if(name   ==NULL ||
-       name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя компонентa. \n"
-                                      "Например: PLUGIN <Имя_компонентa> ...") ;
-                                     return(-1) ;
-                         }
-
-       hub=(RSS_Unit_HomingHub *)FindUnit(name) ;                   /* Ищем компонент по имени */
-    if(hub==NULL)  return(-1) ;
-
-/*---------------------------------------------- Контроль параметров */
-
-    if(strcmp(stage, "1") &&
-       strcmp(stage, "2")   ) {
-                           SEND_ERROR("Индекс стадии наведения должен быть 1 или 2") ;
-                                     return(-1) ;
-                              }
-    if(unit_name   ==NULL ||
-       unit_name[0]==  0    ) {
-                           SEND_ERROR("Не задано имя подключаемого компонента") ;
-                                     return(-1) ;
-                              }
-    if(unit_type   ==NULL ||
-       unit_type[0]==  0    ) {
-                           SEND_ERROR("Не задан тип подключаемого компонента") ;
-                                     return(-1) ;
-                              }
-/*---------------------------------------------- Контроль заполнения */
-
-    if((stage[0]=='1' && hub->units_1[2]!=NULL) ||
-       (stage[0]=='2' && hub->units_2[2]!=NULL)   ) {
-             SEND_ERROR("Заполнены все слоты для данной стадии наведения") ;
-                                     return(-1) ;
-                                                    }
-/*-------------------------------- Создание и регистрация компонента */
-
-             object=hub->Owner ;
-
-       unit=AddUnit(object, unit_name, unit_type, error) ;        
-    if(unit==NULL) {
-                       SEND_ERROR(error) ;
-                             return(-1) ;
-                   }
-
-    if(stage[0]=='1') {
-        for(i=0 ; i<3 ; i++) if(hub->units_1[i]==NULL) {  hub->units_1[i]=unit ;  break ;  }
-                      } 
-    else              {
-        for(i=0 ; i<3 ; i++) if(hub->units_2[i]==NULL) {  hub->units_2[i]=unit ;  break ;  }
-                      } 
-/*-------------------------------------------------------------------*/
-
-#undef   _PARS_MAX    
-
-   return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*             Поиск обьекта типа HomingHub по имени                */
-
-  RSS_Unit *RSS_Module_HomingHub::FindUnit(char *name)
+  RSS_Unit *RSS_Module_Control2Stage::FindUnit(char *name)
 
 {
  RSS_Object *object ;
@@ -635,11 +523,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    }
 /*-------------------------------------------- Контроль типа объекта */ 
 
-     if(strcmp(unit->Type, "HomingHub")) {
+     if(strcmp(unit->Type, "Control2Stage")) {
 
-           SEND_ERROR("Компонент не является компонентом типа HomingHub") ;
+           SEND_ERROR("Компонент не является компонентом типа Control2Stage") ;
                             return(NULL) ;
-                                         }
+                                             }
 /*-------------------------------------------------------------------*/ 
 
    return((RSS_Unit *)unit) ;
@@ -650,67 +538,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
-/*********************************************************************/
-/*                                                                   */
-/*                 Добавление компонента к объекту                   */
-
-  class RSS_Unit_Homing *RSS_Module_HomingHub::AddUnit(RSS_Object *object, char *unit_name, char *unit_type, char *error)
-
-{
-        RSS_Kernel *unit_module ;
-   RSS_Unit_Homing *unit ;
-               int  i ;
-
-/*---------------------------------------- Контроль имени компонента */
-
-   for(i=0 ; i<object->Units.List_cnt ; i++)
-     if(!stricmp(unit_name, object->Units.List[i].object->Name))  break ;
-
-      if(i<object->Units.List_cnt) {
-            strcpy(error, "В состав объекта уже включен компонент с таким именем") ;
-                                     return(NULL) ;
-                                   }
-/*------------------------------------ Идентификация типа компонента */
-
-#define   MODULES       RSS_Kernel::kernel->modules 
-#define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt
-
-                 unit_module=NULL ;
-
-   for(i=0 ; i<MODULES_CNT ; i++) 
-     if(MODULES[i].entry->category      !=NULL &&
-        MODULES[i].entry->identification!=NULL   )
-      if(!stricmp("Unit",     MODULES[i].entry->category      ) &&
-         !stricmp( unit_type, MODULES[i].entry->identification)   )  unit_module=MODULES[i].entry ;
-      
-      if(unit_module==NULL) {
-                strcpy(error, "Неизвестный тип компонента") ;
-                                     return(NULL) ;
-                            }
-
-#undef    MODULES
-#undef    MODULES_CNT
-
-/*-------------------------------- Создание и регистрация компонента */
-
-        unit=(RSS_Unit_Homing *)unit_module->vCreateObject(NULL) ;
-     if(unit==NULL)   return(NULL) ;
-
-        strncpy(unit->Name, unit_name, sizeof(unit->Name)-1) ;
-                unit->Owner=object ;
-
-                  object->Units.Add(unit, "") ;
-
-/*-------------------------------------------------------------------*/
-
-  return(unit) ;
-}
-
-
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**         ОПИСАНИЕ КЛАССА КОМПОНЕНТА "КОМБИНИРОВАННАЯ ГСН"       **/
+/**	     ОПИСАНИЕ КЛАССА КОМПОНЕНТА "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"        **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -719,17 +550,29 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Конструктор класса			    */
 
-     RSS_Unit_HomingHub::RSS_Unit_HomingHub(void)
+     RSS_Unit_Control2Stage::RSS_Unit_Control2Stage(void)
 
 {
-   strcpy(Type, "HomingHub") ;
+   strcpy(Type, "Control2Stage") ;
           Module=&ProgramModule ;
 
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-    memset(units_1, 0, sizeof(units_1)) ;
-    memset(units_2, 0, sizeof(units_2)) ;
+/*
+     tripping_type    =_BY_ALTITUDE ;
+     tripping_altitude= 0. ;
+     tripping_time    = 0. ;
+
+         load_type    =_GRENADE_TYPE ;
+          hit_range   = 0. ;
+        blast_radius  = 5. ;
+
+          sub_unit[0] = 0 ;
+          sub_object  = NULL ;
+          sub_count   = 0 ;
+          sub_step    = 0. ;
+*/
 }
 
 
@@ -737,7 +580,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		        Деструктор класса			    */
 
-    RSS_Unit_HomingHub::~RSS_Unit_HomingHub(void)
+    RSS_Unit_Control2Stage::~RSS_Unit_Control2Stage(void)
 
 {
       vFree() ;
@@ -748,7 +591,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Освобождение ресурсов                        */
 
-  void   RSS_Unit_HomingHub::vFree(void)
+  void   RSS_Unit_Control2Stage::vFree(void)
 
 {
   int  i ;
@@ -772,17 +615,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_HomingHub::vCopy(char *name)
+    class RSS_Object *RSS_Unit_Control2Stage::vCopy(char *name)
 
 {
-         RSS_Model_data  create_data ;
-     RSS_Unit_HomingHub *unit ;
+            RSS_Model_data  create_data ;
+    RSS_Unit_Control2Stage *unit ;
    
 /*------------------------------------- Копирование базового объекта */
 
       memset(&create_data, 0, sizeof(create_data)) ;
 
-       unit=(RSS_Unit_HomingHub *)this->Module->vCreateObject(&create_data) ;
+       unit=(RSS_Unit_Control2Stage *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
 /*
@@ -809,7 +652,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Специальные действия                      */
 
-     int  RSS_Unit_HomingHub::vSpecial(char *oper, void *data)
+     int  RSS_Unit_Control2Stage::vSpecial(char *oper, void *data)
 {
 /*------------------------------------------ Ссылка на модуль BATTLE */
 
@@ -828,7 +671,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Unit_HomingHub::vCalculateStart(double  t)
+     int  RSS_Unit_Control2Stage::vCalculateStart(double  t)
 {
 /*
         blast=        0 ;
@@ -844,7 +687,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                   Расчет изменения состояния                     */
 
-     int  RSS_Unit_HomingHub::vCalculate(double t1, double t2, char *callback, int cb_size)
+     int  RSS_Unit_Control2Stage::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
 
 /*------------------------------------------------- Входной контроль */
@@ -864,7 +707,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*      Отображение результата расчета изменения состояния          */
 
-     int  RSS_Unit_HomingHub::vCalculateShow(double  t1, double  t2)
+     int  RSS_Unit_Control2Stage::vCalculateShow(double  t1, double  t2)
 {
   return(0) ;
 }
@@ -873,7 +716,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*              	  Управление режимами ГСН         	     */
 
-    int  RSS_Unit_HomingHub::vSetHomingControl(char *regime)
+    int  RSS_Unit_Control2Stage::vSetHomingControl(char *regime)
 
 {
    return(0) ;
@@ -884,7 +727,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*              	  Направление на цель            	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingDirection(RSS_Point *direction)
+    int  RSS_Unit_Control2Stage::vGetHomingDirection(RSS_Point *direction)
 
 {
    return(0) ;
@@ -895,7 +738,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*             	 Относительное положение цели           	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingPosition(RSS_Point *position)
+    int  RSS_Unit_Control2Stage::vGetHomingPosition(RSS_Point *position)
 
 {
    return(0) ;
@@ -906,7 +749,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Дистанция до цели                 	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingDistance(double *distance)
+    int  RSS_Unit_Control2Stage::vGetHomingDistance(double *distance)
 
 {
    return(0) ;
@@ -917,7 +760,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Скорость сближения с целью            	     */
 
-    int  RSS_Unit_HomingHub::vGetHomingClosingSpeed(double *velocity)
+    int  RSS_Unit_Control2Stage::vGetHomingClosingSpeed(double *velocity)
 
 {
    return(0) ;

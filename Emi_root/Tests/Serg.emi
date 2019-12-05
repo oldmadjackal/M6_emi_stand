@@ -52,6 +52,8 @@ r1 lego warhead WarHeadSimple
 r1 lego homing HomingHub
 r1 lego model ModelSimple
 r1.engine p tests\serg.engine
+r1.homing plugin 1 to_place HomingPoint
+r1.homing plugin 2 to_target HomingSimple
 ;kas1.warhead tripping/a 250
 ;kas1.warhead stripe sb 2 20
 ;kas1.warhead pancakes sb 15 20 5 25
