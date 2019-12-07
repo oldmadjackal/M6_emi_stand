@@ -714,20 +714,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*********************************************************************/
 /*								     */
-/*              	  Управление режимами ГСН         	     */
-
-    int  RSS_Unit_Control2Stage::vSetHomingControl(char *regime)
-
-{
-   return(0) ;
-}
-
-
-/*********************************************************************/
-/*								     */
 /*              	  Направление на цель            	     */
 
-    int  RSS_Unit_Control2Stage::vGetHomingDirection(RSS_Point *direction)
+    int  RSS_Unit_Control2Stage::vSetHomingDirection(RSS_Point *direction)
 
 {
    return(0) ;
@@ -738,7 +727,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*             	 Относительное положение цели           	     */
 
-    int  RSS_Unit_Control2Stage::vGetHomingPosition(RSS_Point *position)
+    int  RSS_Unit_Control2Stage::vSetHomingPosition(RSS_Point *position)
 
 {
    return(0) ;
@@ -749,7 +738,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Дистанция до цели                 	     */
 
-    int  RSS_Unit_Control2Stage::vGetHomingDistance(double *distance)
+    int  RSS_Unit_Control2Stage::vSetHomingDistance(double  distance)
 
 {
    return(0) ;
@@ -760,7 +749,51 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								     */
 /*               	 Скорость сближения с целью            	     */
 
-    int  RSS_Unit_Control2Stage::vGetHomingClosingSpeed(double *velocity)
+    int  RSS_Unit_Control2Stage::vSetHomingClosingSpeed(double  velocity)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*              	  Управление режимами БЧ         	     */
+
+    int  RSS_Unit_Control2Stage::vGetWarHeadControl(char *regime)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*              	  Управление режимами ГСН         	     */
+
+    int  RSS_Unit_Control2Stage::vGetHomingControl(char *regime)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*              	  Управление двигателем         	     */
+
+    int  RSS_Unit_Control2Stage::vGetEngineControl(RSS_Unit_Engine_Control *engines)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*     	  Управление аэродинамическими поверхностями        	     */
+
+    int  RSS_Unit_Control2Stage::vGetAeroControl(RSS_Unit_Aero_Control *aeros)
 
 {
    return(0) ;

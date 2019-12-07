@@ -38,12 +38,15 @@
          virtual        int  vCalculateShow        (double, double) ;                   /* Отображение результата расчета изменения состояния */
          virtual        int  vSpecial              (char *, void *) ;                   /* Специальные действия */
 
-         virtual        int  vSetHomingControl     (char *) ;                           /* Управление ГСН */
+                virtual int  vSetHomingDirection   (RSS_Point *) ;                      /* Направление на цель */
+                virtual int  vSetHomingPosition    (RSS_Point *) ;                      /* Относительное положение цели */
+                virtual int  vSetHomingDistance    (double) ;                           /* Дистанция до цели */
+                virtual int  vSetHomingClosingSpeed(double) ;                           /* Скорость сближения с целью */
 
-         virtual        int  vGetHomingDirection   (RSS_Point *) ;                      /* Направление на цель */
-         virtual        int  vGetHomingPosition    (RSS_Point *) ;                      /* Относительное положение цели */
-         virtual        int  vGetHomingDistance    (double *) ;                         /* Дистанция до цели */
-         virtual        int  vGetHomingClosingSpeed(double *) ;                         /* Скорость сближения с целью */
+                virtual int  vGetWarHeadControl    (char *) ;                           /* Управление БЧ */
+                virtual int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
+                virtual int  vGetEngineControl     (RSS_Unit_Engine_Control *) ;        /* Управление двигателем */
+                virtual int  vGetAeroControl       (RSS_Unit_Aero_Control *) ;          /* Управление аэродинамическими поверхностями */
 
 	                     RSS_Unit_Control2Stage() ;                /* Конструктор */
 	                    ~RSS_Unit_Control2Stage() ;                /* Деструктор */

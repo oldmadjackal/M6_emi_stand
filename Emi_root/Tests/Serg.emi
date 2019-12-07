@@ -50,7 +50,8 @@ missile-lego cr r1 ракета-1 0.2 3
 r1 lego engine EngineSimple
 r1 lego warhead WarHeadSimple
 r1 lego homing HomingHub
-r1 lego model ModelSimple
+r1 lego control Control2Stage
+r1 lego model ModelGuided
 r1.engine p tests\serg.engine
 r1.homing plugin 1 to_place HomingPoint
 r1.homing plugin 2 to_target HomingSimple
