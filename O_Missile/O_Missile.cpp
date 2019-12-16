@@ -902,7 +902,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------- Контроль имени цели */
 
     if(target==NULL) {                                              /* Если имя не задано... */
-                        SEND_ERROR("Не задано имя объекта-носителя. \n"
+                        SEND_ERROR("Не задано имя объекта-цели. \n"
                                    "Например: TARGET <Имя_ракеты> <Имя_цели>") ;
                                      return(-1) ;
                     }
@@ -1811,11 +1811,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       z_velocity=   0. ;
       v_abs     =   0. ;
       g_ctrl    = 100. ;
-
-  memset(owner,  0, sizeof(owner )) ;
-  memset(target, 0, sizeof(target)) ;
-       o_owner =NULL ;   
-       o_target=NULL ;   
 
       mTrace      =NULL ;
       mTrace_cnt  =  0 ;  

@@ -11,23 +11,37 @@
 #define U_CONTROL_2STAGE_API __declspec(dllimport)
 #endif
 
+/*------------------------------------- Описание программы наведения */
+
+#define  _STAGE_ACTIONS_MAX   20
+#define         _STAGES_MAX   20
+
+typedef  struct {
+                  char  operation[128] ;
+                   int  if_condition ;
+                   int  exit_condition ;
+                   int  once ;
+                }  StageAction ;
+
+typedef  struct {
+                       char  name[32] ;
+                StageAction  actions[_STAGE_ACTIONS_MAX] ;
+                        int  actions_cnt ;               
+                }  Stage ;
+
 /*------------------ Описание класса объекта "2-х этапное наведение" */
 
   class U_CONTROL_2STAGE_API RSS_Unit_Control2Stage : public RSS_Unit_Control {
 
     public:
+                    Stage  stage_start ;
+                    Stage  stages[_STAGES_MAX] ;
+                      int  stages_cnt ;
+                      int  stage ;
 
-#define _UNITS_BY_STAGE_MAX  4
-
-                       int  stage ;
-           RSS_Unit_Homing *units_1[_UNITS_BY_STAGE_MAX] ;
-                       int  switch_1 ;
-           RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
-
-                       time_t  start_time ;                      /* Время запуска */
-//                     double  x, y, z ;                         /* Последние проаналазированные координаты */
-
-//                     int  blast ;                           /* Флаг отработки срабатывания */  
+                   time_t  start_time ;                      /* Время запуска */
+                     char  warhead_control[1024] ;           /* Команды управления БЧ */
+                     char  homing_control[1024] ;            /* Команды управления системой наведения */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
@@ -38,15 +52,18 @@
          virtual        int  vCalculateShow        (double, double) ;                   /* Отображение результата расчета изменения состояния */
          virtual        int  vSpecial              (char *, void *) ;                   /* Специальные действия */
 
-                virtual int  vSetHomingDirection   (RSS_Point *) ;                      /* Направление на цель */
-                virtual int  vSetHomingPosition    (RSS_Point *) ;                      /* Относительное положение цели */
-                virtual int  vSetHomingDistance    (double) ;                           /* Дистанция до цели */
-                virtual int  vSetHomingClosingSpeed(double) ;                           /* Скорость сближения с целью */
+         virtual        int  vSetHomingDirection   (RSS_Point *) ;                      /* Направление на цель */
+         virtual        int  vSetHomingPosition    (RSS_Point *) ;                      /* Относительное положение цели */
+         virtual        int  vSetHomingDistance    (double) ;                           /* Дистанция до цели */
+         virtual        int  vSetHomingClosingSpeed(double) ;                           /* Скорость сближения с целью */
 
-                virtual int  vGetWarHeadControl    (char *) ;                           /* Управление БЧ */
-                virtual int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
-                virtual int  vGetEngineControl     (RSS_Unit_Engine_Control *) ;        /* Управление двигателем */
-                virtual int  vGetAeroControl       (RSS_Unit_Aero_Control *) ;          /* Управление аэродинамическими поверхностями */
+         virtual        int  vGetWarHeadControl    (char *) ;                           /* Управление БЧ */
+         virtual        int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
+         virtual        int  vGetEngineControl     (RSS_Unit_Engine_Control *) ;        /* Управление двигателем */
+         virtual        int  vGetAeroControl       (RSS_Unit_Aero_Control *) ;          /* Управление аэродинамическими поверхностями */
+
+                        int  ExecuteOperation      (char *, char *) ;                   /* Выполнение операции */
+                        int  ExecuteExpression     (char *, char *, char *) ;           /* Вычисление выражения  */
 
 	                     RSS_Unit_Control2Stage() ;                /* Конструктор */
 	                    ~RSS_Unit_Control2Stage() ;                /* Деструктор */
@@ -70,9 +87,11 @@
                      int  cHelp         (char *) ;                           /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cConfig       (char *) ;                           /* Инструкция CONFIG */ 
+                     int  cProgram      (char *) ;                           /* Инструкция PROGRAM */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
-
+                     int  ReadProgram   (RSS_Unit_Control2Stage *,           /* Считывание программы управления */
+                                         char *, char *) ;
     public:
 	                  RSS_Module_Control2Stage() ;              /* Конструктор */
 	                 ~RSS_Module_Control2Stage() ;              /* Деструктор */

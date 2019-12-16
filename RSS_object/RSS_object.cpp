@@ -91,6 +91,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        battle_state= 0 ; 
          land_state= 0 ; 
 
+  memset(owner,  0, sizeof(owner )) ;
+  memset(target, 0, sizeof(target)) ;
+       o_owner =NULL ;   
+       o_target=NULL ;   
+
         ErrorEnable= 1 ;
 }
 

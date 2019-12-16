@@ -54,9 +54,6 @@
            RSS_Unit_Engine  *unit_engine ;
             RSS_Unit_Model  *unit_model ;
 
-                      char   owner[128] ;                      /* Объект-носитель */
-                RSS_Object  *o_owner ;
-
                 RSS_Object **mSpawn ;                          /* Список клонов при эмитации залпа */
                        int   mSpawn_cnt ;
 

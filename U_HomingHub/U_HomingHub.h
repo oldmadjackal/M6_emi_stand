@@ -23,7 +23,7 @@
            RSS_Unit_Homing *units_1[_UNITS_BY_STAGE_MAX] ;
            RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
 
-                       time_t  start_time ;                      /* Время запуска */
+                    time_t  start_time ;                      /* Время запуска */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */

@@ -56,9 +56,6 @@
           RSS_Unit_Control  *unit_control ;
             RSS_Unit_Model  *unit_model ;
 
-                      char   owner[128] ;                      /* Объект-носитель */
-                RSS_Object  *o_owner ;
-
                 RSS_Object **mSpawn ;                          /* Список клонов при эмитации залпа */
                        int   mSpawn_cnt ;
 
@@ -112,6 +109,7 @@
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
                      int  cCopy         (char *) ;                     /* Инструкция COPY */ 
                      int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
+                     int  cTarget       (char *) ;                     /* Инструкция TARGET */ 
                      int  cLego         (char *) ;                     /* Инструкция LEGO */ 
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
                      int  cSpawn        (char *) ;                     /* Инструкция SPAWN */

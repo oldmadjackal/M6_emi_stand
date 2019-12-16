@@ -110,31 +110,31 @@
   class RSS_OBJECT_API RSS_Object {
 
        public:
-                       char   Name[128] ;       /* Имя обьекта */
-                       char   Type[128] ;       /* Тип обьекта */
-                       char   Decl[1024] ;      /* Описание обьекта */
+                       char   Name[128] ;         /* Имя обьекта */
+                       char   Type[128] ;         /* Тип обьекта */
+                       char   Decl[1024] ;        /* Описание обьекта */
 
-                        int   battle_state ;    /* Род объекта в бою */
+                        int   battle_state ;      /* Род объекта в бою */
 #define                        _ACTIVE_STATE  1
 #define                         _SPAWN_STATE  2
 
-                        int   land_state ;      /* Принадлежность объекта ландшафту */
+                        int   land_state ;        /* Принадлежность объекта ландшафту */
 
-                     double   x_base ;          /* Координаты базовой точки */
+                     double   x_base ;            /* Координаты базовой точки */
                      double   y_base ;
                      double   z_base ;
                      double   x_base_stack ;
                      double   y_base_stack ;
                      double   z_base_stack ; 
-
-                     double   a_azim ;          /* Углы ориентации */
+ 
+                     double   a_azim ;            /* Углы ориентации */
                      double   a_elev ;
                      double   a_roll ;
                      double   a_azim_stack ;
                      double   a_elev_stack ;
                      double   a_roll_stack ;
 
-                     double   x_velocity ;      /* Вектор скорости */
+                     double   x_velocity ;        /* Вектор скорости */
                      double   y_velocity ;
                      double   z_velocity ;
                      double   x_velocity_stack ;
@@ -144,18 +144,23 @@
                   RSS_Point   direct_target ;     /* Целевая точка программного управления */
                        char   direct_select[16] ;
 
-       struct RSS_Parameter  *Parameters ;     /* Список параметров */
+       struct RSS_Parameter  *Parameters ;        /* Список параметров */
                         int   Parameters_cnt ;
 
-                RSS_Feature **Features ;       /* Список свойств */
+                RSS_Feature **Features ;          /* Список свойств */
                         int   Features_cnt ;
 
-     class RSS_Objects_List   Units ;          /* Список объектов-составных частей */
+     class RSS_Objects_List   Units ;             /* Список объектов-составных частей */
 
-                RSS_Transit  *Context ;        /* Интерфейс передачи контекстов */
-          class  RSS_Kernel  *Module ;         /* Программный модуль объекта */
+                RSS_Transit  *Context ;           /* Интерфейс передачи контекстов */
+          class  RSS_Kernel  *Module ;            /* Программный модуль объекта */
 
-                        int   ErrorEnable ;    /* Флаг выдачи сообщений об ошибках */
+                       char   owner[128] ;        /* Объект-носитель */
+                 RSS_Object  *o_owner ;
+                       char   target[128] ;       /* Объект-цель */
+                 RSS_Object  *o_target ;
+
+                        int   ErrorEnable ;       /* Флаг выдачи сообщений об ошибках */
 
        public:
 

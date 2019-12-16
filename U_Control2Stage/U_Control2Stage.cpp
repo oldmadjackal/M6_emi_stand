@@ -97,6 +97,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " CONFIG <Имя> \n"
                     "   Задать параметры компонента в диалоговом режиме\n",
                     &RSS_Module_Control2Stage::cConfig },
+ { "program", "p", "#PROGRAM - задание программы управления объектом",
+                   " PROGRAM <Имя> <Имя файла программы>\n"
+                   "   Задание программы управления объектом\n",
+                    &RSS_Module_Control2Stage::cProgram },
  {  NULL }
                                                             } ;
 
@@ -463,7 +467,84 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*	           Поиск обьекта типа Control2Stage по имени            */
+/*		      Реализация инструкции PROGRAM                 */
+/*								    */
+/*     PROGRAM <Имя комонента> <Путь к файлу программы>             */
+
+  int  RSS_Module_Control2Stage::cProgram(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                    char *pars[_PARS_MAX] ;
+                    char *name ;
+                    char *path ;
+  RSS_Unit_Control2Stage *unit ;
+                 INT_PTR  status ;
+                    char  error[1024] ;
+                    char *end ;
+                     int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+           if( pars[0]==NULL ||
+              *pars[0]==  0    ) {
+                                     SEND_ERROR("Не задан компонент") ;
+                                         return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+                     path=pars[1] ;
+
+/*---------------------------------------------- Контроль параметров */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонентa. \n"
+                                      "Например: PROGRAM <Имя_компонентa> ...") ;
+                                     return(-1) ;
+                         }
+
+    if(path   ==NULL ||
+       path[0]==  0    ) {                                          /* Если файл программы не задано... */
+                           SEND_ERROR("Не задано имя компонентa. \n"
+                                      "Например: PROGRAM <Имя_компонентa> ...") ;
+                                     return(-1) ;
+                         }
+
+
+       unit=(RSS_Unit_Control2Stage *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*--------------------------------------- Переход в диалоговый режим */
+
+       status=ReadProgram(unit, path, error) ;
+    if(status) {
+                  SEND_ERROR(error) ;
+                     return(-1) ;
+               }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*	       Поиск обьекта типа Control2Stage по имени            */
 
   RSS_Unit *RSS_Module_Control2Stage::FindUnit(char *name)
 
@@ -539,9 +620,147 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
 /********************************************************************/
+/*								    */
+/*	             Считывание программы управления                */
+
+  int  RSS_Module_Control2Stage::ReadProgram(RSS_Unit_Control2Stage *unit, char *path, char *error)
+
+{
+     FILE *file ;
+     char  text[1024] ;
+      int  row ;
+     char *end ;
+      int  start_stage ;
+    Stage *stage ;
+
+/*---------------------------------------------------- Инициализация */ 
+
+                    *error=0 ; 
+
+/*--------------------------------------------------- Открытие файла */ 
+
+        file=fopen(path, "rb") ;
+     if(file==NULL)  {
+                         sprintf(error, "Control2Stage - program file open error %d : %s", errno, path) ;
+                           return(-1) ;
+                     }
+/*------------------------------------------------- Считывание файла */ 
+
+           unit->stages_cnt=0 ;
+
+                    row=0 ;
+
+            start_stage=1 ;
+
+    do {
+/*- - - - - - - - - - - - - - - - - - -  Считывание очередной строки */
+               memset(text, 0, sizeof(text)) ;
+            end=fgets(text, sizeof(text)-1, file) ;
+         if(end==NULL)  break ;
+
+             row++ ;
+
+            end=strchr(text, '\r') ;
+         if(end!=NULL)  *end=0 ; 
+            end=strchr(text, '\n') ;
+         if(end!=NULL)  *end=0 ; 
+
+         if(text[sizeof(text)-1]!=0) {
+                         sprintf(error, "Control2Stage - to large row %d in program file : %s", row, path) ;
+                                        break ;
+                                     }
+
+         if(text[0]==';')  continue ;                               /* Обработка комментария */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - Стартовый блок */
+         if(start_stage) {
+
+             if(stricmp(text, "start")) {
+                           sprintf(error, "Control2Stage - First section in program file must be 'start' (row %d) : %s", row, path) ;
+                                            break ;
+                                        }
+
+                               stage=&unit->stage_start ;
+                        memset(stage, 0, sizeof(*stage)) ;
+
+                               start_stage=0 ;
+                                  continue ;
+                         }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - Начало блока */
+         if(!memicmp(text, "stage", strlen("stage"))) {
+
+            if(unit->stages_cnt>=_STAGES_MAX) {
+                           sprintf(error, "Control2Stage - Stages list overflow in row %d : %s", row, path) ;
+                                                 break ;
+                                              }
+
+                               stage=&unit->stages[unit->stages_cnt] ;
+                        memset(stage, 0, sizeof(*stage)) ;
+
+                                      unit->stages_cnt++ ;
+                                        continue ;
+                                                      }
+/*- - - - - - - - - - - - - - - - - - - - Условие использования - IF */
+#define  A   stage->actions[stage->actions_cnt]
+
+         if(!memicmp(text, "if ", strlen("if "))) {
+
+              memset(&A, 0, sizeof(StageAction)) ;
+
+              strncpy(A.operation, text+strlen("if "), sizeof(A.operation)-1) ;
+                      A.if_condition=1 ; 
+
+                      stage->actions_cnt++ ;
+                                                  }
+/*- - - - - - - - - - - - - - - - - - - - - -  Условие выхода - EXIT */
+         else
+         if(!memicmp(text, "exit ", strlen("exit "))) {
+
+              memset(&A, 0, sizeof(StageAction)) ;
+
+              strncpy(A.operation, text+strlen("exit "), sizeof(A.operation)-1) ;
+                      A.exit_condition=1 ; 
+
+                      stage->actions_cnt++ ;
+                                                      }
+/*- - - - - - - - - - - - - - Однократно выполняемый оператор - ONCE */
+         else
+         if(!memicmp(text, "once ", strlen("once "))) {
+
+              memset(&A, 0, sizeof(StageAction)) ;
+
+              strncpy(A.operation, text+strlen("once "), sizeof(A.operation)-1) ;
+                      A.once=1 ; 
+
+                      stage->actions_cnt++ ;
+                                                      }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - Простой оператор */
+         else                                        {
+
+              memset(&A, 0, sizeof(StageAction)) ;
+
+              strncpy(A.operation, text, sizeof(A.operation)-1) ;
+
+                      stage->actions_cnt++ ;
+                                                     }
+#undef   A 
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+       } while(1) ;
+
+/*--------------------------------------------------- Закрытие файла */ 
+
+        fclose(file) ;
+
+/*-------------------------------------------------------------------*/ 
+  
+   if(*error!=0)  return(-1) ;
+                  return( 0) ;
+}
+
+
+/********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	     ОПИСАНИЕ КЛАССА КОМПОНЕНТА "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"        **/
+/**	  ОПИСАНИЕ КЛАССА КОМПОНЕНТА "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"       **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -559,20 +778,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-/*
-     tripping_type    =_BY_ALTITUDE ;
-     tripping_altitude= 0. ;
-     tripping_time    = 0. ;
-
-         load_type    =_GRENADE_TYPE ;
-          hit_range   = 0. ;
-        blast_radius  = 5. ;
-
-          sub_unit[0] = 0 ;
-          sub_object  = NULL ;
-          sub_count   = 0 ;
-          sub_step    = 0. ;
-*/
+       stages_cnt=  0 ;
 }
 
 
@@ -673,11 +879,45 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_Control2Stage::vCalculateStart(double  t)
 {
-/*
-        blast=        0 ;
-*/
+  char  text[1024] ;
+  char  error[1024] ;
+   int  status ;
+   int  i ; 
 
-   start_time=(time_t)t ;
+/*------------------------------------------------- Входной контроль */
+
+       if(stages_cnt==0) {
+
+              sprintf(error, "Unit %s - missed program for control unit", this->Owner->Name) ;
+           SEND_ERROR(error) ;
+                                return(-1) ;
+                         }
+/*---------------------------------------------------- Инициализация */
+
+            start_time=(time_t)t ;
+
+/*---------------------------------------- обработка старового кадра */
+
+      this->warhead_control[0]=0 ;
+      this-> homing_control[0]=0 ;
+
+#define   A   this->stage_start.actions
+
+   for(i=0 ; i<this->stage_start.actions_cnt ; i++) {
+
+     if(A[i].if_condition || A[i].exit_condition)  continue ;
+
+            status=ExecuteOperation(A[i].operation, text) ;
+         if(status)  {
+              sprintf(text, "Unit %s - error in program for control unit, start stage: %s", this->Owner->Name, text) ;
+                        SEND_ERROR(error) ;
+                             return(-1) ;
+                     }
+                                                    }
+
+#undef   A
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }
@@ -696,6 +936,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           t1-=this->start_time ;
           t2-=this->start_time ;
+
+/*---------------------------------------------- Инициализация кадра */
+
+      this->warhead_control[0]=0 ;
+      this-> homing_control[0]=0 ;
 
 /*-------------------------------------------------------------------*/
 
@@ -763,6 +1008,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_Control2Stage::vGetWarHeadControl(char *regime)
 
 {
+     strcpy(regime, this->warhead_control) ;
+  
+
    return(0) ;
 }
 
@@ -774,6 +1022,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_Control2Stage::vGetHomingControl(char *regime)
 
 {
+     strcpy(regime, this->homing_control) ;
+
    return(0) ;
 }
 
@@ -800,3 +1050,161 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
+/********************************************************************/
+/*								    */
+/*                   Выполнение оператора управления                */
+
+     int  RSS_Unit_Control2Stage::ExecuteOperation(char *text, char *error)
+{
+   char  oper[2048] ;
+   char  result[256] ;
+   char  value[256] ;
+   char *control ;
+   char *work ;
+   char *words[30] ;
+    int  status ;
+    int  i ;
+    int  j ;
+
+/*------------------------------------------------------- Подготовка */
+
+                  control=NULL ;
+
+                 strcpy(oper, text) ;
+
+/*----------------------------------- Выделение префиксов назначения */
+
+   if(!memicmp(oper, "homing:", strlen("homing:"))) {
+
+           control=this->homing_control ;
+              work=oper+strlen("homing:") ;
+                                                    }
+   else
+   if(!memicmp(oper, "warhead:", strlen("warhead:"))) {
+
+           control=this->warhead_control ;
+              work= oper+strlen("warhead:") ;
+                                                      }
+/*-------------------------------------------------- Разбор на слова */
+
+              memset(words, 0, sizeof(words)) ;
+
+                      i = 0 ;
+                words[i]=strtok(work, " \t") ;
+
+          while(words[i]!=NULL && i<30) {
+                      i++ ;
+                words[i]=strtok(NULL, " \t") ;
+                                        }
+/*--------------------------------------------------- Обработка слов */
+ 
+                       result[0]=0 ;
+
+     for(i=0 ; i<30 && words[i]!=NULL ; i++) {
+
+          if(words[i]==0)  continue ;
+
+          status=ExecuteExpression(words[i], value, error) ;
+       if(status)  return(-1) ;
+
+       if(result[0]!=0)  strcat(result, " "  ) ;
+                         strcat(result, value) ;
+
+                                             }
+/*-------------------------------------------- Выполнение назначения */
+
+   if(control!=NULL) {
+                       if(control[0]!=0)  strcat(control, ";") ;
+                                          strcat(control, result) ;
+                     } 
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*                      Вычисление выражения                        */
+
+     int  RSS_Unit_Control2Stage::ExecuteExpression(char *text, char *result, char *error)
+{
+     char *next ;  
+     char *oper ;
+     char *oper_prv ;
+   double  value ;
+   double  result_dgt ;
+      int  dgt_data ; 
+
+/*---------------------------------------------------- Инициализация */
+
+                oper=NULL ;
+                next=text ; 
+            dgt_data=  0 ; 
+
+   do {
+             oper_prv=oper ;
+/*- - - - - - - - - - -  - - - - - - - - - - - -  Обработка операнда */
+         if(!memicmp(next, "$target.x", strlen("$target.x"))) {     /* X цели */
+
+               value=this->Owner->o_target->x_base ;
+                oper=next+strlen("$target.x") ;
+                next=oper+1 ;
+                                                              }
+         else 
+         if(!memicmp(next, "$target.y", strlen("$target.y"))) {     /* Y цели */
+
+               value=this->Owner->o_target->y_base ;
+                oper=next+strlen("$target.y") ;
+                next=oper+1 ;
+                                                              }
+         else 
+         if(!memicmp(next, "$target.z", strlen("$target.z"))) {     /* Z цели */
+
+               value=this->Owner->o_target->z_base ;
+                oper=next+strlen("$target.z") ;
+                next=oper+1 ;
+                                                              }
+         else 
+         if(!stricmp(next, "$target"                       )) {     /* Название цели */
+
+                  strcpy(result, this->Owner->target) ;
+                          break ;
+                                                              }
+         else 
+         if(oper_prv!=NULL)                                   {     /* Числовой операнд */
+
+                value=strtod(next, &oper) ;
+                             next=oper+1 ;
+                                                              }
+         else                                                 {     /* Строчный операнд */
+                  strcpy(result, text) ;
+                          break ;
+                                                              }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Выполнение операции */
+         if(oper_prv==NULL  ) {
+                                 result_dgt =value ;
+                                    dgt_data=  1 ; 
+                              } 
+         else               
+         if(oper_prv[0]=='+') {
+                                 result_dgt+=value ;
+                              }
+         else                 {
+                sprintf(error, "Unknown operation i %s", text) ;
+                                    return(-1) ;
+                              }
+
+         if(oper[0]==0)  break ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+      } while(1) ;
+
+/*-------------------------------------- Перевод результата операции */
+
+   if(dgt_data) {
+                    sprintf(result, "%.6lf", result_dgt) ;
+                }
+/*-------------------------------------------------------------------*/
+
+  return(0) ;
+}

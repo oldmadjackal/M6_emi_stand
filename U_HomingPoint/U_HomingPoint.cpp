@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИАЛЬНАЯ ГСН"           */
+/*       МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КООРДИНАТНАЯ ГСН"           */
 /*								    */
 /********************************************************************/
 
@@ -79,7 +79,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /**							           **/
 /**            ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ          **/
-/**                      "ИНЕРЦИАЛЬНАЯ ГСН"	                       **/
+/**                      "КООРДИНАТНАЯ ГСН"	                   **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -541,7 +541,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	       ОПИСАНИЕ КЛАССА КОМПОНЕНТА "ИНЕРЦИОННАЯ ГСН"            **/
+/**	       ОПИСАНИЕ КЛАССА КОМПОНЕНТА "КООРДИНАТНАЯ ГСН"       **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -719,6 +719,77 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vSetHomingControl(char *regime)
 
 {
+   char  text[1024] ;
+   char *command ;
+   char *next ;
+   char *value ;
+   char *end ;
+
+/*------------------------------------------------------- Подготовка */
+
+            memset(text, 0, sizeof(text)) ;
+           strncpy(text, regime, sizeof(text)-1) ;
+
+/*--------------------------------------------------- Перебор команд */
+
+   for(command=text, next=text ; next!=NULL ; command=next+1) {
+
+            next=strchr(command, ';') ;
+         if(next!=NULL)  *next=0 ;
+
+/*-------------------------------------------- Задание целевой точки */
+
+      if(!memicmp(command, "point ", 6)) {
+/*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
+                 value=command+6 ;
+             this->x_t=strtod(value, &end) ;
+
+         if(*end!=' ') {
+                            sprintf(text, "Invalid parameter X in 'point' command in HomingPoint : %s", command) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                       }
+
+                 value=end+1 ;
+             this->y_t=strtod(value, &end) ;
+
+         if(*end!=' ') {
+                            sprintf(text, "Invalid parameter Y in 'point' command in HomingPoint : %s", command) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                       }
+
+                 value=end+1 ;
+             this->z_t=strtod(value, &end) ;
+
+         if(*end!= 0 ) {
+                            sprintf(text, "Invalid parameter Y in 'point' command in HomingPoint : %s", command) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                       }
+/*- - - - - - - - - - - - - - - - - - - - - - Канонизация параметров */
+       if(this->method==_INERTIAL_METHOD) {
+
+                        this->x_t-=this->Owner->x_base ;
+                        this->y_t-=this->Owner->y_base ;
+                        this->z_t-=this->Owner->z_base ;
+
+                                          }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                         }
+/*---------------------------------------------- Неизвестная команда */
+
+      else                              {
+
+                  sprintf(text, "Unknown command in HomingPoint : %s", command) ;
+               SEND_ERROR(text) ;
+                    return(-1) ;          
+
+                                        }
+/*--------------------------------------------------- Перебор команд */
+                                                              }
+/*-------------------------------------------------------------------*/
+
    return(0) ;
 }
 

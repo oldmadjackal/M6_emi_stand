@@ -484,7 +484,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    char *unit_type ;
         RSS_Unit_Homing *unit ;
              RSS_Object *object ;
-                INT_PTR  status ;
                    char  error[1024] ;
                    char *end ;
                     int  i ;
@@ -876,6 +875,55 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingHub::vSetHomingControl(char *regime)
 
 {
+   char  text[1024] ;
+   char *command ;
+   char *next ;
+    int  i ;
+
+/*------------------------------------------------------- Подготовка */
+
+            memset(text, 0, sizeof(text)) ;
+           strncpy(text, regime, sizeof(text)-1) ;
+
+/*--------------------------------------------------- Перебор команд */
+
+   for(command=text, next=text ; next!=NULL ; command=next+1) {
+
+            next=strchr(command, ';') ;
+         if(next!=NULL)  *next=0 ;
+
+/*----------------------------------------------------- Команды хаба */
+
+      if(!memicmp(command, "stage", 5)) {
+
+         if(command[6]=='1')   this->stage=1 ;
+         else
+         if(command[6]=='2')   this->stage=2 ;
+         else                {
+                                    sprintf(text, "Illegal stage index in HomingHub : %s", command) ;
+                                 SEND_ERROR(text) ;
+                                      return(-1) ;          
+                             }
+                                        }
+/*--------------------------------------- Команды модулей управления */
+
+      else                              {
+
+           if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vSetHomingControl(command) ;              
+                              }
+           else 
+           if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vSetHomingControl(command) ;              
+                              }
+
+                                        }
+/*--------------------------------------------------- Перебор команд */
+                                                              }
+/*-------------------------------------------------------------------*/
+
    return(0) ;
 }
 

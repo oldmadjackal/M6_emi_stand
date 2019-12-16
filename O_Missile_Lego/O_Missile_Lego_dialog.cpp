@@ -399,7 +399,7 @@
         if(strstr(MODULES[i].entry->lego_type, "WarHead")!=NULL)  CB_ADD_LIST(IDC_TYPE_W, text) ;
         if(strstr(MODULES[i].entry->lego_type, "Engine" )!=NULL)  CB_ADD_LIST(IDC_TYPE_E, text) ;
         if(strstr(MODULES[i].entry->lego_type, "Homing" )!=NULL)  CB_ADD_LIST(IDC_TYPE_H, text) ;
-        if(strstr(MODULES[i].entry->lego_type, "COntrol")!=NULL)  CB_ADD_LIST(IDC_TYPE_C, text) ;
+        if(strstr(MODULES[i].entry->lego_type, "Control")!=NULL)  CB_ADD_LIST(IDC_TYPE_C, text) ;
         if(strstr(MODULES[i].entry->lego_type, "Model"  )!=NULL)  CB_ADD_LIST(IDC_TYPE_M, text) ;                  
                                                        }
 

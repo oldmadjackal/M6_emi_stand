@@ -55,11 +55,6 @@
 
                        int  g_over ;                          /* Маневр с максимальной перегрузкой */
 
-                      char  owner[128] ;                      /* Объект-носитель */
-                RSS_Object *o_owner ;
-                      char  target[128] ;                     /* Объект-цель */
-                RSS_Object *o_target ;
-
    private:
 
      RSS_Object_MissileTrace *mTrace ;                        /* Траектория */

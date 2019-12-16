@@ -114,6 +114,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " OWNER <Имя> <Носитель>\n"
                     "   Назначить объект - носитель ракеты",
                     &RSS_Module_MissileLego::cOwner },
+ { "target",  "tg", "#TARGET - назначить цель ракеты",
+                    " TARGET <Имя> <Цель>\n"
+                    "   Назначить объект - цель ракеты",
+                    &RSS_Module_MissileLego::cTarget },
  { "lego",     "l", "#LEGO - назначить компонент в составе объекта",
                     " LEGO <Имя>\n"
                     "   просмотреть список компонентов, назначить компонент в диалоговом режиме\n"
@@ -914,6 +918,78 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------------------- Пропись носителя */
 
           strcpy(missile->owner, owner) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции TARGET                  */
+/*								    */
+/*       TARGET <Имя> <Цель>                                        */
+
+  int  RSS_Module_MissileLego::cTarget(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                   char  *pars[_PARS_MAX] ;
+                   char  *name ;
+                   char  *target ;
+ RSS_Object_MissileLego  *missile ;
+             RSS_Object  *object ;
+                   char  *end ;
+                    int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                   target=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: TARGET <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       missile=(RSS_Object_MissileLego *)FindObject(name, 1) ;          /* Ищем объект-цель по имени */
+    if(missile==NULL)  return(-1) ;
+
+/*---------------------------------------------- Контроль имени цели */
+
+    if(target==NULL) {                                              /* Если имя не задано... */
+                        SEND_ERROR("Не задано имя объекта-цели. \n"
+                                   "Например: TARGET <Имя_ракеты> <Имя_цели>") ;
+                                     return(-1) ;
+                    }
+
+       object=FindObject(target, 0) ;                               /* Ищем объект-цели по имени */
+    if(object==NULL)  return(-1) ;
+
+/*----------------------------------------------------- Пропись цели */
+
+               strcpy(missile->target, target) ;
+
+   for(i=0 ; i<missile->Features_cnt ; i++)
+     if(!stricmp(missile->Features[i]->Type, "Hit")) 
+         strcpy(((RSS_Feature_Hit *)(missile->Features[i]))->target, target) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1807,6 +1883,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       this->a_elev=this->o_owner->a_elev ;
       this->a_roll=this->o_owner->a_roll ;
                           }
+/*------------------------------------------ Привязка к объекту-цели */
+
+      this->o_target=NULL ;
+
+  if(this->target[0]!=0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->target)) {
+                       this->o_target=OBJECTS[i] ;
+                                 break ;
+                                                      }
+                         }
 /*-------------------------------------------- Обработка компонентов */
 
       if(this->unit_engine !=NULL)  this->unit_engine ->vCalculateStart(t) ;
@@ -1851,6 +1939,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   double  mi_x ;
                   double  mi_y ;
                   double  mi_z ;
+                    char  homing_control[1024] ;
                      int  status ;
 
 /*------------------------------------------------------- Подготовка */
@@ -1861,7 +1950,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*---------------------------------------------------- Моделирование */
 
-      if(this->unit_engine !=NULL) {
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Система наведения */
+   if(this->unit_homing !=NULL) {
+                                    homing_control[0]=0 ;          
+
+     if(this->unit_control!=NULL)  this->unit_control->vGetHomingControl(homing_control) ;
+
+        this->unit_homing->vSetHomingControl(homing_control) ;
+        this->unit_homing->vCalculate       (t1, t2, callback, cb_size) ;
+
+                                }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Двигатель */
+   if(this->unit_engine !=NULL) {
 
                        this->unit_engine->vCalculate      (t1, t2, callback, cb_size) ;
 
@@ -1869,8 +1969,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               mass_use=this->unit_engine->vGetEngineMass  (&mass, &mass_point) ;
                 mi_use=this->unit_engine->vGetEngineMI    (&mi_x, &mi_y, &mi_z) ;
 
-                                   } 
-      if(this->unit_model  !=NULL) {
+                                } 
+/*- - - - - - - - - - - - - - - - - - - - - - - - Система управления */
+/*- - - - - - - - - - - - - - - - - - -  Динамическая модель объекта */
+   if(this->unit_model  !=NULL) {
 
           if(thrust_cnt)  this->unit_model->vSetEngineThrust(thrust, thrust_cnt) ;
           if(  mass_use)  this->unit_model->vSetEngineMass  (mass, &mass_point) ;
@@ -1878,13 +1980,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                           this->unit_model->vCalculate(t1, t2, callback, cb_size) ;
 
-                                   } 
-      if(this->unit_warhead!=NULL) {
+                                } 
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - Боевая часть */
+   if(this->unit_warhead!=NULL) {
 
             status=this->unit_warhead->vCalculate(t1, t2, callback, cb_size) ;
          if(status)  return(1) ;
 
-                                   } 
+                                } 
 /*-------------------------------------------------------------------*/
 
   return(0) ;

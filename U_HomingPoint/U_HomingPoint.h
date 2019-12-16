@@ -1,7 +1,7 @@
 
 /********************************************************************/
 /*								    */
-/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИОННАЯ ГСН"         */
+/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КООРДИНАТНАЯ ГСН"        */
 /*								    */
 /********************************************************************/
 
@@ -11,23 +11,18 @@
 #define U_HOMING_POINT_API __declspec(dllimport)
 #endif
 
-/*---------------------------- Описание класса объекта "Простая ГСН" */
+/*----------------------- Описание класса объекта "Координатная ГСН" */
 
   class U_HOMING_POINT_API RSS_Unit_HomingPoint : public RSS_Unit_Homing {
 
     public:
 
-#define _UNITS_BY_STAGE_MAX  4
+                          int  method ;              /* Вид системы наведения */
+#define                         _INERTIAL_METHOD  1   /* Инерциальная система наведения */
 
-                       int  stage ;
-           RSS_Unit_Homing *units_1[_UNITS_BY_STAGE_MAX] ;
-                       int  switch_1 ;
-           RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
-
-                       time_t  start_time ;                      /* Время запуска */
-//                     double  x, y, z ;                         /* Последние проаналазированные координаты */
-
-//                     int  blast ;                           /* Флаг отработки срабатывания */  
+                       time_t  start_time ;          /* Время запуска */
+                       double  x_0, y_0, z_0 ;       /* Начальные координаты */
+                       double  x_t, y_t, z_t ;       /* Целевые координаты */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
@@ -49,7 +44,7 @@
 	                    ~RSS_Unit_HomingPoint() ;                /* Деструктор */
                                                         } ;
 
-/*---------------- Описание класса управления объектом "Простая ГСН" */
+/*----------- Описание класса управления объектом "Координатная ГСН" */
 
   class U_HOMING_POINT_API RSS_Module_HomingPoint : public RSS_Kernel {
 
