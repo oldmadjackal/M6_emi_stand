@@ -85,6 +85,7 @@
                 virtual int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
                 virtual int  vGetEngineControl     (RSS_Unit_Engine_Control *) ;        /* Управление двигателем */
                 virtual int  vGetAeroControl       (RSS_Unit_Aero_Control *) ;          /* Управление аэродинамическими поверхностями */
+                virtual int  vGetVectorControl     (RSS_Vector *) ;                     /* Перегрузка маневра */
 
        public:
 			     RSS_Unit_Control  () ;                /* Конструктор */
@@ -111,6 +112,7 @@
 
        public:
                 virtual int  vSetAeroControl       (RSS_Unit_Aero_Control *, int) ;     /* Управление аэродинамическими поверхностями */
+                virtual int  vSetVectorControl     (RSS_Vector *) ;                     /* Перегрузка маневра */
                 virtual int  vSetEngineThrust      (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
                 virtual int  vSetEngineMass        (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
                 virtual int  vSetEngineMI          (double, double, double) ;           /* Моменты инерции двигателя */

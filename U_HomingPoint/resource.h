@@ -15,10 +15,12 @@
 #define IDC_NAME_2_1                    1027
 #define IDC_SUBMUNITION                 1028
 #define IDC_NAME_2_2                    1028
+#define IDC_GPS_XYZ_PRECISION           1028
 #define IDC_TYPE_2_3                    1029
 #define IDC_NAME_2_3                    1030
 #define IDC_SWEETCH_1_2                 1031
 #define IDC_SWITCH_1_2                  1031
+#define IDC_METHOD                      1031
 
 // Next default values for new objects
 // 

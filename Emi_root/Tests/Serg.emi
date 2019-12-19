@@ -55,6 +55,7 @@ r1 lego model ModelGuided
 r1.engine p tests\serg.engine
 r1.homing plugin 1 to_point HomingPoint
 r1.homing plugin 2 to_target HomingSimple
+r1.to_point gps 20
 r1.control program tests\serg.control
 ;kas1.warhead tripping/a 250
 ;kas1.warhead stripe sb 2 20

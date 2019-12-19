@@ -1,6 +1,6 @@
 /********************************************************************/
 /*								    */
-/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ИНЕРЦИОННАЯ ГСН"         */
+/*          МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "КООРДИНАТНАЯ ГСН"        */
 /*								    */
 /*                   Диалоговые процедуры                           */
 /*                                                                  */
@@ -143,11 +143,10 @@
  static      RSS_Unit_HomingPoint *unit ;
                               int  elm ;          /* Идентификатор элемента диалога */
                               int  status ;
-                             char *unit_name ;
-                             char  unit_type[1024] ;
                              char  text[1024] ;
-                             char *end ;
-                              int  i ;
+
+#define       _INERTIAL_METHOD_TXT  "Инерциальная система наведения"
+#define            _GPS_METHOD_TXT  "GPS"
      
 /*------------------------------------------------- Большая разводка */
 
@@ -169,62 +168,27 @@
                                       VARIABLE_PITCH,
                                        "Courier New Cyr") ;
 //         SendMessage(ITEM(IDC_LIST), WM_SETFONT, (WPARAM)font, 0) ;
-/*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
-#define   MODULES       RSS_Kernel::kernel->modules 
-#define   MODULES_CNT   RSS_Kernel::kernel->modules_cnt 
-
-                                          CB_CLEAR(IDC_TYPE_1_1) ;
-                                          CB_CLEAR(IDC_TYPE_1_2) ;
-                                          CB_CLEAR(IDC_TYPE_1_3) ;
-                                          CB_CLEAR(IDC_TYPE_2_1) ;
-                                          CB_CLEAR(IDC_TYPE_2_2) ;
-                                          CB_CLEAR(IDC_TYPE_2_3) ;
-                                          CB_CLEAR(IDC_SWITCH_1_2) ;
-
-   for(i=0 ; i<MODULES_CNT ; i++) 
-     if(MODULES[i].entry->category      !=NULL &&
-        MODULES[i].entry->identification!=NULL   )
-      if(!stricmp("Unit", MODULES[i].entry->category)) {
-
-        if(MODULES[i].entry->lego_type==NULL)  continue ;
-
-             MODULES[i].entry->vGetParameter("$$MODULE_NAME", text) ;
-
-        if(strstr(MODULES[i].entry->lego_type, "Homing" )!=NULL) {
-                                                                    CB_ADD_LIST(IDC_TYPE_1_1, text) ;
-                                                                    CB_ADD_LIST(IDC_TYPE_1_2, text) ;
-                                                                    CB_ADD_LIST(IDC_TYPE_1_3, text) ;
-                                                                    CB_ADD_LIST(IDC_TYPE_2_1, text) ;
-                                                                    CB_ADD_LIST(IDC_TYPE_2_2, text) ;
-                                                                    CB_ADD_LIST(IDC_TYPE_2_3, text) ;
-                                                                 }
-                                                       }
-
-#undef    MODULES
-#undef    MODULES_CNT
+/*- - - - - - - - - - - - - - Инициализация списка методов наведения */
+                  CB_CLEAR(IDC_METHOD) ;
+               CB_ADD_LIST(IDC_METHOD, _INERTIAL_METHOD_TXT) ;
+               CB_ADD_LIST(IDC_METHOD,      _GPS_METHOD_TXT) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
-/*
-         if(object->unit_warhead!=NULL) {
-             object->unit_warhead->Module->vGetParameter("$$MODULE_NAME", text) ;
-                                                    SETc(IDC_TYPE_W, text) ;
-                                        }
-         if(object->unit_engine !=NULL) {
-             object->unit_engine->Module->vGetParameter("$$MODULE_NAME", text) ;
-                                                   SETc(IDC_TYPE_E, text) ;
-                                        }
-         if(object->unit_homing !=NULL) {
-             object->unit_homing->Module->vGetParameter("$$MODULE_NAME", text) ;
-                                                   SETc(IDC_TYPE_H, text) ;
-                                        }
-         if(object->unit_control!=NULL) {
-             object->unit_control->Module->vGetParameter("$$MODULE_NAME", text) ;
-                                                    SETc(IDC_TYPE_C, text) ;
-                                        }
-         if(object->unit_model  !=NULL) {
-             object->unit_model->Module->vGetParameter("$$MODULE_NAME", text) ;
-                                                  SETc(IDC_TYPE_M, text) ;
-                                        }
-*/
+       if(unit->method==_INERTIAL_METHOD)  SETc(IDC_METHOD, _INERTIAL_METHOD_TXT) ;
+       if(unit->method==     _GPS_METHOD)  SETc(IDC_METHOD,      _GPS_METHOD_TXT) ;
+
+                SETi(IDC_GPS_XYZ_PRECISION, unit->gps_xyz_precision) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Инициализация доступов */
+       if(unit->method==_INERTIAL_METHOD) {
+                                          }
+       else                               {
+                                          }
+
+       if(unit->method==     _GPS_METHOD) {
+                                              ENABLE(IDC_GPS_XYZ_PRECISION) ;
+                                          }
+       else                               {
+                                             DISABLE(IDC_GPS_XYZ_PRECISION) ;
+                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
   			     break ;
@@ -236,34 +200,36 @@
 
 	status=HIWORD(wParam) ;
 	   elm=LOWORD(wParam) ;
-/*- - - - - - - - - - - - - - - - - - - - - - Добавление компонентов */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - Выбор метода */
+     if(status==CBN_SELCHANGE &&
+           elm==IDC_METHOD       ) {
+
+           GETc(IDC_METHOD, text) ;
+ 
+       if(!stricmp(text, _INERTIAL_METHOD_TXT)) {
+                                                }
+       else                                     {
+                                                }
+
+       if(!stricmp(text,      _GPS_METHOD_TXT)) {
+                                                    ENABLE(IDC_GPS_XYZ_PRECISION) ;
+                                                }
+       else                                     {
+                                                   DISABLE(IDC_GPS_XYZ_PRECISION) ;
+                                                }
+
+                                       return(FALSE) ;
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - Задание параметров */
      if(elm==IDC_SET) {
-/*
-        for(i=0 ; i<5 ; i++) {
 
-          if(i==0)  {  GETc(IDC_TYPE_W, unit_type) ;
-                                        unit_name="warhead" ;  }
-          if(i==1)  {  GETc(IDC_TYPE_E, unit_type) ;
-                                        unit_name="engine" ;  }
-          if(i==2)  {  GETc(IDC_TYPE_H, unit_type) ;
-                                        unit_name="homing" ;  }
-          if(i==3)  {  GETc(IDC_TYPE_C, unit_type) ;
-                                        unit_name="control" ;  }
-          if(i==4)  {  GETc(IDC_TYPE_M, unit_type) ;
-                                        unit_name="model" ;  }
+               GETc(IDC_METHOD, text) ;
+ 
+        if(!stricmp(text, _INERTIAL_METHOD_TXT))  unit->method=_INERTIAL_METHOD ;
+        if(!stricmp(text,      _GPS_METHOD_TXT))  unit->method=     _GPS_METHOD ;
 
-          if(unit_type[0]==0)  continue ;
+               unit->gps_xyz_precision=GETi(IDC_GPS_XYZ_PRECISION) ;
 
-             end=strchr(unit_type, ' ') ;
-          if(end!=NULL)  *end=0 ;
-
-             unit=Module->AddUnit(object, unit_name, unit_type, text) ;
-          if(unit==NULL) {
-                            SEND_ERROR(text) ;
-                              return(FALSE) ;
-                         }
-                             }
-*/
                             EndDialog(hDlg, 0) ;
 
                               return(FALSE) ;

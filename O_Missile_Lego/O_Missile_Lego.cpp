@@ -1940,6 +1940,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   double  mi_y ;
                   double  mi_z ;
                     char  homing_control[1024] ;
+                    char  warhead_control[1024] ;
+               RSS_Point  target_direction ;                /* Направление на цель */
+               RSS_Point  target_position ;                 /* Относительное положение цели */
+                  double  target_distance ;                 /* Дистанция до цели */
+                  double  target_speed ;                    /* Скорость сближения с целью */
+              RSS_Vector  control_vector ;                  /* Вектор перегрузки маневра */
                      int  status ;
 
 /*------------------------------------------------------- Подготовка */
@@ -1952,7 +1958,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Система наведения */
    if(this->unit_homing !=NULL) {
-                                    homing_control[0]=0 ;          
+                                    homing_control[0]=0 ;
 
      if(this->unit_control!=NULL)  this->unit_control->vGetHomingControl(homing_control) ;
 
@@ -1963,7 +1969,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Двигатель */
    if(this->unit_engine !=NULL) {
 
-                       this->unit_engine->vCalculate      (t1, t2, callback, cb_size) ;
+                       this->unit_engine->vCalculate       (t1, t2, callback, cb_size) ;
 
             thrust_cnt=this->unit_engine->vGetEngineThrust(thrust) ;
               mass_use=this->unit_engine->vGetEngineMass  (&mass, &mass_point) ;
@@ -1971,21 +1977,51 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                 } 
 /*- - - - - - - - - - - - - - - - - - - - - - - - Система управления */
-/*- - - - - - - - - - - - - - - - - - -  Динамическая модель объекта */
-   if(this->unit_model  !=NULL) {
+   if(this->unit_control!=NULL) {
 
-          if(thrust_cnt)  this->unit_model->vSetEngineThrust(thrust, thrust_cnt) ;
-          if(  mass_use)  this->unit_model->vSetEngineMass  (mass, &mass_point) ;
-          if(    mi_use)  this->unit_model->vSetEngineMI    (mi_x, mi_y, mi_z) ;
+            memset(&target_direction, 0, sizeof(target_direction)) ;
+            memset(&target_position,  0, sizeof(target_position )) ;
+                    target_distance=0. ;
+                    target_speed   =0. ;
 
-                          this->unit_model->vCalculate(t1, t2, callback, cb_size) ;
+     if(this->unit_homing!=NULL) {
 
-                                } 
+         this->unit_homing->vGetHomingDirection   (&target_direction) ;
+         this->unit_homing->vGetHomingPosition    (&target_position) ;
+         this->unit_homing->vGetHomingDistance    (&target_distance) ;
+         this->unit_homing->vGetHomingClosingSpeed(&target_speed) ;
+                                 }
+
+         this->unit_control->vSetHomingDirection   (&target_direction) ;
+         this->unit_control->vSetHomingPosition    (&target_position) ;
+         this->unit_control->vSetHomingDistance    ( target_distance) ;
+         this->unit_control->vSetHomingClosingSpeed( target_speed) ;
+         this->unit_control->vCalculate            (t1, t2, callback, cb_size) ;
+
+                                }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - Боевая часть */
    if(this->unit_warhead!=NULL) {
+                                    warhead_control[0]=0 ;
 
-            status=this->unit_warhead->vCalculate(t1, t2, callback, cb_size) ;
+     if(this->unit_control!=NULL)  this->unit_control->vGetWarHeadControl(warhead_control) ;
+
+                   this->unit_warhead->vSetWarHeadControl(warhead_control) ;
+            status=this->unit_warhead->vCalculate        (t1, t2, callback, cb_size) ;
          if(status)  return(1) ;
+
+                                } 
+/*- - - - - - - - - - - - - - - - - - -  Динамическая модель объекта */
+   if(this->unit_model  !=NULL) {
+             
+            memset(&control_vector, 0, sizeof(control_vector)) ;
+          
+     if(this->unit_control!=NULL)  this->unit_control->vGetVectorControl(&control_vector) ;
+
+          if(thrust_cnt)  this->unit_model->vSetEngineThrust (thrust, thrust_cnt) ;
+          if(  mass_use)  this->unit_model->vSetEngineMass   (mass, &mass_point) ;
+          if(    mi_use)  this->unit_model->vSetEngineMI     (mi_x, mi_y, mi_z) ;
+                          this->unit_model->vSetVectorControl(&control_vector) ;
+                          this->unit_model->vCalculate       (t1, t2, callback, cb_size) ;
 
                                 } 
 /*-------------------------------------------------------------------*/

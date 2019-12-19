@@ -888,7 +888,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if(stages_cnt==0) {
 
-              sprintf(error, "Unit %s - missed program for control unit", this->Owner->Name) ;
+              sprintf(error, "Unit %s.%s - missed program for control unit", this->Owner->Name, this->Name) ;
            SEND_ERROR(error) ;
                                 return(-1) ;
                          }

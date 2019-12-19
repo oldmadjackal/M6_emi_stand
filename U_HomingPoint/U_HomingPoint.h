@@ -19,10 +19,15 @@
 
                           int  method ;              /* Вид системы наведения */
 #define                         _INERTIAL_METHOD  1   /* Инерциальная система наведения */
+#define                              _GPS_METHOD  2   /* GPS */
+
+                       double  gps_xyz_precision ;
 
                        time_t  start_time ;          /* Время запуска */
                        double  x_0, y_0, z_0 ;       /* Начальные координаты */
-                       double  x_t, y_t, z_t ;       /* Целевые координаты */
+                       double  x_t, y_t, z_t ;       /* Координаты целевой точки */
+
+                       double  x, y, z ;             /* Относительные координаты целевой точки */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
@@ -62,6 +67,7 @@
                      int  cHelp         (char *) ;                           /* Инструкция HELP */ 
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cConfig       (char *) ;                           /* Инструкция CONFIG */ 
+                     int  cSetGPS       (char *) ;                           /* Инструкция GPS */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 

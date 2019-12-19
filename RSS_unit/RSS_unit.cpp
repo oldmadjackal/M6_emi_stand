@@ -289,6 +289,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*********************************************************************/
 /*								     */
+/*                         Перегрузка маневра                        */
+
+    int  RSS_Unit_Control::vGetVectorControl(RSS_Vector *vector)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
 /*	      Компоненты класса "КОМПОНЕНТ - Двигатель"       	     */
 /*								     */
 /*********************************************************************/
@@ -388,6 +399,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*              Управление аэродинамическими поверхностями     	     */
 
     int  RSS_Unit_Model::vSetAeroControl(RSS_Unit_Aero_Control *aeros, int  aeros_cnt)
+
+{
+   return(0) ;
+}
+
+
+/*********************************************************************/
+/*								     */
+/*                         Перегрузка маневра                        */
+
+    int  RSS_Unit_Model::vSetVectorControl(RSS_Vector *vector)
 
 {
    return(0) ;

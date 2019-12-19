@@ -90,13 +90,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   struct RSS_Module_HomingPoint_instr  RSS_Module_HomingPoint_InstrList[]={
 
- { "help",    "?",  "#HELP   - список доступных команд", 
-                     NULL,
-                    &RSS_Module_HomingPoint::cHelp   },
- { "config",  "c",  "#CONFIG - задать параметры компонента в диалоговом режиме",
-                    " CONFIG <Имя> \n"
-                    "   Задать параметры компонента в диалоговом режиме\n",
-                    &RSS_Module_HomingPoint::cConfig },
+ { "help",    "?",   "#HELP   - список доступных команд", 
+                      NULL,
+                     &RSS_Module_HomingPoint::cHelp   },
+ { "config",  "c",   "#CONFIG - задать параметры компонента в диалоговом режиме",
+                     " CONFIG <Имя> \n"
+                     "   Задать параметры компонента в диалоговом режиме\n",
+                     &RSS_Module_HomingPoint::cConfig },
+ { "gps",     "gps", "#GPS - выбрать метод GPS и задать для него параметры",
+                     " GPS <Имя> <Точность по XYZ>\n"
+                     "   Выбрать метод GPS и задать для него параметры\n",
+                     &RSS_Module_HomingPoint::cSetGPS },
  {  NULL }
                                                             } ;
 
@@ -463,7 +467,79 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*	           Поиск обьекта типа HomingPoint по имени             */
+/*		      Реализация инструкции GPS                     */
+/*								    */
+/*    GPS <Имя компонента> <Точность по XYZ>                        */
+
+  int  RSS_Module_HomingPoint::cSetGPS(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                   char *pars[_PARS_MAX] ;
+                   char *name ;
+   RSS_Unit_HomingPoint *unit ;
+                   char  error[1024] ;
+                   char *end ;
+                    int  i ;
+
+/*---------------------------------------- Разборка командной строки */
+
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+           if( pars[0]==NULL ||
+              *pars[0]==  0    ) {
+                                     SEND_ERROR("Не задан объект управления") ;
+                                         return(-1) ;
+                                 }
+
+                     name=pars[0] ;
+
+/*---------------------------------------- Контроль имени компонента */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонентa. \n"
+                                      "Например: GPS <Имя_компонентa> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_HomingPoint *)FindUnit(name) ;                /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*----------------------------------------------- Задание параметров */
+
+                          unit->method=_GPS_METHOD ;  
+
+    if(pars[1]!=NULL) {
+                          unit->gps_xyz_precision=strtod(pars[1], &end) ;  
+
+      if(*end!=0) {
+                          sprintf("HommingPoint - Некорректная точность определения координат для компонента %s", name) ;
+                       SEND_ERROR(error) ;
+                          return(-1) ;
+                  }
+                      }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*	        Поиск обьекта типа HomingPoint по имени             */
 
   RSS_Unit *RSS_Module_HomingPoint::FindUnit(char *name)
 
@@ -559,20 +635,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-/*
-     tripping_type    =_BY_ALTITUDE ;
-     tripping_altitude= 0. ;
-     tripping_time    = 0. ;
+               method= 0 ;
+    gps_xyz_precision=20 ;
 
-         load_type    =_GRENADE_TYPE ;
-          hit_range   = 0. ;
-        blast_radius  = 5. ;
-
-          sub_unit[0] = 0 ;
-          sub_object  = NULL ;
-          sub_count   = 0 ;
-          sub_step    = 0. ;
-*/
 }
 
 
@@ -673,11 +738,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_HomingPoint::vCalculateStart(double  t)
 {
-/*
-        blast=        0 ;
-*/
+   char  error[1024] ;
 
-   start_time=(time_t)t ;
+/*------------------------------------------------- Входной контроль */
+
+       if(this->method==0) {
+
+              sprintf(error, "Unit %s.%s - positioning method not assigned", this->Owner->Name, this->Name) ;
+           SEND_ERROR(error) ;
+                                return(-1) ;
+                           }
+/*---------------------------------------------------- Инициализация */
+
+               start_time=(time_t)t ;
+
+/*-------------------------------------------------------------------*/
 
   return(0) ;
 }
@@ -697,6 +772,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           t1-=this->start_time ;
           t2-=this->start_time ;
 
+/*-------------------------------------------------------- Метод GPS */
+
+   if(this->method==_GPS_METHOD) {
+
+        this->x=this->x_t-this->Owner->x_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+        this->y=this->y_t-this->Owner->y_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+        this->z=this->z_t-this->Owner->z_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+
+                                 }
+/*----------------------------------------------- Инерциальный метод */
+
+   if(this->method==_INERTIAL_METHOD) {
+                                      }
 /*-------------------------------------------------------------------*/
 
   return(0) ;
@@ -775,6 +863,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                         this->z_t-=this->Owner->z_base ;
 
                                           }
+       if(this->method==     _GPS_METHOD) {
+                                          }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*---------------------------------------------- Неизвестная команда */
@@ -812,6 +902,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vGetHomingPosition(RSS_Point *position)
 
 {
+         position->x=this->x ;
+         position->y=this->y ;
+         position->z=this->z ;
+
    return(0) ;
 }
 
@@ -823,6 +917,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vGetHomingDistance(double *distance)
 
 {
+    sqrt(this->x*this->x+this->y*this->y+this->z*this->z) ;
+
    return(0) ;
 }
 
