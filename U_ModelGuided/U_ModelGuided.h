@@ -16,15 +16,18 @@
   class U_MODEL_GUIDED_API RSS_Unit_ModelGuided : public RSS_Unit_Model {
 
     public:
-                            double  t_0 ;                 /* Время запуска */
 
                             double  mass ;                /* Полная масса без массы РД */
-                            double  slideway ;            /* Длина движения по направляющей */
                             double  s_azim ;              /* Стандартое отклонение по направлению */
                             double  s_elev ;              /* Стандартое отклонение по углу вылета */
+                            double  start_time ;          /* Время участка начального разгона  */
+                            double  s_middle ;            /* Характерная площадь */
+
+                            double  t_0 ;                 /* Время запуска */
 
                             double  engine_thrust ;       /* Сила тяги */
                             double  engine_mass ;         /* Масса РД */
+                        RSS_Vector  control_vector ;      /* Требуемая перегрузка маневра */
 
     public:
          virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
@@ -36,6 +39,7 @@
          virtual        int  vSpecial          (char *, void *) ;                   /* Специальные действия */
 
          virtual        int  vSetAeroControl   (RSS_Unit_Aero_Control *, int) ;     /* Управление аэродинамическими поверхностями */
+         virtual        int  vSetVectorControl (RSS_Vector *) ;                     /* Требуемая перегрузка маневра */
          virtual        int  vSetEngineThrust  (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
          virtual        int  vSetEngineMass    (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
          virtual        int  vSetEngineMI      (double, double, double) ;           /* Моменты инерции двигателя */
@@ -63,7 +67,6 @@
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cPars         (char *) ;                           /* Инструкция PARS */ 
                      int  cMass         (char *) ;                           /* Инструкция MASS */ 
-                     int  cSlide        (char *) ;                           /* Инструкция SLIDE */ 
                      int  cDeviation    (char *) ;                           /* Инструкция DEVIATION */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */

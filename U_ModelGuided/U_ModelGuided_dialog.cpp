@@ -143,7 +143,8 @@
                             int  status ;
                            char  text[512] ;
                          double  mass ;
-                         double  slideway ;
+                         double  start_time ;
+                         double  s_middle ;
                          double  s_azim ;
                          double  s_elev ;
                            char *end ;
@@ -161,8 +162,11 @@
                   sprintf(text, "%lf", unit->mass) ;
                      SETs(IDC_MASS, text) ;
 
-                  sprintf(text, "%lf", unit->slideway) ;
+                  sprintf(text, "%lf", unit->start_time) ;
                      SETs(IDC_SLIDEWAY, text) ;
+
+                  sprintf(text, "%lf", unit->s_middle) ;
+                     SETs(IDC_MIDDLE, text) ;
 
                   sprintf(text, "%lf", unit->s_azim) ;
                      SETs(IDC_S_AZIM, text) ;
@@ -192,10 +196,18 @@
                         }
 
                           GETsl(IDC_SLIDEWAY, text, sizeof(text)-1) ;
-                slideway=strtod(text, &end) ;
+              start_time=strtod(text, &end) ;
 
             if(*end!=0) {
-                           SEND_ERROR("Некорректное значение длины направляющей") ;
+                           SEND_ERROR("Некорректное значение длины стартового участка") ;
+                                return(FALSE) ;
+                        }
+
+                        GETsl(IDC_MIDDLE, text, sizeof(text)-1) ;
+              s_middle=strtod(text, &end) ;
+
+            if(*end!=0) {
+                           SEND_ERROR("Некорректное значение площади характерного сечения") ;
                                 return(FALSE) ;
                         }
 
@@ -215,10 +227,11 @@
                                 return(FALSE) ;
                         }
 
-                          unit->mass    =mass ;
-                          unit->slideway=slideway ;
-                          unit->s_azim  =s_azim ;
-                          unit->s_elev  =s_elev ;
+                          unit->mass      =mass ;
+                          unit->start_time=start_time ;
+                          unit->s_middle  =s_middle ;
+                          unit->s_azim    =s_azim ;
+                          unit->s_elev    =s_elev ;
 
                             EndDialog(hDlg, 1) ;
 

@@ -104,9 +104,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "mass",      "m",  "#MASS - задание массы НУР (без двигателя)", 
                        NULL,
                       &RSS_Module_ModelGuided::cMass   },
- { "slide",     "sl", "#SLIDE - задание длины направляющей", 
-                       NULL,
-                      &RSS_Module_ModelGuided::cSlide  },
  { "deviation", "dv", "#DEVIATION - задание отклонений параметров от нормы", 
                       " DEVIATION <Имя> <azim> <elev>\n"
                       "   Задание стандартного отклонения по направлению и углу вылета, градусы\n"
@@ -383,7 +380,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "\r\n",
                         unit->Name,      unit->Type, 
                         unit->Owner->Name, 
-                        unit->mass, unit->slideway 
+                        unit->mass, unit->start_time 
                     ) ;
 
            info=text ;
@@ -552,87 +549,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------------------- Пропись массы */
 
                  unit->mass=coord[0] ;
-
-/*-------------------------------------------------------------------*/
-
-#undef  _COORD_MAX   
-#undef   _PARS_MAX    
-
-   return(0) ;
-}
-
-
-/********************************************************************/
-/*								    */
-/*		      Реализация инструкции SLIDE                   */
-/*								    */
-/*       SLIDE <Имя> <Масса>                                        */
-
-  int  RSS_Module_ModelGuided::cSlide(char *cmd)
-
-{
-#define  _COORD_MAX   3
-#define   _PARS_MAX  10
-
-                  char  *pars[_PARS_MAX] ;
-                  char  *name ;
-                  char **xyz ;
-                double   coord[_COORD_MAX] ;
-                   int   coord_cnt ;
-  RSS_Unit_ModelGuided  *unit ;
-                  char  *error ;
-                  char  *end ;
-                   int   i ;
-
-/*---------------------------------------- Разборка командной строки */
-/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
-    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
-
-    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
-      
-                pars[i]=end ;
-                   end =strchr(pars[i], ' ') ;
-                if(end==NULL)  break ;
-                  *end=0 ;
-                                                 }
-
-                     name= pars[0] ;
-                      xyz=&pars[1] ;   
-
-/*---------------------------------------- Контроль имени компонентa */
-
-    if(name   ==NULL ||
-       name[0]==  0    ) {                                          /* Если имя не задано... */
-                           SEND_ERROR("Не задано имя компонент. \n"
-                                      "Например: SLIDE <Имя_компонент> ...") ;
-                                     return(-1) ;
-                         }
-
-       unit=(RSS_Unit_ModelGuided *)FindUnit(name) ;                /* Ищем компонент по имени */
-    if(unit==NULL)  return(-1) ;
-
-/*------------------------------------------------ Разбор параметров */
-
-    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
-
-             coord[i]=strtod(xyz[i], &end) ;
-        if(*end!=0) {  
-                       SEND_ERROR("Некорректное значение длины направляющей") ;
-                                       return(-1) ;
-                    }
-                                                  }
-
-                             coord_cnt=i ;
-
-                        error= NULL ;
-      if(coord_cnt==0)  error="Не указана длина направляющей" ;
-
-      if(error!=NULL) {  SEND_ERROR(error) ;
-                               return(-1) ;   }
-
-/*---------------------------------------------------- Пропись массы */
-
-                 unit->slideway=coord[0] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -858,7 +774,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               t_0=  0. ; 
              mass=  0. ; 
-         slideway=  0. ;
+       start_time=  0. ;
+         s_middle=  0. ;
            s_azim=  0. ;
            s_elev=  0. ;
     engine_thrust=  0. ; 
@@ -921,7 +838,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------- Копирование настроек объекта */
 
              unit->mass    =this->mass ;
-             unit->slideway=this->slideway ;
              unit->s_azim  =this->s_azim ;
              unit->s_elev  =this->s_elev ;
 
@@ -965,8 +881,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Расчет отклонений */
 
-    this->Owner->a_azim+=this->Module->gGaussianValue(0., this->s_azim) ;
-    this->Owner->a_elev+=this->Module->gGaussianValue(0., this->s_elev) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -981,80 +895,96 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      int  RSS_Unit_ModelGuided::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
   RSS_Object *parent ;
-      double  Ky ;
-      double  Kn ;
-      double  Vy ;
-      double  Vn ;
-      double  t_s ;
-      double  a ;
-      double  f ;
-      double  g ;
+      double  V ;
+      double  M ;
+      double  Fa ;       /* Сила аэродинамического сопротивления */
+      double  A_size ;
+  RSS_Vector  A ;
       double  dt ;
-      double  dVy ;
-      double  dVn ;
-      double  dH ;
-      double  dL ;
+      double  Vc ;
+      double  Cx ;
+      double  p ;
+         int  i ;
+
+   static struct { double Cx ; double M ; } Cx_table[7]={ { 0.0 , 0.44 },
+                                                          { 0.7 , 0.43 },
+                                                          { 0.9 , 0.69 },
+                                                          { 1.05, 1.18 },
+                                                          { 1.2 , 1.36 },
+                                                          { 1.5 , 1.00 },
+                                                          { 9.0 , 1.00 },
+                                                         } ;
+
+#define   _G  9.8
 
 /*------------------------------------------------ Пoдготовка данных */
 
            t1-=this->t_0 ;
            t2-=this->t_0 ;
+           dt =t2-t1 ;
 
         parent=this->Owner ;
 
-            dt=t2-t1 ;
-             f=engine_thrust/(mass+engine_mass) ;
-            Vy=     parent->y_velocity ;
-            Vn=sqrt(parent->x_velocity*parent->x_velocity+
+             V=sqrt(parent->x_velocity*parent->x_velocity+
+                    parent->y_velocity*parent->y_velocity+
                     parent->z_velocity*parent->z_velocity ) ;
+            
+/*----------------------- Приведение управляющей перегрузки к ракете */
 
-/*-------------------------------------------- Определение угла тяги */
+/*-------------------- Определение допустимой управляющей перегрузки */
 
-              if(f>0)  t_s=sqrt(2.*slideway/f) ;                    /* Движение по направляющей полагаем с постоянным ускорением */
-              else     t_s= 0 ;
+/*------- Приведение управляющей перегрузки к абсолютным координатам */
 
-              if(t1== 0 ) {                                         /* Старт */
-                             Ky=sin(parent->a_elev*_GRD_TO_RAD) ;
-                             Kn=cos(parent->a_elev*_GRD_TO_RAD) ;
-                          }
-         else if(t1< t_s) {                                         /* Движение по направляющей */
-                             Ky=sin(parent->a_elev*_GRD_TO_RAD) ;
-                             Kn=cos(parent->a_elev*_GRD_TO_RAD) ;
-                          }
-         else             {                                         /* Свободный полет */
-                             Ky=Vy/sqrt(Vy*Vy+Vn*Vn) ;
-                             Kn=Vn/sqrt(Vy*Vy+Vn*Vn) ;
-                          }
-/*--------------------------- Расчет траектории в плоскости стрельбы */
+/*--------------------------------- Определение табличных параметров */
 
-      if(t1== 0 || 
-         t1< t_s  ) g=0. ;
-      else          g=9.8 ;
+               Vc=330. ;                                            /* Скорость звука */
+                p=1.2 ;                                             /* Плотность воздуха */
 
-           a = f*Ky-g ;                                             /* Вертикальная компонента */ 
-           dVy=dt*a ;
-           dH =Vy*dt+0.5*a*dt*dt ;
+               M=V/Vc ;
 
-            a = f*Kn ;                                              /* Компонента дальности */
-           dVn=dt*a ;
-           dL =Vn*dt+0.5*a*dt*dt ;
+    for(i=1 ; i<100 ; i)  if(M<Cx_table[i].M)  Cx=Cx_table[i].Cx ;
 
-            Vy+=dVy ;
-            Vn+=dVn ;
+/*------------------------------- Определение касательного ускорения */
 
-/*------------------------------------- Перевод в базовые координаты */
+              Fa= 0.5*Cx*(V/Vc)*p*this->s_middle ;
+          A_size=(this->engine_thrust-Fa)/(this->engine_mass+this->mass)
+                -_G*sin(parent->a_elev) ; 
 
-             parent->x_velocity=Vn*sin(parent->a_azim*_GRD_TO_RAD) ;
-             parent->y_velocity=Vy ;
-             parent->z_velocity=Vn*cos(parent->a_azim*_GRD_TO_RAD) ;
+/*--------------------------------- Определение суммарного ускорения */
 
-             parent->a_elev    =atan2(Vy, Vn)*_RAD_TO_GRD ;
+   if(t1>start_time) {
+                         A.x =this->control_vector.x ;
+                         A.y =this->control_vector.y ;
+                         A.x =this->control_vector.z ;
+                     }
 
-             parent->x_base   +=dL*sin(parent->a_azim*_GRD_TO_RAD) ;
-             parent->y_base   +=dH ;
-             parent->z_base   +=dL*cos(parent->a_azim*_GRD_TO_RAD) ;
+                         A.x+=A_size*cos(parent->a_elev*_GRD_TO_RAD)*sin(parent->a_azim*_GRD_TO_RAD) ;
+                         A.y+=A_size*sin(parent->a_elev*_GRD_TO_RAD) ;
+                         A.z+=A_size*cos(parent->a_elev*_GRD_TO_RAD)*cos(parent->a_azim*_GRD_TO_RAD) ;
+
+/*---------------------------------- Определение выходных параметров */
+
+
+             parent->x_base    +=parent->x_velocity*dt+0.5*A.x*dt*dt ;
+             parent->y_base    +=parent->y_velocity*dt+0.5*A.y*dt*dt ;
+             parent->z_base    +=parent->z_velocity*dt+0.5*A.z*dt*dt ;
+
+             parent->x_velocity+=A.x*dt ;
+             parent->y_velocity+=A.y*dt ;
+             parent->z_velocity+=A.z*dt ;
+
+                              V = sqrt(parent->x_velocity*parent->x_velocity+
+                                       parent->y_velocity*parent->y_velocity+
+                                       parent->z_velocity*parent->z_velocity ) ;
+             parent->a_elev     =atan2(parent->y_velocity, V)*_RAD_TO_GRD ;
+
+                              V = sqrt(parent->x_velocity*parent->x_velocity+
+                                       parent->z_velocity*parent->z_velocity ) ;
+             parent->a_azim     =atan2(parent->z_velocity, V)*_RAD_TO_GRD ;
 
 /*-------------------------------------------------------------------*/
+
+#undef   _G 
 
   return(0) ;
 }
@@ -1117,3 +1047,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    return(0) ;
 }
 
+/*********************************************************************/
+/*								     */
+/*                   Требуемая перегрузка маневра                    */
+
+    int  RSS_Unit_ModelGuided::vSetVectorControl(RSS_Vector *vector)
+
+{
+    this->control_vector=*vector ;
+
+   return(0) ;
+}

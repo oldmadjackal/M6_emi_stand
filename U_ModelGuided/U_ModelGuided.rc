@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Russian resources
+// Русский (Россия) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
-#ifdef _WIN32
 LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
 #pragma code_page(1251)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -52,7 +50,7 @@ END
 // Dialog
 //
 
-IDD_HELP DIALOG  0, 0, 350, 206
+IDD_HELP DIALOG 0, 0, 350, 206
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Справка по командам секции Object Body"
 FONT 8, "MS Sans Serif"
@@ -60,20 +58,22 @@ BEGIN
     LISTBOX         IDC_HELP_LIST,6,7,337,192,LBS_NOINTEGRALHEIGHT | NOT WS_BORDER | WS_VSCROLL | WS_TABSTOP
 END
 
-IDD_PARS DIALOGEX 0, 0, 308, 136
+IDD_PARS DIALOGEX 0, 0, 309, 170
 STYLE DS_SETFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_TOPMOST
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     EDITTEXT        IDC_MASS,195,7,60,13,ES_CENTER | ES_AUTOHSCROLL
     EDITTEXT        IDC_SLIDEWAY,195,29,60,13,ES_CENTER | ES_AUTOHSCROLL
-    RTEXT           "Масса НУР без топлива",IDC_STATIC,83,9,108,8
-    RTEXT           "Длина направляющей",IDC_STATIC,83,31,108,8
-    PUSHBUTTON      "Принять",IDC_SET,40,113,230,16
-    RTEXT           "Стандартное отклонение по направления, град",IDC_STATIC,12,52,179,8
-    RTEXT           "Стандартное отклонение по углу вылета, град",IDC_STATIC,12,72,179,8
-    EDITTEXT        IDC_S_AZIM,195,50,60,13,ES_CENTER | ES_AUTOHSCROLL
-    EDITTEXT        IDC_S_ELEV,195,70,60,13,ES_CENTER | ES_AUTOHSCROLL
+    RTEXT           "Масса ракеты без двигателя",IDC_STATIC,83,9,108,8
+    RTEXT           "Время стартового участка",IDC_STATIC,83,31,108,8
+    PUSHBUTTON      "Принять",IDC_SET,40,147,230,16
+    RTEXT           "Стандартное отклонение по направления, град",IDC_STATIC,12,96,179,8
+    RTEXT           "Стандартное отклонение по углу вылета, град",IDC_STATIC,12,116,179,8
+    EDITTEXT        IDC_S_AZIM,195,94,60,13,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_S_ELEV,195,114,60,13,ES_CENTER | ES_AUTOHSCROLL
+    EDITTEXT        IDC_MIDDLE,195,51,60,13,ES_CENTER | ES_AUTOHSCROLL
+    RTEXT           "Площадь характерного сечения",IDC_STATIC,56,52,136,8
 END
 
 
@@ -83,7 +83,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     "IDD_HELP", DIALOG
     BEGIN
@@ -96,14 +96,25 @@ BEGIN
     "IDD_PARS", DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 301
+        RIGHTMARGIN, 302
         TOPMARGIN, 7
-        BOTTOMMARGIN, 129
+        BOTTOMMARGIN, 163
     END
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Russian resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_PARS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Русский (Россия) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

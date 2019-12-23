@@ -1875,13 +1875,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   if(this->o_owner!=NULL) {
 
-      this->x_base=this->o_owner->x_base ;
-      this->y_base=this->o_owner->y_base ;
-      this->z_base=this->o_owner->z_base ;
+      this->x_base    =this->o_owner->x_base ;
+      this->y_base    =this->o_owner->y_base ;
+      this->z_base    =this->o_owner->z_base ;
 
-      this->a_azim=this->o_owner->a_azim ;
-      this->a_elev=this->o_owner->a_elev ;
-      this->a_roll=this->o_owner->a_roll ;
+      this->a_azim    =this->o_owner->a_azim ;
+      this->a_elev    =this->o_owner->a_elev ;
+      this->a_roll    =this->o_owner->a_roll ;
+
+      this->x_velocity=this->o_owner->x_velocity ;
+      this->y_velocity=this->o_owner->y_velocity ;
+      this->z_velocity=this->o_owner->z_velocity ;
+
                           }
 /*------------------------------------------ Привязка к объекту-цели */
 

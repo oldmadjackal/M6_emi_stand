@@ -407,7 +407,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*********************************************************************/
 /*								     */
-/*                         Перегрузка маневра                        */
+/*                   Требуемая перегрузка маневра                    */
+
 
     int  RSS_Unit_Model::vSetVectorControl(RSS_Vector *vector)
 
