@@ -104,6 +104,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "mass",      "m",  "#MASS - задание массы НУР (без двигателя)", 
                        NULL,
                       &RSS_Module_ModelGuided::cMass   },
+ { "middle",    "md", "#MIDDLE - площадь характеристического сечения", 
+                       NULL,
+                      &RSS_Module_ModelGuided::cMiddle   },
+ { "starttime", "s",  "#STARTTIME - время стартового участка", 
+                       NULL,
+                      &RSS_Module_ModelGuided::cStartTime   },
+ { "log",       "l",  "#LOG - задание файла лога модели", 
+                      " LOG <Имя> <Шаблон путу к файлу>\n"
+                      "   Шаблон может включать символ подстановку @ для указания места, куда вставляется имя объекта\n",
+                      &RSS_Module_ModelGuided::cLog   },
  { "deviation", "dv", "#DEVIATION - задание отклонений параметров от нормы", 
                       " DEVIATION <Имя> <azim> <elev>\n"
                       "   Задание стандартного отклонения по направлению и углу вылета, градусы\n"
@@ -561,6 +571,232 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции MIDDLE                  */
+/*								    */
+/*       MIDDLE <Имя> <Масса>                                       */
+
+  int  RSS_Module_ModelGuided::cMiddle(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char **xyz ;
+                double   coord[_COORD_MAX] ;
+                   int   coord_cnt ;
+  RSS_Unit_ModelGuided  *unit ;
+                  char  *error ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонентa */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: MIDDLE <Имя_компонент> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_ModelGuided *)FindUnit(name) ;                /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение площади характеристического сечения") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указана площадь характеристического сечения" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*--------------------------------------------------- Пропись данных */
+
+                 unit->s_middle=coord[0] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции STARTTIME               */
+/*								    */
+/*       STARTTIME <Имя> <Время разгонного участка>                 */
+
+  int  RSS_Module_ModelGuided::cStartTime(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char **xyz ;
+                double   coord[_COORD_MAX] ;
+                   int   coord_cnt ;
+  RSS_Unit_ModelGuided  *unit ;
+                  char  *error ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонентa */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: STARTTIME <Имя_компонент> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_ModelGuided *)FindUnit(name) ;                /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение продолжительности разгонного участка") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указана продолжительность разгонного участка" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*--------------------------------------------------- Пропись данных */
+
+                 unit->start_time=coord[0] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции LOG                     */
+/*								    */
+/*       LOG <Имя> <Шаблон пути к файлу лога>                       */
+/*  Шаблон может включать символ подстановку @ для указания места,  */
+/*   куда вставляется имя объекта                                   */
+
+  int  RSS_Module_ModelGuided::cLog(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char  *path ;
+  RSS_Unit_ModelGuided  *unit ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                     path= pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонентa */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: LOG <Имя_компонент> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_ModelGuided *)FindUnit(name) ;                /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+    if(path==NULL) {  SEND_ERROR("Не указана продолжительность разгонного участка") ;
+                               return(-1) ;   }
+
+/*--------------------------------------------------- Пропись данных */
+
+         strncpy(unit->log_path, path, sizeof(unit->log_path)) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*               Реализация инструкции DEVIATION                    */
 /*								    */
 /*   DEVIATION   <Имя> <По направлению> <По углу вылета>            */
@@ -780,6 +1016,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            s_elev=  0. ;
     engine_thrust=  0. ; 
     engine_mass  =  0. ; 
+
+   memset(log_path, 0, sizeof(log_path)) ;
 }
 
 
@@ -872,6 +1110,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_ModelGuided::vCalculateStart(double  t)
 {
+        char  error[1024] ;
+
+   const char *log_header="Time;P;V;X;Y;Z;" ;
+
 /*------------------------------------ Инициализация рабочих данных */
 
     this->t_0          =t ;
@@ -879,8 +1121,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     this->engine_thrust=0. ;
     this->engine_mass  =0. ;
 
-/*------------------------------------------------ Расчет отклонений */
+/*----------------------------------------- Контроль наличия данных */
 
+    if(this->s_middle<=0.) {
+                sprintf(error, "RSS_Unit_ModelGuided::vCalculateStart - Не задана площадь характеристического сечения %s", this->Owner->Name) ;
+             SEND_ERROR(error) ;
+                   return(-1) ;
+                           }
+
+/*-------------------------------------------- Подготовка телеметрии */
+
+                 Log(log_header) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -904,20 +1155,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       double  Vc ;
       double  Cx ;
       double  p ;
+        char  error[1024] ;
+        char  value[1024] ;
+        char  text[2048] ;
          int  i ;
 
-   static struct { double Cx ; double M ; } Cx_table[7]={ { 0.0 , 0.44 },
+   static struct { double M ; double Cx ; } Cx_table[7]={ { 0.0 , 0.44 },
                                                           { 0.7 , 0.43 },
                                                           { 0.9 , 0.69 },
                                                           { 1.05, 1.18 },
                                                           { 1.2 , 1.36 },
                                                           { 1.5 , 1.00 },
                                                           { 9.0 , 1.00 },
-                                                         } ;
+                                                        } ;
 
 #define   _G  9.8
 
 /*------------------------------------------------ Пoдготовка данных */
+
+        if(t1<this->t_0)  return(0) ;
+
+              text[0]=0 ;
 
            t1-=this->t_0 ;
            t2-=this->t_0 ;
@@ -928,7 +1186,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              V=sqrt(parent->x_velocity*parent->x_velocity+
                     parent->y_velocity*parent->y_velocity+
                     parent->z_velocity*parent->z_velocity ) ;
-            
+
+    if(this->mass+this->engine_mass<=0.) {
+                sprintf(error, "RSS_Unit_ModelGuided::vCalculate - Нулевая суммарная масса ракеты %s", parent->Name) ;
+             SEND_ERROR(error) ;
+                   return(-1) ;
+                                         }
+
+       sprintf(value, "%lf;%lf;%lf;%lf;%lf;%lf;",
+                        t1, this->engine_thrust, V,
+                            parent->x_base, parent->y_base, parent->z_base) ;
+        strcat(text, value) ;
+
 /*----------------------- Приведение управляющей перегрузки к ракете */
 
 /*-------------------- Определение допустимой управляющей перегрузки */
@@ -942,7 +1211,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                M=V/Vc ;
 
-    for(i=1 ; i<100 ; i)  if(M<Cx_table[i].M)  Cx=Cx_table[i].Cx ;
+    for(i=1 ; i<100 ; i++)
+      if(M<Cx_table[i].M) {  Cx=Cx_table[i-1].Cx ;  break ;  }
 
 /*------------------------------- Определение касательного ускорения */
 
@@ -955,7 +1225,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    if(t1>start_time) {
                          A.x =this->control_vector.x ;
                          A.y =this->control_vector.y ;
-                         A.x =this->control_vector.z ;
+                         A.z =this->control_vector.z ;
+                     }
+   else              {
+                         A.x =0. ;
+                         A.y =0. ;
+                         A.z =0. ;
                      }
 
                          A.x+=A_size*cos(parent->a_elev*_GRD_TO_RAD)*sin(parent->a_azim*_GRD_TO_RAD) ;
@@ -974,13 +1249,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              parent->z_velocity+=A.z*dt ;
 
                               V = sqrt(parent->x_velocity*parent->x_velocity+
-                                       parent->y_velocity*parent->y_velocity+
                                        parent->z_velocity*parent->z_velocity ) ;
              parent->a_elev     =atan2(parent->y_velocity, V)*_RAD_TO_GRD ;
+             parent->a_azim     =atan2(parent->x_velocity, parent->z_velocity)*_RAD_TO_GRD ;
 
-                              V = sqrt(parent->x_velocity*parent->x_velocity+
-                                       parent->z_velocity*parent->z_velocity ) ;
-             parent->a_azim     =atan2(parent->z_velocity, V)*_RAD_TO_GRD ;
+/*------------------------------------------------- Сброс телеметрии */
+
+                 Log(text) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1058,3 +1333,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    return(0) ;
 }
+
+
+/********************************************************************/
+/*								    */
+/*		Запись сообщения в лог-файл			    */	
+
+   void  RSS_Unit_ModelGuided::Log(const char *message)
+
+{
+    char  path[FILENAME_MAX] ;
+    FILE *file ;
+    char *mark ;
+
+
+    if(this->log_path[0]==0)  return ;
+        
+       mark=strchr(this->log_path, '@') ;
+
+    if(mark==NULL) {
+                      strcpy(path, this->log_path) ;
+                   }
+    else           {
+                      memset(path, 0, sizeof(path)) ;
+
+      if(mark!=this->log_path) 
+                     strncpy(path, this->log_path, mark-this->log_path) ;
+                      strcat(path, this->Owner->Name) ;
+                      strcat(path, mark+1) ;
+                   }
+
+       file=fopen(path, "at") ;
+    if(file==NULL)  return ;
+
+           fwrite(message, 1, strlen(message), file) ;
+           fwrite("\n",    1, strlen("\n"   ), file) ;
+
+           fclose(file) ;
+}
+
+

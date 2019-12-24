@@ -61,6 +61,8 @@
 
                       HWND  hDropsViewWnd ;                    /* Окно распределения точек падения/срабатывания */
 
+                    double  t_0 ;
+
    private:
 
     RSS_Object_MissileLegoTrace *mTrace ;                      /* Траектория */

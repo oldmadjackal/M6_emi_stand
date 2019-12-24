@@ -17,17 +17,19 @@
 
     public:
 
-                            double  mass ;                /* Полная масса без массы РД */
-                            double  s_azim ;              /* Стандартое отклонение по направлению */
-                            double  s_elev ;              /* Стандартое отклонение по углу вылета */
-                            double  start_time ;          /* Время участка начального разгона  */
-                            double  s_middle ;            /* Характерная площадь */
+                            double  mass ;                    /* Полная масса без массы РД */
+                            double  s_azim ;                  /* Стандартое отклонение по направлению */
+                            double  s_elev ;                  /* Стандартое отклонение по углу вылета */
+                            double  start_time ;              /* Время участка начального разгона  */
+                            double  s_middle ;                /* Характерная площадь */
 
-                            double  t_0 ;                 /* Время запуска */
+                              char  log_path[FILENAME_MAX] ;  /* Файл лога телеметрии */
 
-                            double  engine_thrust ;       /* Сила тяги */
-                            double  engine_mass ;         /* Масса РД */
-                        RSS_Vector  control_vector ;      /* Требуемая перегрузка маневра */
+                            double  t_0 ;                     /* Время запуска */
+
+                            double  engine_thrust ;           /* Сила тяги */
+                            double  engine_mass ;             /* Масса РД */
+                        RSS_Vector  control_vector ;          /* Требуемая перегрузка маневра */
 
     public:
          virtual       void  vFree             (void) ;                             /* Освободить ресурсы */
@@ -43,6 +45,8 @@
          virtual        int  vSetEngineThrust  (RSS_Unit_Engine_Thrust *, int) ;    /* Вектор тяги двигателя */
          virtual        int  vSetEngineMass    (double, RSS_Point *) ;              /* Масса и положение центра масс двигателя */
          virtual        int  vSetEngineMI      (double, double, double) ;           /* Моменты инерции двигателя */
+
+                       void  Log               (const char *) ;                     /* Запись лога телеметрии */
 
 	                     RSS_Unit_ModelGuided() ;                /* Конструктор */
 	                    ~RSS_Unit_ModelGuided() ;                /* Деструктор */
@@ -67,7 +71,10 @@
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cPars         (char *) ;                           /* Инструкция PARS */ 
                      int  cMass         (char *) ;                           /* Инструкция MASS */ 
+                     int  cMiddle       (char *) ;                           /* Инструкция MIDDLE */ 
+                     int  cStartTime    (char *) ;                           /* Инструкция STARTTIME */ 
                      int  cDeviation    (char *) ;                           /* Инструкция DEVIATION */ 
+                     int  cLog          (char *) ;                           /* Инструкция LOG */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
 

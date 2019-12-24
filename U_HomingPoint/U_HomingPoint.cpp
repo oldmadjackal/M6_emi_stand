@@ -869,13 +869,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                          }
 /*---------------------------------------------- Неизвестная команда */
 
-      else                              {
+      else if(command[0]!=0) {
 
                   sprintf(text, "Unknown command in HomingPoint : %s", command) ;
                SEND_ERROR(text) ;
                     return(-1) ;          
 
-                                        }
+                             }
 /*--------------------------------------------------- Перебор команд */
                                                               }
 /*-------------------------------------------------------------------*/

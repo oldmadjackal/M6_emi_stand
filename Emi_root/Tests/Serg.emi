@@ -57,6 +57,10 @@ r1.homing plugin 1 to_point HomingPoint
 r1.homing plugin 2 to_target HomingSimple
 r1.to_point gps 20
 r1.control program tests\serg.control
+r1.model mass 0.
+r1.model middle 0.01
+r1.model starttime 0.1
+r1.model log tests\log--model-*.csv
 ;kas1.warhead tripping/a 250
 ;kas1.warhead stripe sb 2 20
 ;kas1.warhead pancakes sb 15 20 5 25
@@ -116,4 +120,5 @@ battle map 8
 battle map/c bla green
 battle map/cq tank# blue
 battle map/t bla
+battle map/t r1
 battle program tests\Serg.battle

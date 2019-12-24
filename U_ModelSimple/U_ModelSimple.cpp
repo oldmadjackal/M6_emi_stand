@@ -1000,6 +1000,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            t1-=this->t_0 ;
            t2-=this->t_0 ;
 
+   if(t1<0.)  return(0) ;
+
         parent=this->Owner ;
 
             dt=t2-t1 ;

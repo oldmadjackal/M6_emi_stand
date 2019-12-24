@@ -1860,6 +1860,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
 #define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
 
+/*------------------------------------------------------- Подготовка */
+
+               this->t_0=t ;
+
 /*-------------------------------------- Привязка к объекту-носителю */
 
       this->o_owner=NULL ;
@@ -1954,6 +1958,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      int  status ;
 
 /*------------------------------------------------------- Подготовка */
+
+       if(t1<this->t_0)  return(0) ;
 
             thrust_cnt=0 ;
               mass_use=0 ;
