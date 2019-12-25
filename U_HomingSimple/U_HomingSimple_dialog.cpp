@@ -143,10 +143,7 @@
  static     RSS_Unit_HomingSimple *unit ;
                               int  elm ;          /* Идентификатор элемента диалога */
                               int  status ;
-                             char *unit_name ;
-                             char  unit_type[1024] ;
                              char  text[1024] ;
-                             char *end ;
                               int  i ;
      
 /*------------------------------------------------- Большая разводка */

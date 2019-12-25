@@ -883,6 +883,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   char  error[1024] ;
    int  status ;
    int  i ; 
+   int  j ; 
 
 /*------------------------------------------------- Входной контроль */
 
@@ -896,6 +897,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             start_time=(time_t)t ;
 
+     for(i=0 ; i<this->stages_cnt ; i++) 
+     for(j=0 ; j<this->stages[i].actions_cnt ; j++)  this->stages[i].actions[j].done=0 ;
+
 /*---------------------------------------- обработка старового кадра */
 
       this->warhead_control[0]=0 ;
@@ -908,14 +912,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(A[i].if_condition || A[i].exit_condition)  continue ;
 
             status=ExecuteOperation(A[i].operation, text) ;
-         if(status)  {
+         if(status==-1)  {
               sprintf(text, "Unit %s - error in program for control unit, start stage: %s", this->Owner->Name, text) ;
                         SEND_ERROR(error) ;
                              return(-1) ;
-                     }
+                         }
                                                     }
 
 #undef   A
+
+               this->stage=-1 ;
 
 /*-------------------------------------------------------------------*/
 
@@ -929,6 +935,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_Control2Stage::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
+    int  next_stage ;
+   char  text[1024] ;
+   char  error[1024] ;
+    int  true_flag ;
+    int  status ;
+    int  i ;
 
 /*------------------------------------------------- Входной контроль */
 
@@ -937,11 +949,111 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           t1-=this->start_time ;
           t2-=this->start_time ;
 
-/*---------------------------------------------- Инициализация кадра */
+/*------------------------------------ Инициализация вычодных данных */
 
-      this->warhead_control[0]=0 ;
-      this-> homing_control[0]=0 ;
+           this->warhead_control[0]=0 ;
+           this-> homing_control[0]=0 ;
 
+   memset(&this->vector_control, 0, sizeof(this->vector_control)) ;
+
+/*-------------------------------- Проверка выхода из текущей стадии */
+
+                                 next_stage=0 ;
+
+    if(this->stage>= 0) {
+
+#define  S  this->stages[this->stage]
+
+               true_flag=1 ;
+
+       for(i=0 ; i<S.actions_cnt ; i++)
+         if(S.actions[i].exit_condition) {
+
+             status=ExecuteOperation(S.actions[i].operation, error) ;
+          if(status==-1) {
+                            sprintf(text, "RSS_Unit_Control2Stage::vCalculate - Объект %s - ошибка вычислителя : %s", this->Owner->Name, error) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                         }
+
+               true_flag&=status ;
+                                         }
+
+            if(true_flag) {
+                             next_stage=1 ;
+                          }
+#undef  S  
+
+                        }
+    else
+    if(this->stage==-1) {
+                                 next_stage=1 ;
+                        }
+/*------------------------------------- Определение следующей стадии */
+
+   if(next_stage) {
+
+#define  S  this->stages[next_stage]
+
+     for(next_stage=this->stage+1 ; 
+         next_stage<this->stages_cnt ; next_stage++) {
+
+               true_flag=1 ;
+
+       for(i=0 ; i<S.actions_cnt ; i++)
+         if(S.actions[i].if_condition) {
+
+             status=ExecuteOperation(S.actions[i].operation, error) ;
+          if(status==-1) {
+                            sprintf(text, "RSS_Unit_Control2Stage::vCalculate - Объект %s - ошибка вычислителя : %s", this->Owner->Name, error) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                         }
+
+               true_flag&=status ;
+                                       }
+
+          if(true_flag) {
+                            this->stage=next_stage ;
+                                    break ;
+                        }
+
+                                                     }
+
+       if(next_stage ==this->stages_cnt && 
+          this->stage>=  0                )  this->stage=-2 ;
+
+#undef  S  
+                  }
+/*----------------------------------------- Отработка рабочей стадии */
+
+  if(this->stage>=0) {
+
+#define  S  this->stages[this->stage]
+
+/*- - - - - - - - - - - - - - - - - - - Выполнение команд управления */
+       for(i=0 ; i<S.actions_cnt ; i++)
+         if(!S.actions[i].if_condition  &&
+            !S.actions[i].exit_condition  ) {
+
+          if(S.actions[i].once &&
+             S.actions[i].done   )  continue ;
+
+             status=ExecuteOperation(S.actions[i].operation, error) ;
+          if(status==-1) {
+                            sprintf(text, "RSS_Unit_Control2Stage::vCalculate - Объект %s - ошибка вычислителя : %s", this->Owner->Name, error) ;
+                         SEND_ERROR(text) ;
+                              return(-1) ;
+                         }
+
+               S.actions[i].done=1 ;
+                                            }
+/*- - - - - - - - - - - - - - - - - - - - - Расчет манёвра наведения */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+#undef  S  
+
+                     }
 /*-------------------------------------------------------------------*/
 
   return(0) ;
@@ -986,6 +1098,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_Control2Stage::vSetHomingDistance(double  distance)
 
 {
+      t_distance=distance ;
+
    return(0) ;
 }
 
@@ -1050,6 +1164,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 }
 
 
+/*********************************************************************/
+/*								     */
+/*               Требуемая перегрузка управления                     */
+
+    int  RSS_Unit_Control2Stage::vGetVectorControl(RSS_Vector *vector)
+
+{
+     *vector=this->vector_control ;
+
+   return(0) ;
+}
+
+
 /********************************************************************/
 /*								    */
 /*                   Выполнение оператора управления                */
@@ -1085,6 +1212,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            control=this->warhead_control ;
               work= oper+strlen("warhead:") ;
                                                       }
+   else                                               {
+
+              work= oper ;
+                                                      }
 /*-------------------------------------------------- Разбор на слова */
 
               memset(words, 0, sizeof(words)) ;
@@ -1119,6 +1250,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      } 
 /*-------------------------------------------------------------------*/
 
+   if(result[0]=='1')  return(1) ;
+
    return(0) ;
 }
 
@@ -1145,27 +1278,42 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    do {
              oper_prv=oper ;
 /*- - - - - - - - - - -  - - - - - - - - - - - -  Обработка операнда */
-         if(!memicmp(next, "$target.x", strlen("$target.x"))) {     /* X цели */
+#define  KEY  "$target.x"
+         if(!memicmp(next, KEY, strlen(KEY))) {                     /* X цели */
 
                value=this->Owner->o_target->x_base ;
-                oper=next+strlen("$target.x") ;
+                oper=next+strlen(KEY) ;
                 next=oper+1 ;
-                                                              }
+                                              }
          else 
-         if(!memicmp(next, "$target.y", strlen("$target.y"))) {     /* Y цели */
+#undef   KEY
+#define  KEY  "$target.y"
+         if(!memicmp(next, KEY, strlen(KEY))) {                     /* Y цели */
 
                value=this->Owner->o_target->y_base ;
-                oper=next+strlen("$target.y") ;
+                oper=next+strlen(KEY) ;
                 next=oper+1 ;
-                                                              }
+                                              }
          else 
-         if(!memicmp(next, "$target.z", strlen("$target.z"))) {     /* Z цели */
+#undef   KEY
+#define  KEY  "$target.z"
+         if(!memicmp(next, KEY, strlen(KEY))) {                     /* Z цели */
 
                value=this->Owner->o_target->z_base ;
-                oper=next+strlen("$target.z") ;
+                oper=next+strlen(KEY) ;
                 next=oper+1 ;
-                                                              }
+                                              }
          else 
+#undef   KEY
+#define  KEY  "homing.distance"
+         if(!memicmp(next, KEY, strlen(KEY))) {                     /* Дистанция до цели */
+
+               value=this->t_distance ;
+                oper=next+strlen(KEY) ;
+                next=oper+1 ;
+                                              }
+         else 
+#undef   KEY
          if(!stricmp(next, "$target"                       )) {     /* Название цели */
 
                   strcpy(result, this->Owner->target) ;
@@ -1186,9 +1334,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                  result_dgt =value ;
                                     dgt_data=  1 ; 
                               } 
-         else               
+         else
          if(oper_prv[0]=='+') {
                                  result_dgt+=value ;
+                              }
+         else
+         if(oper_prv[0]=='>') {
+                                 if(result_dgt>value)  result_dgt=1. ;
+                                 else                  result_dgt=0. ;
+                              }
+         else
+         if(oper_prv[0]=='<') {
+                                 if(result_dgt<value)  result_dgt=1. ;
+                                 else                  result_dgt=0. ;
                               }
          else                 {
                 sprintf(error, "Unknown operation i %s", text) ;

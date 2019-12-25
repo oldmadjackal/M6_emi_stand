@@ -21,6 +21,7 @@ typedef  struct {
                    int  if_condition ;
                    int  exit_condition ;
                    int  once ;
+                   int  done ;
                 }  StageAction ;
 
 typedef  struct {
@@ -42,6 +43,9 @@ typedef  struct {
                    time_t  start_time ;                      /* Время запуска */
                      char  warhead_control[1024] ;           /* Команды управления БЧ */
                      char  homing_control[1024] ;            /* Команды управления системой наведения */
+               RSS_Vector  vector_control ;                  /* Требуемая перегрузка управления */
+
+                   double  t_distance ;                      /* Дальность до цели */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
@@ -61,6 +65,7 @@ typedef  struct {
          virtual        int  vGetHomingControl     (char *) ;                           /* Управление ГСН */
          virtual        int  vGetEngineControl     (RSS_Unit_Engine_Control *) ;        /* Управление двигателем */
          virtual        int  vGetAeroControl       (RSS_Unit_Aero_Control *) ;          /* Управление аэродинамическими поверхностями */
+         virtual        int  vGetVectorControl     (RSS_Vector *) ;                     /* Требуемая перегрузка маневра */
 
                         int  ExecuteOperation      (char *, char *) ;                   /* Выполнение операции */
                         int  ExecuteExpression     (char *, char *, char *) ;           /* Вычисление выражения  */

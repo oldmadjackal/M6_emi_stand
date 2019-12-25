@@ -5,18 +5,18 @@ homing:point $target.x $target.y+1000 $target.z
 ;
 ; Этап 1 движение в расчетную точку по инерционной системе наведения или GPS
 stage 1
-if homing.distance >5000
-exit homing.distance <2000
+if homing.distance>5000
+exit homing.distance<2000
 ;
 ; Этап 2 - самонаведение на цель с сохранением запаса высоты
 stage 2
-if homing.distance <2000
+if homing.distance<2000
 once homing:stage 2
 once homing:lock $target
-exit homing.distance <500
+exit homing.distance<500
 ;
 ; Этап 3 - пикирование на цель
 stage 3
-if homing.distance <500
+if homing.distance<500
 once homing:stage 2
 once homing:lock $target

@@ -917,7 +917,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vGetHomingDistance(double *distance)
 
 {
-    sqrt(this->x*this->x+this->y*this->y+this->z*this->z) ;
+    *distance=sqrt(this->x*this->x+this->y*this->y+this->z*this->z) ;
 
    return(0) ;
 }

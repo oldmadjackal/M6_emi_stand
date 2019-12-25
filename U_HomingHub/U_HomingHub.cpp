@@ -829,11 +829,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_HomingHub::vCalculateStart(double  t)
 {
-/*
-        blast=        0 ;
-*/
+   int  i ;
 
-   start_time=(time_t)t ;
+
+     for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+       if(units_1[i]!=NULL)  units_1[i]->vCalculateStart(t) ;              
+
+     for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+       if(units_2[i]!=NULL)  units_2[i]->vCalculateStart(t) ;              
 
   return(0) ;
 }
@@ -846,14 +849,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      int  RSS_Unit_HomingHub::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
 
-/*------------------------------------------------- Входной контроль */
+   int  i ;
 
-/*----------------------------------------------- Приведение времени */
 
-          t1-=this->start_time ;
-          t2-=this->start_time ;
-
-/*-------------------------------------------------------------------*/
+   if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vCalculate(t1, t2, callback, cb_size) ;
+                      }
+    else 
+    if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vCalculate(t1, t2, callback, cb_size) ;
+                       }
 
   return(0) ;
 }
@@ -935,6 +942,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingHub::vGetHomingDirection(RSS_Point *direction)
 
 {
+   int  i ;
+
+
+   if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vGetHomingDirection(direction) ;              
+                      }
+    else 
+    if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vGetHomingDirection(direction) ;              
+                       }
+
    return(0) ;
 }
 
@@ -946,6 +966,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingHub::vGetHomingPosition(RSS_Point *position)
 
 {
+   int  i ;
+
+
+   if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vGetHomingPosition(position) ; 
+                      }
+    else 
+    if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vGetHomingPosition(position) ;
+                       }
+
    return(0) ;
 }
 
@@ -957,6 +990,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingHub::vGetHomingDistance(double *distance)
 
 {
+   int  i ;
+
+
+   if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vGetHomingDistance(distance) ;              
+                      }
+    else 
+    if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vGetHomingDistance(distance) ;              
+                       }
+
    return(0) ;
 }
 
@@ -968,6 +1014,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingHub::vGetHomingClosingSpeed(double *velocity)
 
 {
+   int  i ;
+
+
+   if(this->stage==1) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_1[i]!=NULL)  units_1[i]->vGetHomingClosingSpeed(velocity) ;
+                      }
+    else 
+    if(this->stage==2) {
+                for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) 
+                  if(units_2[i]!=NULL)  units_2[i]->vGetHomingClosingSpeed(velocity) ;              
+                       }
+
    return(0) ;
 }
 
