@@ -1,7 +1,7 @@
 ; Запуск
 start
 homing:stage 1
-homing:point $target.x $target.y+1000 $target.z
+homing:point $target.x $target.y+700 $target.z
 ;
 ; Этап 1 движение в расчетную точку по инерционной системе наведения или GPS
 stage 1

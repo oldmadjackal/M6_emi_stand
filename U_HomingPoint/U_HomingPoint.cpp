@@ -776,9 +776,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(this->method==_GPS_METHOD) {
 
-        this->x=this->x_t-this->Owner->x_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
-        this->y=this->y_t-this->Owner->y_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
-        this->z=this->z_t-this->Owner->z_base+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+        this->x=this->x_t+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+        this->y=this->y_t+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
+        this->z=this->z_t+ProgramModule.gGaussianValue(0., this->gps_xyz_precision) ;
 
                                  }
 /*----------------------------------------------- Èíåğöèàëüíûé ìåòîä */
@@ -917,7 +917,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vGetHomingDistance(double *distance)
 
 {
-    *distance=sqrt(this->x*this->x+this->y*this->y+this->z*this->z) ;
+    *distance=sqrt((this->x-this->Owner->x_base)*(this->x-this->Owner->x_base)+
+                   (this->y-this->Owner->y_base)*(this->y-this->Owner->y_base)+
+                   (this->z-this->Owner->z_base)*(this->z-this->Owner->z_base) ) ;
 
    return(0) ;
 }

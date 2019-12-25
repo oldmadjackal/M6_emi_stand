@@ -46,6 +46,8 @@ typedef  struct {
                RSS_Vector  vector_control ;                  /* Требуемая перегрузка управления */
 
                    double  t_distance ;                      /* Дальность до цели */
+                RSS_Point  t_xyz ;                           /* Положение цели */
+                RSS_Point  t_xyz_prv ;                       /* Положение цели */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */

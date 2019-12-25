@@ -1112,7 +1112,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
         char  error[1024] ;
 
-   const char *log_header="Time;P;V;X;Y;Z;" ;
+   const char *log_header="Time;P;V;Nx;Ny;Nz;X;Y;Z;" ;
 
 /*------------------------------------ Инициализация рабочих данных */
 
@@ -1193,8 +1193,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    return(-1) ;
                                          }
 
-       sprintf(value, "%lf;%lf;%lf;%lf;%lf;%lf;",
+       sprintf(value, "%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;",
                         t1, this->engine_thrust, V,
+                            this->control_vector.x, this->control_vector.y, this->control_vector.z,
                             parent->x_base, parent->y_base, parent->z_base) ;
         strcat(text, value) ;
 

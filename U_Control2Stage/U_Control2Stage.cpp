@@ -900,6 +900,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      for(i=0 ; i<this->stages_cnt ; i++) 
      for(j=0 ; j<this->stages[i].actions_cnt ; j++)  this->stages[i].actions[j].done=0 ;
 
+          memset(&t_xyz,     0, sizeof(t_xyz    )) ;
+          memset(&t_xyz_prv, 0, sizeof(t_xyz_prv)) ;
+
 /*---------------------------------------- обработка старового кадра */
 
       this->warhead_control[0]=0 ;
@@ -935,12 +938,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_Control2Stage::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
-    int  next_stage ;
-   char  text[1024] ;
-   char  error[1024] ;
-    int  true_flag ;
-    int  status ;
-    int  i ;
+         int  next_stage ;
+        char  text[1024] ;
+        char  error[1024] ;
+         int  true_flag ;
+  RSS_Vector  T ;             /* Направление на цель */
+  RSS_Vector  A  ;            /* Вектор ускорения */
+  RSS_Vector  V  ;            /* Вектор скорости */
+      double  v ;             /* Скорость сближения */
+      double  t_time ;        /* Оценка времени достижения */
+      double  l ;
+      double  h ;
+         int  status ;
+         int  i ;
 
 /*------------------------------------------------- Входной контроль */
 
@@ -964,8 +974,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #define  S  this->stages[this->stage]
 
-               true_flag=1 ;
-
        for(i=0 ; i<S.actions_cnt ; i++)
          if(S.actions[i].exit_condition) {
 
@@ -976,12 +984,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               return(-1) ;
                          }
 
-               true_flag&=status ;
+            if(status) {
+                          next_stage=1 ;
+                                break ;
+                       }
                                          }
 
-            if(true_flag) {
-                             next_stage=1 ;
-                          }
 #undef  S  
 
                         }
@@ -1048,7 +1056,43 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                S.actions[i].done=1 ;
                                             }
+/*- - - - - - - - - - - - - - - - - - - - - - - - Подготовка расчета */
+         V.x=this->Owner->x_velocity ;
+         V.y=this->Owner->y_velocity ;
+         V.z=this->Owner->z_velocity ;
+
+           v=sqrt(V.x*V.x+V.y*V.y+V.z*V.z) ;
+      t_time=this->t_distance/v ;                                   /* Оценка подлетного времени */
 /*- - - - - - - - - - - - - - - - - - - - - Расчет манёвра наведения */
+      T.x=(this->t_xyz.x-this->Owner->x_base)*v/this->t_distance ;  /* Нормируем вектор на цель по скорости */
+      T.y=(this->t_xyz.y-this->Owner->y_base)*v/this->t_distance ;
+      T.z=(this->t_xyz.z-this->Owner->z_base)*v/this->t_distance ;
+
+      A.x=2*(T.x-V.x)/t_time ; 
+      A.y=2*(T.y-V.y)/t_time ; 
+      A.z=2*(T.z-V.z)/t_time ; 
+
+      T.x=V.x+A.x ;                                                 /* Временное направление на цель */
+      T.y=V.y+A.y ;
+      T.z=V.z+A.z ;
+
+        l=sqrt(T.x*T.x+T.y*T.y+T.z*T.z) ;
+      T.x=T.x/l*v ;                                                 /* Нормируем Временное направление на цель по скорости */
+      T.y=T.y/l*v ;
+      T.z=T.z/l*v ;
+
+        h=sqrt((T.x-V.x)*(T.x-V.x)+                                 /* Длина вектора ускорения */
+               (T.y-V.y)*(T.y-V.y)+
+               (T.z-V.z)*(T.z-V.z) ) ;
+
+        l=v/( (v*v+v*v-h*h)/(2.*v*v) ) ;                            /* Нормируем Временное направление на цель под нормальное ускорение */
+      T.x=T.x/v*l ;                                                 
+      T.y=T.y/v*l ;
+      T.z=T.z/v*l ;
+
+       vector_control.x=T.x-V.x ;                                   /* Нормальная перегрузка управления */
+       vector_control.y=T.y-V.y ;
+       vector_control.z=T.z-V.z ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 #undef  S  
@@ -1087,6 +1131,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_Control2Stage::vSetHomingPosition(RSS_Point *position)
 
 {
+   t_xyz=*position ;
+
    return(0) ;
 }
 

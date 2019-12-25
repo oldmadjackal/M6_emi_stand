@@ -2611,6 +2611,8 @@ typedef  struct {
                  } 
 /*-------------------------------------------- Идентификация объекта */
 
+  if(*cmd!=0) { 
+
        for(i=0 ; i<OBJECTS_CNT ; i++)
          if(!stricmp(OBJECTS[i]->Name, cmd))  break ;
 
@@ -2620,7 +2622,10 @@ typedef  struct {
                        }
 
                  RSS_Kernel::eye_object=OBJECTS[i] ;
-   
+              }
+  else        {
+                 RSS_Kernel::eye_object=NULL ;
+              }
 /*-------------------------------------------------- Пропись на окно */
 
                         EmiRoot_lookfrom("Main", "Set", cmd) ;

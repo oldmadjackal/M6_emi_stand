@@ -25,9 +25,7 @@
            RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
 
                        time_t  start_time ;                      /* Время запуска */
-//                     double  x, y, z ;                         /* Последние проаналазированные координаты */
-
-//                     int  blast ;                           /* Флаг отработки срабатывания */  
+                       double  x, y, z ;                         /* Координаты цели */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */

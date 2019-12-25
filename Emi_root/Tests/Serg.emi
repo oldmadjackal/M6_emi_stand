@@ -9,7 +9,7 @@ marker cr m2 cross red
 m2 base 2000 100 10000
 
 marker cr m3 cross red
-m3 base  500 100 12000
+m3 base  500 300 12000
 
 ;------------------------- Бак-гроунд
 
@@ -61,15 +61,23 @@ r1.model mass 0.
 r1.model middle 0.01
 r1.model starttime 0.1
 r1.model log tests\log--model-*.csv
-;kas1.warhead tripping/a 250
-;kas1.warhead stripe sb 2 20
-;kas1.warhead pancakes sb 15 20 5 25
 r1 owner bla
 
-missile cr r2 ракета-1 0.2 3
-hit radius r2 3
-r2 v 400
-r2 c/g 50
+missile-lego cr r2 ракета-1 0.2 3
+r2 lego engine EngineSimple
+r2 lego warhead WarHeadSimple
+r2 lego homing HomingHub
+r2 lego control Control2Stage
+r2 lego model ModelGuided
+r2.engine p tests\serg.engine
+r2.homing plugin 1 to_point HomingPoint
+r2.homing plugin 2 to_target HomingSimple
+r2.to_point gps 20
+r2.control program tests\serg.control
+r2.model mass 0.
+r2.model middle 0.01
+r2.model starttime 0.1
+r2.model log tests\log--model-*.csv
 r2 owner bla
 
 ;r1 copy r2
@@ -120,5 +128,4 @@ battle map 8
 battle map/c bla green
 battle map/cq tank# blue
 battle map/t bla
-battle map/t r1
 battle program tests\Serg.battle

@@ -673,9 +673,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Unit_HomingSimple::vCalculateStart(double  t)
 {
-/*
-        blast=        0 ;
-*/
 
    start_time=(time_t)t ;
 
@@ -697,6 +694,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           t1-=this->start_time ;
           t2-=this->start_time ;
 
+/*-------------------------------------------------- Координаты цели */
+
+    if(this->o_target!=NULL) {
+                                   x=this->o_target->x_base ;
+                                   y=this->o_target->y_base ;
+                                   z=this->o_target->z_base ;
+                             } 
 /*-------------------------------------------------------------------*/
 
   return(0) ;
@@ -719,6 +723,64 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingSimple::vSetHomingControl(char *regime)
 
 {
+   char  text[1024] ;
+   char *command ;
+   char *next ;
+    int  i ; 
+
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
+
+/*------------------------------------------------------- Подготовка */
+
+            memset(text, 0, sizeof(text)) ;
+           strncpy(text, regime, sizeof(text)-1) ;
+
+/*--------------------------------------------------- Перебор команд */
+
+   for(command=text, next=text ; next!=NULL ; command=next+1) {
+
+            next=strchr(command, ';') ;
+         if(next!=NULL)  *next=0 ;
+
+/*-------------------------------------------- Задание целевой точки */
+
+      if(!memicmp(command, "lock ", 5)) {
+/*- - - - - - - - - - - - - - - - - - - - - -  Извлечение параметров */
+             memset(this->target, 0, sizeof(this->target)) ;
+            strncpy(this->target, command+5, sizeof(this->target)-1) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Канонизация параметров */
+                 this->o_target=NULL ;
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->target)) {
+                       this->o_target=OBJECTS[i] ;
+                                 break ;
+                                                      }
+
+         if(i>=OBJECTS_CNT) {
+                  sprintf(text, "Unknown target in HomingSimple : %s", this->target) ;
+               SEND_ERROR(text) ;
+                    return(-1) ;          
+                            }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                         }
+/*---------------------------------------------- Неизвестная команда */
+
+      else if(command[0]!=0) {
+
+                  sprintf(text, "Unknown command in HomingSimple : %s", command) ;
+               SEND_ERROR(text) ;
+                    return(-1) ;          
+
+                             }
+/*--------------------------------------------------- Перебор команд */
+                                                              }
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+
+
    return(0) ;
 }
 
@@ -741,6 +803,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingSimple::vGetHomingPosition(RSS_Point *position)
 
 {
+         position->x=this->x ;
+         position->y=this->y ;
+         position->z=this->z ;
+
    return(0) ;
 }
 
@@ -752,6 +818,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingSimple::vGetHomingDistance(double *distance)
 
 {
+    *distance=sqrt((this->x-this->Owner->x_base)*(this->x-this->Owner->x_base)+
+                   (this->y-this->Owner->y_base)*(this->y-this->Owner->y_base)+
+                   (this->z-this->Owner->z_base)*(this->z-this->Owner->z_base) ) ;
+
    return(0) ;
 }
 
