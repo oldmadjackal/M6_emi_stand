@@ -646,7 +646,7 @@
 /*                                                                   */
 /*                 Работа с точкой наблюдения камеры                 */
 
-   int  EmiRoot_lookat(char *name, char *oper, char *look_at) 
+   int  EmiRoot_lookat(char *name, char *oper, char *look_at, double *dx, double *dy, double *dz) 
 {
    int  wnd_num ;
 
@@ -662,6 +662,9 @@
    if(!stricmp(oper, "GET")) {
 
      if(look_at!=NULL)  strcpy(look_at, EmiRoot_contexts[wnd_num].AtObject) ;
+     if(     dx!=NULL)             *dx =EmiRoot_contexts[wnd_num].Look_dx ;
+     if(     dy!=NULL)             *dy =EmiRoot_contexts[wnd_num].Look_dy ;
+     if(     dz!=NULL)             *dz =EmiRoot_contexts[wnd_num].Look_dz ;
 
                              }
 /*-------------------------------------------------------- Занесение */
@@ -675,6 +678,11 @@
         strncpy(EmiRoot_contexts[wnd_num].AtObject, look_at,
                               sizeof(EmiRoot_contexts[wnd_num].AtObject)-1) ;
                        } 
+
+     if(     dx!=NULL)  EmiRoot_contexts[wnd_num].Look_dx=*dx ;
+     if(     dy!=NULL)  EmiRoot_contexts[wnd_num].Look_dy=*dy ;
+     if(     dz!=NULL)  EmiRoot_contexts[wnd_num].Look_dz=*dz ;
+
                              }
 /*-------------------------------------------------------------------*/
 
@@ -801,7 +809,6 @@
                 y=strtod(              end, &end) ;
                 z=strtod(              end, &end) ;
 /*- - - - - - - - - - - - - - - - - - - - - - -  Обработка на объект */
-
    if(*end!=0) {
 
                     memset(name, 0, sizeof(name)) ;
@@ -821,6 +828,10 @@
                         x=target.x ;
                         y=target.y ;
                         z=target.z ;
+/*- - - - - - - - - - - - - - - - - - - - -  Корректировка по сдвигу */
+                        x+=context->Look_dx ;
+                        y+=context->Look_dy ;
+                        z+=context->Look_dz ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                } 
 /*---------------------------------------- Пересчет углов наблюдения */

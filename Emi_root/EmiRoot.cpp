@@ -1593,6 +1593,9 @@ typedef  struct {
  { "lookfrom",  "lf",    "# LOOKFROM - задать точку(объект), из которого ведётся наблюдение",
                          " LOOKFROM <Имя объекта>\n",
                          &RSS_Module_Main::cLookFrom },
+ { "lookshift", "ls",    "# LOOKSHIFT - задать сдвиг точку наблюдения относительно объекта, заданного LOOKAT",
+                         " LOOKSHIFT <dХ> <dY> <dZ>\n",
+                         &RSS_Module_Main::cLookShift },
  { "zoom",      "z",     "# ZOOM - управление полем зрения камеры",
                          " ZOOM <Ширина поля зрения>\n"
                          " ZOOM+\n"
@@ -2561,13 +2564,186 @@ typedef  struct {
                  } 
 /*-------------------------------------------------- Пропись на окно */
 
-                        EmiRoot_lookat("Main", "Set", cmd) ;
+                        EmiRoot_lookat("Main", "Set", cmd, NULL, NULL, NULL) ;
 
 /*------------------------------------------------------ Перерисовка */
 
      if(quiet_flag==0)  EmiRoot_redraw("Main") ;
 
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции LOOKSHIFT               */
+/*								    */
+/*        LOOKSHIFT <dX> <dY> <dZ>                                  */
+
+  int  RSS_Module_Main::cLookShift(char *cmd) 
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10 
+
+             char  *pars[_PARS_MAX] ;
+             char **xyz ;
+           double   coord[_COORD_MAX] ;
+              int   coord_cnt ;
+           double   inverse ;
+              int   xyz_flag ;          /* Флаг режима одной координаты */
+              int   delta_flag ;        /* Флаг режима приращений */
+              int   arrow_flag ;        /* Флаг стрелочного режима */
+             char  *arrows ;
+           double   look_dx ;
+           double   look_dy ;
+           double   look_dz ;
+             char  *error ;
+             char  *end ;
+              int   status ;
+              int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                        xyz_flag=0 ;
+                      delta_flag=0 ;
+                      arrow_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, '+')!=NULL   )  delta_flag= 1 ;
+
+                if(strchr(cmd, 'x')!=NULL ||
+                   strchr(cmd, 'X')!=NULL   )    xyz_flag='X' ;
+           else if(strchr(cmd, 'y')!=NULL ||
+                   strchr(cmd, 'Y')!=NULL   )    xyz_flag='Y' ;
+           else if(strchr(cmd, 'z')!=NULL ||
+                   strchr(cmd, 'Z')!=NULL   )    xyz_flag='Z' ;
+
+                           cmd=end+1 ;
+                        }
+
+  else if(*cmd=='>') {
+                           delta_flag=1 ;
+                           arrow_flag=1 ;
+
+                          cmd=strchr(cmd, ' ') ;
+                       if(cmd==NULL)  return(0) ;
+                          cmd++ ;
+                     } 
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                      xyz=&pars[0] ;   
+                  inverse=   1. ; 
+
+/*------------------------------------- Обработка стрелочного режима */
+
+    if(arrow_flag) {                        
+                         arrows=pars[0] ;
+
+      if(strstr(arrows, "left" )!=NULL &&
+         strstr(arrows, "ctrl" )==NULL   ) {  xyz_flag='X' ;  inverse=-1. ;  }
+      if(strstr(arrows, "right")!=NULL &&  
+         strstr(arrows, "ctrl" )==NULL   ) {  xyz_flag='X' ;  inverse= 1. ;  }  
+
+      if(strstr(arrows, "up"   )!=NULL   ) {  xyz_flag='Y' ;  inverse= 1. ;  }
+      if(strstr(arrows, "down" )!=NULL   ) {  xyz_flag='Y' ;  inverse=-1. ;  }
+
+      if(strstr(arrows, "left" )!=NULL &&
+         strstr(arrows, "ctrl" )!=NULL   ) {  xyz_flag='Z' ;  inverse=-1. ;  }
+      if(strstr(arrows, "right")!=NULL &&  
+         strstr(arrows, "ctrl" )!=NULL   ) {  xyz_flag='Z' ;  inverse= 1. ;  }  
+           
+                          xyz=&pars[1] ;   
+                   }
+/*------------------------------------------------- Разбор координат */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение координаты") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=  i ;
+
+                                 error= NULL ;
+      if(xyz_flag) {
+               if(coord_cnt==0)  error="Не указана координата или ее приращение" ;
+                   }
+      else         {
+               if(coord_cnt <3)  error="Должно быть указаны 3 координаты" ;
+                   }
+
+      if(error!=NULL)  SEND_ERROR(error) ;
+
+      if(arrow_flag && coord_cnt>1)  coord[0]=coord[coord_cnt-1] ;  /* Для стрелочного режима берем в качестве шага */
+                                                                    /*  самое последнее значение                    */
+/*-------------------------------------- Получение параметров камеры */
+
+       status=EmiRoot_lookat("Main", "Get",  NULL, &look_dx, &look_dy, &look_dz ) ;
+    if(status) {
+                   SEND_ERROR("Неизвестное окно") ;
+                      return(-1) ;
+               }
+/*------------------------------------------------ Пропись координат */
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
+   if(delta_flag) {
+
+          if(xyz_flag=='X')   look_dx+=inverse*coord[0] ;
+     else if(xyz_flag=='Y')   look_dy+=inverse*coord[0] ;                 
+     else if(xyz_flag=='Z')   look_dz+=inverse*coord[0] ;
+                  }
+/*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
+   else           {
+
+          if(xyz_flag=='X')   look_dx=coord[0] ;
+     else if(xyz_flag=='Y')   look_dy=coord[0] ;                 
+     else if(xyz_flag=='Z')   look_dz=coord[0] ;
+     else                   {
+                              look_dx=coord[0] ;
+                              look_dy=coord[1] ;
+                              look_dz=coord[2] ;
+                            }
+                  }
+
+/*-------------------------------------- Установка параметров камеры */
+
+       status=EmiRoot_lookat("Main", "Set", NULL, &look_dx, &look_dy, &look_dz) ;
+    if(status) {
+                    return(-1) ;
+               }
+/*------------------------------------------------------ Перерисовка */
+
+            EmiRoot_redraw("Main") ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -2602,7 +2778,7 @@ typedef  struct {
 /*--------------------------------------------------------- Проверка */
 
    if(cmd[0]!=0) {
-                        EmiRoot_lookat("Main", "Get", look_at) ;
+                        EmiRoot_lookat("Main", "Get", look_at, NULL, NULL, NULL) ;
 
     if(!stricmp(look_at, cmd)) {
                     SEND_ERROR("Данный объект уже используется как целевой для камеры") ;
@@ -2678,7 +2854,7 @@ typedef  struct {
                }
 
               EmiRoot_zoom  ("Main", "Get", &zoom) ;
-              EmiRoot_lookat("Main", "Get",  look_at) ;
+              EmiRoot_lookat("Main", "Get",  look_at, NULL, NULL, NULL) ;
 
 /*-------------------------------------------- Формирование описания */
 

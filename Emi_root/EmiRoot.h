@@ -59,6 +59,7 @@
                      int  cLookDirection(char *) ;              /* Инструкция LOOK */ 
                      int  cLookAt       (char *) ;              /* Инструкция LOOKAT */ 
                      int  cLookFrom     (char *) ;              /* Инструкция LOOKFROM */ 
+                     int  cLookShift    (char *) ;              /* Инструкция LOOKSHIFT */ 
                      int  cLookZoom     (char *) ;              /* Инструкция ZOOM */
                      int  cRead         (char *) ;              /* Инструкция READ */
                      int  cWrite        (char *) ;              /* Инструкция WRITE */

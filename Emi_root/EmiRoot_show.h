@@ -22,6 +22,9 @@
                     double  Range_strobe ;
                     double  Zoom ;
                       char  AtObject[256] ;
+                    double  Look_dx ;
+                    double  Look_dy ;
+                    double  Look_dz ;
                       char  FromObject[256] ;
 
                  }  WndContext ;
@@ -44,7 +47,8 @@
     int  EmiRoot_zoom            (char *, char *,    /* Работа с полем зрения камеры */
                                         double * ) ;
     int  EmiRoot_lookat          (char *, char *,    /* Работа с точкой наблюдения камеры */ 
-                                          char * ) ;
+                                          char *,
+                                  double *, double *, double * ) ;
     int  EmiRoot_lookfrom        (char *, char *,    /* Работа с точкой установки камеры */ 
                                           char * ) ;
     int  EmiRoot_lookat_point    (WndContext *) ;    /* Обработка точки наблюдения */

@@ -40,6 +40,8 @@ typedef  struct {
                       int  stages_cnt ;
                       int  stage ;
 
+                   double  vector_control_max ;              /* Максимальная величина перегрузки управления, м/с*с */
+
                    time_t  start_time ;                      /* Время запуска */
                      char  warhead_control[1024] ;           /* Команды управления БЧ */
                      char  homing_control[1024] ;            /* Команды управления системой наведения */

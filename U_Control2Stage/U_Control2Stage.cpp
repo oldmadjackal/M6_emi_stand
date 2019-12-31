@@ -959,12 +959,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           t1-=this->start_time ;
           t2-=this->start_time ;
 
-/*------------------------------------ Инициализация вычодных данных */
+/*------------------------------------ Инициализация выходных данных */
 
            this->warhead_control[0]=0 ;
            this-> homing_control[0]=0 ;
 
    memset(&this->vector_control, 0, sizeof(this->vector_control)) ;
+
+           this->vector_control_max=60. ;
 
 /*-------------------------------- Проверка выхода из текущей стадии */
 
@@ -1093,6 +1095,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        vector_control.x=T.x-V.x ;                                   /* Нормальная перегрузка управления */
        vector_control.y=T.y-V.y ;
        vector_control.z=T.z-V.z ;
+/*- - - - - - - - - - - - - - - -  Ограничение перегрузки управления */
+          l=sqrt(vector_control.x*vector_control.x+
+                 vector_control.y*vector_control.y+
+                 vector_control.z*vector_control.z ) ;
+
+     if(l>this->vector_control_max) {
+
+                     vector_control.x*=(this->vector_control_max/l) ;
+                     vector_control.y*=(this->vector_control_max/l) ;
+                     vector_control.z*=(this->vector_control_max/l) ;
+
+                                    } 
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 #undef  S  
