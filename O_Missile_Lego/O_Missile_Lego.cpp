@@ -1757,7 +1757,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------- Копирование лего-модулей */
 
       if(this->unit_warhead!=NULL) {
-                         unit=(RSS_Unit *)this->unit_warhead->vCopy(NULL) ;
+                         unit=(RSS_Unit *)this->unit_warhead->vCopy(object) ;
                   strcpy(unit->Name, "warhead") ;
                          unit->Owner=object ;
 
@@ -1765,7 +1765,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  object->Units.Add(unit, "") ;
                                    }
       if(this->unit_homing !=NULL) {
-                         unit=(RSS_Unit *)this->unit_homing->vCopy(NULL) ;
+                         unit=(RSS_Unit *)this->unit_homing->vCopy(object) ;
                   strcpy(unit->Name, "homing") ;
                          unit->Owner=object ;
 
@@ -1773,7 +1773,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  object->Units.Add(unit, "") ;
                                    }
       if(this->unit_engine !=NULL) {
-                         unit=(RSS_Unit *)this->unit_engine->vCopy(NULL) ;
+                         unit=(RSS_Unit *)this->unit_engine->vCopy(object) ;
                   strcpy(unit->Name, "engine") ;
                          unit->Owner=object ;
 
@@ -1781,7 +1781,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  object->Units.Add(unit, "") ;
                                    }
       if(this->unit_control!=NULL) {
-                         unit=(RSS_Unit *)this->unit_control->vCopy(NULL) ;
+                         unit=(RSS_Unit *)this->unit_control->vCopy(object) ;
                   strcpy(unit->Name, "control") ;
                          unit->Owner=object ;
 
@@ -1789,7 +1789,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  object->Units.Add(unit, "") ;
                                    }
       if(this->unit_model  !=NULL) {
-                         unit=(RSS_Unit *)this->unit_model->vCopy(NULL) ;
+                         unit=(RSS_Unit *)this->unit_model->vCopy(object) ;
                   strcpy(unit->Name, "model") ;
                          unit->Owner=object ;
 

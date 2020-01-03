@@ -47,7 +47,7 @@
 
     public:
          virtual       void  vFree            (void) ;                             /* Освободить ресурсы */
-         virtual RSS_Object *vCopy            (char *) ;                           /* Копировать объект */
+         virtual   RSS_Unit *vCopy            (RSS_Object *) ;                     /* Копировать компонент */
          virtual        int  vCalculateStart  (double) ;                           /* Подготовка расчета изменения состояния */
          virtual        int  vCalculate       (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      

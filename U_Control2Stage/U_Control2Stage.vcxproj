@@ -294,10 +294,6 @@
     <ResourceCompile Include="U_Control2Stage.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Matrix\Matrix.vcxproj">
-      <Project>{69ec1b80-b635-4727-9c61-e399286aceda}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\RSS_feature\RSS_feature.vcxproj">
       <Project>{6532543f-8d20-45ce-a126-e0d503aef651}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

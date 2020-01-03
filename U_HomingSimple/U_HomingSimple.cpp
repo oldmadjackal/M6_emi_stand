@@ -559,20 +559,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-/*
-     tripping_type    =_BY_ALTITUDE ;
-     tripping_altitude= 0. ;
-     tripping_time    = 0. ;
-
-         load_type    =_GRENADE_TYPE ;
-          hit_range   = 0. ;
-        blast_radius  = 5. ;
-
-          sub_unit[0] = 0 ;
-          sub_object  = NULL ;
-          sub_count   = 0 ;
-          sub_step    = 0. ;
-*/
 }
 
 
@@ -615,7 +601,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_HomingSimple::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_HomingSimple::vCopy(RSS_Object *owner)
 
 {
             RSS_Model_data  create_data ;
@@ -628,16 +614,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_HomingSimple *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
+/*------------------------------------- Копирование настроек объекта */
+
 /*
-             unit->tripping_type    =this->tripping_type ;
-             unit->tripping_altitude=this->tripping_altitude ;
-             unit->tripping_time    =this->tripping_time ;
-             unit->    load_type    =this->    load_type ;
-             unit->     hit_range   =this->     hit_range ;
-             unit->   blast_radius  =this->   blast_radius ;
-      strcpy(unit->     sub_unit,    this->     sub_unit) ;   
-             unit->     sub_object  =this->     sub_object ;
-             unit->     sub_count   =this->     sub_count ;
              unit->     sub_step    =this->     sub_step ;
              unit->     sub_series  =this->     sub_series ;
              unit->     sub_range   =this->     sub_range ;

@@ -678,9 +678,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*                        Копировать объекта		            */
+/*                        Копировать компонент		            */
 
-    class RSS_Object *RSS_Unit_HomingPoint::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_HomingPoint::vCopy(RSS_Object *owner)
 
 {
             RSS_Model_data  create_data ;
@@ -693,20 +693,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_HomingPoint *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
-/*
-             unit->tripping_type    =this->tripping_type ;
-             unit->tripping_altitude=this->tripping_altitude ;
-             unit->tripping_time    =this->tripping_time ;
-             unit->    load_type    =this->    load_type ;
-             unit->     hit_range   =this->     hit_range ;
-             unit->   blast_radius  =this->   blast_radius ;
-      strcpy(unit->     sub_unit,    this->     sub_unit) ;   
-             unit->     sub_object  =this->     sub_object ;
-             unit->     sub_count   =this->     sub_count ;
-             unit->     sub_step    =this->     sub_step ;
-             unit->     sub_series  =this->     sub_series ;
-             unit->     sub_range   =this->     sub_range ;
-*/
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
+/*------------------------------------- Копирование настроек объекта */
+
+       unit->method           =this->method ;
+       unit->gps_xyz_precision=this->gps_xyz_precision ;
+  
 /*-------------------------------------------------------------------*/
 
    return(unit) ;

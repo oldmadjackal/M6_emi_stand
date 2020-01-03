@@ -63,21 +63,21 @@
                RSS_Point  hit_point ;                         /* Точка поражения */
 
     public:
-         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
-         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
-         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
+         virtual       void  vFree          (void) ;                    /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;                  /* Копировать объект */
+         virtual       void  vWriteSave     (std::string *) ;           /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;                  /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,            /* Расчет изменения состояния */
                                                      char *, int) ;
-         virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
-         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
+         virtual        int  vCalculateShow (double, double) ;          /* Отображение результата расчета изменения состояния */
+         virtual        int  vEvent         (char *, double) ;          /* Обработка событий */
+         virtual        int  vSpecial       (char *, void *) ;          /* Специальные действия */
 
-                        int  iShowView      (void) ;            /* Отрисовка эффекта */
-                        int  iShowView_     (void) ;            /* Отрисовка эффекта с передачей контекста */
+                        int  iShowView      (void) ;                    /* Отрисовка эффекта */
+                        int  iShowView_     (void) ;                    /* Отрисовка эффекта с передачей контекста */
 
-	                     RSS_Object_Sadarm() ;             /* Конструктор */
-	                    ~RSS_Object_Sadarm() ;             /* Деструктор */
+	                     RSS_Object_Sadarm() ;                      /* Конструктор */
+	                    ~RSS_Object_Sadarm() ;                      /* Деструктор */
                                                         } ;
 
 /*--------------------- Описание класса управления объектом "SADARM" */

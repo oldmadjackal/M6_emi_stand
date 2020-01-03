@@ -35,6 +35,7 @@ typedef  struct {
   class U_CONTROL_2STAGE_API RSS_Unit_Control2Stage : public RSS_Unit_Control {
 
     public:
+                     char  program[FILENAME_MAX] ;
                     Stage  stage_start ;
                     Stage  stages[_STAGES_MAX] ;
                       int  stages_cnt ;
@@ -53,7 +54,7 @@ typedef  struct {
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
-         virtual RSS_Object *vCopy                 (char *) ;                           /* Копировать объект */
+         virtual   RSS_Unit *vCopy                 (RSS_Object *) ;                     /* Копировать компонент */
          virtual        int  vCalculateStart       (double) ;                           /* Подготовка расчета изменения состояния */
          virtual        int  vCalculate            (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      
@@ -97,6 +98,7 @@ typedef  struct {
                      int  cInfo         (char *) ;                           /* Инструкция INFO */ 
                      int  cConfig       (char *) ;                           /* Инструкция CONFIG */ 
                      int  cProgram      (char *) ;                           /* Инструкция PROGRAM */ 
+                     int  cNMax         (char *) ;                           /* Инструкция NMAX */ 
 
                 RSS_Unit *FindUnit      (char *) ;                           /* Поиск компонента по имени */
                      int  ReadProgram   (RSS_Unit_Control2Stage *,           /* Считывание программы управления */

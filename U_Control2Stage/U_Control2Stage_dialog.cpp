@@ -139,15 +139,19 @@
                                                      WPARAM wParam, LPARAM lParam) 
 {
  static                     HFONT  font ;         /* Шрифт */
- static  RSS_Module_Control2Stage *Module ;
+         RSS_Module_Control2Stage  Module ;
  static    RSS_Unit_Control2Stage *unit ;
                               int  elm ;          /* Идентификатор элемента диалога */
                               int  status ;
-                             char *unit_name ;
-                             char  unit_type[1024] ;
                              char  text[1024] ;
+                           double  value ;
                              char *end ;
-                              int  i ;
+
+                     OPENFILENAME  file_choice ;
+                             char  path[FILENAME_MAX] ;
+                             char *dat_filter="Control-файлы\0*.control\0"
+                                              "Все файлы\0*.*\0"
+                                              "\0\0" ;
      
 /*------------------------------------------------- Большая разводка */
 
@@ -169,9 +173,18 @@
                                       VARIABLE_PITCH,
                                        "Courier New Cyr") ;
 //         SendMessage(ITEM(IDC_LIST), WM_SETFONT, (WPARAM)font, 0) ;
-/*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
-
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
+             SETs(IDC_PATH, unit->program) ;
+
+          sprintf(text, "%.2lf", unit->vector_control_max/9.8) ;
+             SETs(IDC_NMAX_G, text) ;
+          sprintf(text, "%.2lf", unit->vector_control_max) ;
+             SETs(IDC_NMAX_N, text) ;
+/*- - - - - - - - - - - - - - - - - - - - - - Инициализация доступов */
+             SETx(IDC_ON_G, 1) ;
+             SETx(IDC_ON_N, 0) ;
+
+          DISABLE(IDC_NMAX_N) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
   			     break ;
@@ -183,34 +196,81 @@
 
 	status=HIWORD(wParam) ;
 	   elm=LOWORD(wParam) ;
+/*- - - - - - - - - - - - - - - - - -  Режим ввода ускорения маневра */
+     if(elm==IDC_ON_G) {
+                            DISABLE(IDC_NMAX_N) ;
+                             ENABLE(IDC_NMAX_G) ;
+
+                                  break ;
+                       }
+     if(elm==IDC_ON_N) {
+                             ENABLE(IDC_NMAX_N) ;
+                            DISABLE(IDC_NMAX_G) ;
+
+                                  break ;
+                       }
+/*- - - - - - - - - - - - - - - - - - - - - - Ввод ускорения маневра */
+     if(   elm==IDC_NMAX_G  &&
+        status==EN_KILLFOCUS  ) {
+
+                     memset(text, 0, sizeof(text));
+                      GETsl(IDC_NMAX_G, text, sizeof(text)-1) ;
+
+               value=strtod(text, &end) ;
+                    sprintf(text, "%.2lf", value*9.8) ;
+                       SETs(IDC_NMAX_N, text) ;
+
+                                       break ;
+                                } 
+     if(   elm==IDC_NMAX_N  &&
+        status==EN_KILLFOCUS  ) {
+
+                     memset(text, 0, sizeof(text));
+                      GETsl(IDC_NMAX_N, text, sizeof(text)-1) ;
+
+               value=strtod(text, &end) ;
+                    sprintf(text, "%.2lf", value/9.8) ;
+                       SETs(IDC_NMAX_G, text) ;
+
+                                       break ;
+                                } 
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - -  Выбор файла */
+     if(   elm==IDC_BROWSE &&
+        status==BN_CLICKED   ) {
+
+           memset( path, 0, sizeof(path)) ;
+
+	   memset(&file_choice, 0, sizeof(file_choice))  ;
+  		   file_choice.lStructSize =sizeof(file_choice) ;   /* Форм.описание диалога */
+		   file_choice.hwndOwner   = NULL ;
+		   file_choice.hInstance   =GetModuleHandle(NULL) ;
+		   file_choice.lpstrFilter =dat_filter ;
+		   file_choice.nFilterIndex=  1  ;
+  		   file_choice.lpstrFile   = path ;
+		   file_choice.nMaxFile    =sizeof(path) ;
+		   file_choice.lpstrTitle  ="Укажите файл программы управления" ;
+		   file_choice.Flags       =  0 ;
+
+            status=GetOpenFileName(&file_choice) ;                  /* Запрос пути */
+         if(status==0)  return(0) ;                                 /* Если путь не выбран... */
+
+                       SETs(IDC_PATH, path) ;
+
+                                     break ;
+                               } 
 /*- - - - - - - - - - - - - - - - - - - - - - Добавление компонентов */
      if(elm==IDC_SET) {
-/*
-        for(i=0 ; i<5 ; i++) {
 
-          if(i==0)  {  GETc(IDC_TYPE_W, unit_type) ;
-                                        unit_name="warhead" ;  }
-          if(i==1)  {  GETc(IDC_TYPE_E, unit_type) ;
-                                        unit_name="engine" ;  }
-          if(i==2)  {  GETc(IDC_TYPE_H, unit_type) ;
-                                        unit_name="homing" ;  }
-          if(i==3)  {  GETc(IDC_TYPE_C, unit_type) ;
-                                        unit_name="control" ;  }
-          if(i==4)  {  GETc(IDC_TYPE_M, unit_type) ;
-                                        unit_name="model" ;  }
-
-          if(unit_type[0]==0)  continue ;
-
-             end=strchr(unit_type, ' ') ;
-          if(end!=NULL)  *end=0 ;
-
-             unit=Module->AddUnit(object, unit_name, unit_type, text) ;
-          if(unit==NULL) {
-                            SEND_ERROR(text) ;
+                                   GETsl(IDC_PATH, text, sizeof(text)-1) ;
+               status=Module.ReadProgram(unit, path, text) ; 
+            if(status) {
+                          SEND_ERROR(text) ;
                               return(FALSE) ;
-                         }
-                             }
-*/
+                       }
+
+                                   GETsl(IDC_NMAX_N, text, sizeof(text)-1) ;
+         unit->vector_control_max=strtod(text, &end) ;
+
                             EndDialog(hDlg, 0) ;
 
                               return(FALSE) ;

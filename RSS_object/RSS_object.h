@@ -164,48 +164,48 @@
 
        public:
 
-   virtual class RSS_Object *vCopy           (char *) ;             /* Копировать объект */
-   virtual             void  vPush           (void)  ;              /* Сохранить состояние объекта */
-   virtual             void  vPop            (void)  ;              /* Восстановить состояние объекта */
+   virtual class RSS_Object *vCopy           (char *) ;                /* Копировать объект */
+   virtual             void  vPush           (void)  ;                 /* Сохранить состояние объекта */
+   virtual             void  vPop            (void)  ;                 /* Восстановить состояние объекта */
 
-   virtual             void  vErrorMessage   (int) ;                /* Вкл./Выкл. сообщений об ошибках */
+   virtual             void  vErrorMessage   (int) ;                   /* Вкл./Выкл. сообщений об ошибках */
 
-   virtual             void  vReadSave       (std::string *) ;      /* Считать данные из строки */
-   virtual             void  vWriteSave      (std::string *) ;      /* Записать данные в строку */
-   virtual             void  vFree           (void) ;               /* Освободить ресурсы */
+   virtual             void  vReadSave       (std::string *) ;         /* Считать данные из строки */
+   virtual             void  vWriteSave      (std::string *) ;         /* Записать данные в строку */
+   virtual             void  vFree           (void) ;                  /* Освободить ресурсы */
 
-   virtual             void  vFormDecl       (void) ;               /* Формировать описание */
+   virtual             void  vFormDecl       (void) ;                  /* Формировать описание */
 
-   virtual              int  vListControlPars(RSS_ControlPar *) ;   /* Получить список параметров управления */
-   virtual              int  vSetControlPar  (RSS_ControlPar *) ;   /* Установить значение параметра управления */
+   virtual              int  vListControlPars(RSS_ControlPar *) ;      /* Получить список параметров управления */
+   virtual              int  vSetControlPar  (RSS_ControlPar *) ;      /* Установить значение параметра управления */
 
-   virtual              int  vGetPosition    (RSS_Point *) ;        /* Работа с положением объекта */
+   virtual              int  vGetPosition    (RSS_Point *) ;           /* Работа с положением объекта */
    virtual             void  vSetPosition    (RSS_Point *) ;
-   virtual              int  vGetVelocity    (RSS_Vector *) ;       /* Получение вектора скорости */
+   virtual              int  vGetVelocity    (RSS_Vector *) ;          /* Получение вектора скорости */
 
-   virtual              int  vSpecial        (char *, void *) ;     /* Специальные действия */
+   virtual              int  vSpecial        (char *, void *) ;        /* Специальные действия */
 
-   virtual              int  vCalculateStart (double) ;             /* Подготовка расчета изменения состояния */
-   virtual              int  vCalculate      (double, double,       /* Расчет изменения состояния */
+   virtual              int  vCalculateStart (double) ;                /* Подготовка расчета изменения состояния */
+   virtual              int  vCalculate      (double, double,          /* Расчет изменения состояния */
                                                       char *, int) ;
-   virtual              int  vCalculateDirect(RSS_Point *, char *); /* Задание целевого состояния */
-   virtual              int  vCalculateShow  (double, double) ;     /* Отображение результата расчета изменения состояния */
-   virtual              int  vEvent          (char *, double) ;     /* Обработка событий */
+   virtual              int  vCalculateDirect(RSS_Point *, char *);    /* Задание целевого состояния */
+   virtual              int  vCalculateShow  (double, double) ;        /* Отображение результата расчета изменения состояния */
+   virtual              int  vEvent          (char *, double) ;        /* Обработка событий */
 
-   virtual              int  vResetFeatures  (void *) ;             /* Сброс контекста проверки свойств */
-   virtual              int  vPrepareFeatures(void *) ;             /* Подготовить свойства к проверке корректности */
-   virtual              int  vCheckFeatures  (void *,               /* Проверить корректность свойств */
+   virtual              int  vResetFeatures  (void *) ;                /* Сброс контекста проверки свойств */
+   virtual              int  vPrepareFeatures(void *) ;                /* Подготовить свойства к проверке корректности */
+   virtual              int  vCheckFeatures  (void *,                  /* Проверить корректность свойств */
                                               RSS_Objects_List *) ;
-   virtual             void  vSetFeature     (RSS_Feature *) ;      /* Работа со свойствами */
+   virtual             void  vSetFeature     (RSS_Feature *) ;         /* Работа со свойствами */
    virtual             void  vGetFeature     (RSS_Feature *) ;
 
-                        int  iAngleInCheck   (double,               /* Проверка попадания угла в диапазон */
+                        int  iAngleInCheck   (double,                  /* Проверка попадания угла в диапазон */
                                               double, double) ;
-                        int  iReplaceText    (char *, char *,       /* Замена текстового фрагмента в строке */
+                        int  iReplaceText    (char *, char *,          /* Замена текстового фрагмента в строке */
                                                       char *, int) ;
 
-			     RSS_Object      () ;                   /* Конструктор */
-			    ~RSS_Object      () ;                   /* Деструктор */
+			     RSS_Object      () ;                      /* Конструктор */
+			    ~RSS_Object      () ;                      /* Деструктор */
 
                                   } ;
 /*-------------------------------------------------------------------*/

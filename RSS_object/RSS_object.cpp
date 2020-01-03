@@ -557,6 +557,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
    int  i ;
 
+/*--------------------------------- Повторная регистрация компонента */
+
+   for(i=0 ; i<List_cnt ; i++)
+     if(object==List[i].object)  return(0) ;
+
 /*------------------------------------------------ Замена компонента */
 
    for(i=0 ; i<List_cnt ; i++)

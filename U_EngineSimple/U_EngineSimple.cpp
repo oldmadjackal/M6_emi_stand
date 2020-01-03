@@ -951,7 +951,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_EngineSimple::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_EngineSimple::vCopy(RSS_Object *owner)
 
 {
         RSS_Model_data  create_data ;
@@ -963,6 +963,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        unit=(RSS_Unit_EngineSimple *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
+
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
 
 /*------------------------------------- Копирование настроек объекта */
 

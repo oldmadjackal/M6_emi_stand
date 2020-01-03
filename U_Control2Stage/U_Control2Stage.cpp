@@ -79,7 +79,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /**							           **/
 /**            ОПИСАНИЕ КЛАССА МОДУЛЯ УПРАВЛЕНИЯ ОБЪЕКТОМ          **/
-/**                      "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"	               **/
+/**                      "2-Х ЭТАПНОЕ НАВЕДЕНИЕ"	           **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -101,6 +101,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    " PROGRAM <Имя> <Имя файла программы>\n"
                    "   Задание программы управления объектом\n",
                     &RSS_Module_Control2Stage::cProgram },
+ { "nmax",    "n", "#NMAX - задание максимальной управляющей перегрузки или нормального ускорения",
+                   " NMAX <Имя> <Значение>\n"
+                   "   Если [Значение]>20 - значение задается в м/с2\n"
+                   "   Если [Значение]<20 - значение задается в единицах g\n",
+                    &RSS_Module_Control2Stage::cNMax },
  {  NULL }
                                                             } ;
 
@@ -534,8 +539,97 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   SEND_ERROR(error) ;
                      return(-1) ;
                }
+
+        strncpy(unit->program, path, sizeof(unit->program)) ;
+
 /*-------------------------------------------------------------------*/
 
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции NMAX                    */
+/*								    */
+/*         NMAX <Имя> <Значение>                                    */
+/*								    */
+/*          Если [Значение]>20 - значение задается в м/с2           */
+/*          Если [Значение]<20 - значение задается в единицах g     */
+
+  int  RSS_Module_Control2Stage::cNMax(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+                      char  *pars[_PARS_MAX] ;
+                      char  *name ;
+                      char **xyz ;
+                    double   coord[_COORD_MAX] ;
+                       int   coord_cnt ;
+    RSS_Unit_Control2Stage  *unit ;
+                      char  *error ;
+                      char  *end ;
+                       int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*---------------------------------------- Контроль имени компонентa */
+
+    if(name   ==NULL ||
+       name[0]==  0    ) {                                          /* Если имя не задано... */
+                           SEND_ERROR("Не задано имя компонент. \n"
+                                      "Например: NMAX <Имя_компонент> ...") ;
+                                     return(-1) ;
+                         }
+
+       unit=(RSS_Unit_Control2Stage *)FindUnit(name) ;              /* Ищем компонент по имени */
+    if(unit==NULL)  return(-1) ;
+
+/*------------------------------------------------ Разбор параметров */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение максимальной управляющей перегрузки или нормального ускорения") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указана пмаксимальная управляющая перегрузка или нормальное ускорение" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*--------------------------------------------------- Пропись данных */
+
+       unit->vector_control_max=coord[0] ;
+
+    if(unit->vector_control_max<20)  unit->vector_control_max*=9.8 ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
 #undef   _PARS_MAX    
 
    return(0) ;
@@ -775,10 +869,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    strcpy(Type, "Control2Stage") ;
           Module=&ProgramModule ;
 
-   Parameters    =NULL ;
-   Parameters_cnt=  0 ;
+       Parameters    =NULL ;
+       Parameters_cnt=  0 ;
 
-       stages_cnt=  0 ;
+       memset(program, 0, sizeof(program)) ;
+
+           stages_cnt=  0 ;
+
+   vector_control_max=  0. ;
+
 }
 
 
@@ -821,11 +920,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_Control2Stage::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_Control2Stage::vCopy(RSS_Object *owner)
 
 {
             RSS_Model_data  create_data ;
     RSS_Unit_Control2Stage *unit ;
+                       int  i ;
    
 /*------------------------------------- Копирование базового объекта */
 
@@ -834,20 +934,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_Control2Stage *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
-/*
-             unit->tripping_type    =this->tripping_type ;
-             unit->tripping_altitude=this->tripping_altitude ;
-             unit->tripping_time    =this->tripping_time ;
-             unit->    load_type    =this->    load_type ;
-             unit->     hit_range   =this->     hit_range ;
-             unit->   blast_radius  =this->   blast_radius ;
-      strcpy(unit->     sub_unit,    this->     sub_unit) ;   
-             unit->     sub_object  =this->     sub_object ;
-             unit->     sub_count   =this->     sub_count ;
-             unit->     sub_step    =this->     sub_step ;
-             unit->     sub_series  =this->     sub_series ;
-             unit->     sub_range   =this->     sub_range ;
-*/
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
+/*------------------------------------- Копирование настроек объекта */
+
+      strcpy(unit->program, this->program) ;   
+             unit->stage_start=stage_start ;
+             unit->stages_cnt =stages_cnt ;
+
+   for(i=0 ; i<stages_cnt ; i++)  unit->stages[i]=stages[i] ;
+
+             unit->vector_control_max=vector_control_max ;
+
 /*-------------------------------------------------------------------*/
 
    return(unit) ;
@@ -887,12 +988,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Входной контроль */
 
-       if(stages_cnt==0) {
+       if(this->stages_cnt==0) {
 
               sprintf(error, "Unit %s.%s - missed program for control unit", this->Owner->Name, this->Name) ;
            SEND_ERROR(error) ;
-                                return(-1) ;
-                         }
+                 return(-1) ;
+                               }
+
+       if(this->vector_control_max==0.) {
+
+              sprintf(error, "Unit %s.%s - missed program for control unit", this->Owner->Name, this->Name) ;
+           SEND_ERROR(error) ;
+                 return(-1) ;
+                                        }
 /*---------------------------------------------------- Инициализация */
 
             start_time=(time_t)t ;
@@ -965,8 +1073,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            this-> homing_control[0]=0 ;
 
    memset(&this->vector_control, 0, sizeof(this->vector_control)) ;
-
-           this->vector_control_max=60. ;
 
 /*-------------------------------- Проверка выхода из текущей стадии */
 
@@ -1251,7 +1357,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    char *words[30] ;
     int  status ;
     int  i ;
-    int  j ;
 
 /*------------------------------------------------------- Подготовка */
 

@@ -19,17 +19,12 @@
 
 #define _UNITS_BY_STAGE_MAX  4
 
-                       int  stage ;
-           RSS_Unit_Homing *units_1[_UNITS_BY_STAGE_MAX] ;
-                       int  switch_1 ;
-           RSS_Unit_Homing *units_2[_UNITS_BY_STAGE_MAX] ;
-
                        time_t  start_time ;                      /* Время запуска */
                        double  x, y, z ;                         /* Координаты цели */
 
     public:
          virtual       void  vFree                 (void) ;                             /* Освободить ресурсы */
-         virtual RSS_Object *vCopy                 (char *) ;                           /* Копировать объект */
+         virtual   RSS_Unit *vCopy                 (RSS_Object *) ;                     /* Копировать компонент */
          virtual        int  vCalculateStart       (double) ;                           /* Подготовка расчета изменения состояния */
          virtual        int  vCalculate            (double, double, char *, int) ;      /* Расчет изменения состояния */
                                                      

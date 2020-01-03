@@ -771,11 +771,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_HomingHub::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_HomingHub::vCopy(RSS_Object *owner)
 
 {
          RSS_Model_data  create_data ;
      RSS_Unit_HomingHub *unit ;
+                    int  i ;
    
 /*------------------------------------- Копирование базового объекта */
 
@@ -784,20 +785,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_HomingHub *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
-/*
-             unit->tripping_type    =this->tripping_type ;
-             unit->tripping_altitude=this->tripping_altitude ;
-             unit->tripping_time    =this->tripping_time ;
-             unit->    load_type    =this->    load_type ;
-             unit->     hit_range   =this->     hit_range ;
-             unit->   blast_radius  =this->   blast_radius ;
-      strcpy(unit->     sub_unit,    this->     sub_unit) ;   
-             unit->     sub_object  =this->     sub_object ;
-             unit->     sub_count   =this->     sub_count ;
-             unit->     sub_step    =this->     sub_step ;
-             unit->     sub_series  =this->     sub_series ;
-             unit->     sub_range   =this->     sub_range ;
-*/
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
+/*------------------------------------- Копирование настроек объекта */
+
+      for(i=0 ; i<_UNITS_BY_STAGE_MAX ; i++) {
+
+         if(this->units_1[i]!=NULL)  unit->units_1[i]=(RSS_Unit_Homing *)this->units_1[i]->vCopy(owner) ;
+         if(this->units_2[i]!=NULL)  unit->units_2[i]=(RSS_Unit_Homing *)this->units_2[i]->vCopy(owner) ;
+
+                                             }
 /*-------------------------------------------------------------------*/
 
    return(unit) ;

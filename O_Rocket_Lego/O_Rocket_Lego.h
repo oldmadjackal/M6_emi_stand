@@ -68,18 +68,18 @@
                             int  mTrace_dlist ;
 
     public:
-         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
-         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
-         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
+         virtual       void  vFree          (void) ;                  /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;                /* Копировать объект */
+         virtual       void  vWriteSave     (std::string *) ;         /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;                /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,          /* Расчет изменения состояния */
                                                      char *, int) ;
-         virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
-                        int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
-                       void  iShowTrace_    (char *) ;          /* Отображение траектории с передачей контекста */
-                       void  iShowTrace     (char *) ;          /* Отображение траектории */
-                       void  iClearSpawn    (void) ;            /* Освобождение ресурсов моделирования залпа */
+         virtual        int  vCalculateShow (double, double) ;        /* Отображение результата расчета изменения состояния */
+         virtual        int  vSpecial       (char *, void *) ;        /* Специальные действия */
+                        int  iSaveTracePoint(char *) ;                /* Сохранение точки траектории */
+                       void  iShowTrace_    (char *) ;                /* Отображение траектории с передачей контекста */
+                       void  iShowTrace     (char *) ;                /* Отображение траектории */
+                       void  iClearSpawn    (void) ;                  /* Освобождение ресурсов моделирования залпа */
 
 	                     RSS_Object_RocketLego() ;          /* Конструктор */
 	                    ~RSS_Object_RocketLego() ;          /* Деструктор */

@@ -1060,7 +1060,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Копировать объекта		            */
 
-    class RSS_Object *RSS_Unit_ModelGuided::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_ModelGuided::vCopy(RSS_Object *owner)
 
 {
         RSS_Model_data  create_data ;
@@ -1073,11 +1073,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        unit=(RSS_Unit_ModelGuided *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
 
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
 /*------------------------------------- Копирование настроек объекта */
 
-             unit->mass    =this->mass ;
-             unit->s_azim  =this->s_azim ;
-             unit->s_elev  =this->s_elev ;
+             unit->mass      =this->mass ;
+             unit->s_azim    =this->s_azim ;
+             unit->s_elev    =this->s_elev ;
+             unit->start_time=this->start_time ;
+             unit->s_middle  =this->s_middle ;
+      strcpy(unit->log_path,  this->log_path) ;
 
 /*-------------------------------------------------------------------*/
 

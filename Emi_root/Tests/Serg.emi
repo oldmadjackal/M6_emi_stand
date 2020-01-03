@@ -57,30 +57,31 @@ r1.homing plugin 1 to_point HomingPoint
 r1.homing plugin 2 to_target HomingSimple
 r1.to_point gps 20
 r1.control program tests\serg.control
+r1.control nmax 6
 r1.model mass 0.
 r1.model middle 0.01
 r1.model starttime 0.1
 r1.model log tests\log--model-*.csv
 r1 owner bla
 
-missile-lego cr r2 ракета-1 0.2 3
-r2 lego engine EngineSimple
-r2 lego warhead WarHeadSimple
-r2 lego homing HomingHub
-r2 lego control Control2Stage
-r2 lego model ModelGuided
-r2.engine p tests\serg.engine
-r2.homing plugin 1 to_point HomingPoint
-r2.homing plugin 2 to_target HomingSimple
-r2.to_point gps 20
-r2.control program tests\serg.control
-r2.model mass 0.
-r2.model middle 0.01
-r2.model starttime 0.1
-r2.model log tests\log--model-*.csv
+;missile-lego cr r2 ракета-1 0.2 3
+;r2 lego engine EngineSimple
+;r2 lego warhead WarHeadSimple
+;r2 lego homing HomingHub
+;r2 lego control Control2Stage
+;r2 lego model ModelGuided
+;r2.engine p tests\serg.engine
+;r2.homing plugin 1 to_point HomingPoint
+;r2.homing plugin 2 to_target HomingSimple
+;r2.to_point gps 20
+;r2.control program tests\serg.control
+;r2.control nmax 6
+;r2.model mass 0.
+;r2.model middle 0.01
+;r2.model starttime 0.1
+;r2.model log tests\log--model-*.csv
+r1 copy r2
 r2 owner bla
-
-;r1 copy r2
 
 scene visible r1 0
 scene visible r2 0

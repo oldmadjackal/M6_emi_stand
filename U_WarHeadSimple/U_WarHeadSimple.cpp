@@ -1082,9 +1082,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
-/*                        Копировать объекта		            */
+/*                        Копировать компонент		            */
 
-    class RSS_Object *RSS_Unit_WarHeadSimple::vCopy(char *name)
+    class RSS_Unit *RSS_Unit_WarHeadSimple::vCopy(RSS_Object *owner)
 
 {
          RSS_Model_data  create_data ;
@@ -1096,6 +1096,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        unit=(RSS_Unit_WarHeadSimple *)this->Module->vCreateObject(&create_data) ;
     if(unit==NULL)  return(NULL) ;
+
+      strcpy(unit->Name, this->Name) ; 
+             unit->Owner=owner ;
+
+    if(owner!=NULL)  owner->Units.Add(unit, "") ;
+
+/*------------------------------------- Копирование настроек объекта */
 
              unit->tripping_type    =this->tripping_type ;
              unit->tripping_altitude=this->tripping_altitude ;
