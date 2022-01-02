@@ -162,6 +162,8 @@
 
                         int   ErrorEnable ;       /* Флаг выдачи сообщений об ошибках */
 
+                        int   CalculateExt_use ;  /* При моделировании объект использует методы vCalculateExt1 и vCalculateExt2, */
+                                                  /*  в противном случае - vCalculate                                            */
        public:
 
    virtual class RSS_Object *vCopy           (char *) ;                /* Копировать объект */
@@ -187,6 +189,10 @@
 
    virtual              int  vCalculateStart (double) ;                /* Подготовка расчета изменения состояния */
    virtual              int  vCalculate      (double, double,          /* Расчет изменения состояния */
+                                                      char *, int) ;
+   virtual              int  vCalculateExt1  (double, double,          /* Расчет изменения состояния, внешний вызов 1 */
+                                                      char *, int) ;
+   virtual              int  vCalculateExt2  (double, double,          /* Расчет изменения состояния, внешний вызов 2 */
                                                       char *, int) ;
    virtual              int  vCalculateDirect(RSS_Point *, char *);    /* Задание целевого состояния */
    virtual              int  vCalculateShow  (double, double) ;        /* Отображение результата расчета изменения состояния */

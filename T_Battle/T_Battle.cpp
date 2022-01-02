@@ -938,6 +938,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     int  n_frame ;
                     int  exit_flag ;
                     int  status ;
+                    int  step ;
                     int  i ;
                     int  j ;
 
@@ -1146,17 +1147,46 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------------- Обсчет объектов */
 
+     for(step=0 ; step<3 ; step++)                                  /* 0 - Внешние модели - вызов 1 */
+                                                                    /* 1 - Внутренние модели */
+                                                                    /* 2 - Внешние модели - вызов 2 */
       for(i=0 ; i<mObjects_cnt ; i++) 
         if(mObjects[i].active) {
-/*- - - - - - - - - - - - - - - - - - - - Обсчет и отрисовка объекта */
-                    memset(callback, 0, sizeof(callback)) ;
 
-            mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c,
-                                                                   callback, _CALLBACK_SIZE-1) ;
-            mObjects[i].object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
+                     memset(callback, 0, sizeof(callback)) ;
 
-         if(mObjects[i].cut_time!=    0. &&
-            mObjects[i].cut_time<=time_c   )  mObjects[i].active=0 ;
+         if((mObjects[i].object->CalculateExt_use==1 && step==1) ||
+            (mObjects[i].object->CalculateExt_use==0 && step!=1)   )  continue ;
+/*- - - - - - - - - - - - - - - - - - - - - Внешние модели - вызов 1 */
+         if(step==0) {
+
+             mObjects[i].object->vCalculateExt1(time_c-RSS_Kernel::calc_time_step, time_c,
+                                                                    callback, _CALLBACK_SIZE-1) ;
+                     }
+/*- - - - - - - - - - - - - - Внутренние модели - обсчет и отрисовка */
+         else
+         if(step==1) {
+
+             mObjects[i].object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c,
+                                                                    callback, _CALLBACK_SIZE-1) ;
+             mObjects[i].object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
+
+          if(mObjects[i].cut_time!=    0. &&
+             mObjects[i].cut_time<=time_c   )  mObjects[i].active=0 ;
+
+                     }
+/*- - - - - - - - - - - - - - - Внешние модели - вызов 2 и отрисовка */
+         else
+         if(step==2) {
+
+             mObjects[i].object->vCalculateExt2(time_c-RSS_Kernel::calc_time_step, time_c,
+                                                                    callback, _CALLBACK_SIZE-1) ;
+             mObjects[i].object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
+
+          if(mObjects[i].cut_time!=    0. &&
+             mObjects[i].cut_time<=time_c   )  mObjects[i].active=0 ;
+
+                     }
 /*- - - - - - - - - - - - - - - - -  Обработка команд обратной связи */
          if(callback[0]!=0) {
 

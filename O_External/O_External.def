@@ -1,0 +1,4 @@
+LIBRARY O_External
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

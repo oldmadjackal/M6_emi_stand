@@ -97,6 +97,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        o_target=NULL ;   
 
         ErrorEnable= 1 ;
+
+   CalculateExt_use= 0 ;
 }
 
 
@@ -398,6 +400,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                  }
 /*-------------------------------------------------------------------*/
 
+  return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*           –асчет изменени€ состо€ни€ во внешней модели           */
+
+     int  RSS_Object::vCalculateExt1(double t1, double t2, char *callback, int callback_size)
+{
+  return(0) ;
+}
+
+     int  RSS_Object::vCalculateExt2(double t1, double t2, char *callback, int callback_size)
+{
   return(0) ;
 }
 

@@ -64,32 +64,11 @@ r1.model starttime 0.1
 r1.model log tests\log--model-*.csv
 r1 owner bla
 
-;missile-lego cr r2 ракета-1 0.2 3
-;r2 lego engine EngineSimple
-;r2 lego warhead WarHeadSimple
-;r2 lego homing HomingHub
-;r2 lego control Control2Stage
-;r2 lego model ModelGuided
-;r2.engine p tests\serg.engine
-;r2.homing plugin 1 to_point HomingPoint
-;r2.homing plugin 2 to_target HomingSimple
-;r2.to_point gps 20
-;r2.control program tests\serg.control
-;r2.control nmax 6
-;r2.model mass 0.
-;r2.model middle 0.01
-;r2.model starttime 0.1
-;r2.model log tests\log--model-*.csv
 r1 copy r2
 r2 owner bla
 
 scene visible r1 0
 scene visible r2 0
-
-;kas1 copy kas2
-
-;scene visible kas1 0
-;scene visible kas2 0
 
 ;------------------------- Танки
 flyer cr tank1 танк
