@@ -99,10 +99,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      NULL,
                     &RSS_Module_Blast::cHelp   },
  { "create",  "cr", "#CREATE - создать объект-эффект",
-                    " CREATE <Имя> <Радиус поражения> <Радиус вспышки> <Имя родителя>\n"
-                    "   Создает обьект-эффект в базовой точке объекта-родителя"
-                    " CREATE <Имя> <Радиус поражения> <Радиус вспышки> <X> <Y> <Z>\n"
-                    "   Создает обьект-эффект в заданной точке",
+                    " CREATE[/G] <Имя> <Радиус поражения> <Радиус вспышки> <Имя родителя>\n"
+                    "   Создает обьект-эффект 'Наземный взрыв' в базовой точке объекта-родителя"
+                    " CREATE[/G] <Имя> <Радиус поражения> <Радиус вспышки> <X> <Y> <Z>\n"
+                    "   Создает обьект-эффект 'Наземный взрыв' в заданной точке\n"
+                    " CREATE/A <Имя> ...\n"
+                    "   Создает обьект-эффект 'Воздушный взрыв' аналогично 'Наземному взрыву'",
                     &RSS_Module_Blast::cCreate },
  { "info",    "i",  "#INFO - выдать информацию по объекту",
                     " INFO <Имя> \n"
@@ -479,9 +481,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		      Реализация инструкции CREATE                  */
 /*								    */
-/*    CREATE <Имя> <Радиус поражения> <Радиус взрыва> ...           */
+/*    CREATE[/G] <Имя> <Радиус поражения> <Радиус взрыва> ...       */
 /*             ... <Объект-родитель>...                             */
-/*    CREATE <Имя> <Радиус поражения> <Радиус взрыва> <X> <Y> <Z>   */
+/*    CREATE[/G] <Имя> <Радиус поражения> <Радиус взрыва> ...       */
+/*             ... <X> <Y> <Z>                                      */
+/*    CREATE/A <Имя> <Радиус поражения> <Радиус взрыва> ...         */
+/*             ... <Объект-родитель>...                             */
+/*    CREATE/A <Имя> <Радиус поражения> <Радиус взрыва> ...         */
+/*             ... <X> <Y> <Z>                                      */
 
   int  RSS_Module_Blast::cCreate(char *cmd)
 
@@ -490,13 +497,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  RSS_Effect_Blast *object ;
        RSS_Object *parent ;
              char *name ;
+              int  a_flag ; 
+              int  g_flag ; 
              char *pars[10] ;
            double  x, y, z ;
              char *end ;
               int  i ;
 
 /*-------------------------------------- Дешифровка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                          a_flag=0 ;
+                          g_flag=0 ;
 
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'a')!=NULL ||
+                   strchr(cmd, 'A')!=NULL   )  a_flag=1 ;
+                if(strchr(cmd, 'g')!=NULL ||
+                   strchr(cmd, 'G')!=NULL   )  g_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
      for(i=0 ; i<10 ; i++)  pars[i]="" ;
 
    do {                                                             /* BLOCK.1 */
@@ -549,6 +580,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(object==NULL)  return(0) ;
 
 /*---------------------------------------- Пропись параметров взрыва */
+
+   if(a_flag)  object->blast_type=   _AIR_BLAST ;
+   else        object->blast_type=_GROUND_BLAST ;
 
    if( pars[0]!=NULL ||
       *pars[0]!=  0    )  object->hit_range=strtod(pars[0], &end) ;
@@ -812,10 +846,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-        color    =RGB(255,   0,   0) ;
-        hit_range= 3. ;
-        range_max= 3. ;
-        range    = 0. ;
+       color      =RGB(255,   0,   0) ;
+       blast_type =_GROUND_BLAST ;
+         hit_range= 3. ;
+       range_max  = 3. ;
+       range      = 0. ;
 
            x_base=0 ;
            y_base=0 ;
@@ -1039,12 +1074,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           glMatrixMode(GL_MODELVIEW) ;
               glEnable(GL_BLEND) ;                                  /* Вкл.смешивание цветов */
 //         glDepthMask(0) ;                                         /* Откл.запись Z-буфера */
+/*- - - - - - - - - - - - - - - - - - - - - - - - -  Воздушный взрыв */
+        if(blast_type==_AIR_BLAST) {
 
+             iShowSphere(0.6, 8, RGB(255, 170,   0)) ;
+             iShowSphere(0.8, 8, RGB(255,  85,   0)) ;
+             iShowSphere(1.,  8, RGB(255,   0,   0)) ;
+
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - Наземный взрыв */
+        else                       {                                     
+ 
                iShowCone(1.,  0.5, 12, RGB(255,   0,   0)) ;
                iShowCone(0.8, 0.8, 14, RGB(255,  85,   0)) ;
                iShowCone(0.6, 1.1, 16, RGB(255, 170,   0)) ;
                iShowCone(0.4, 1.4, 12, RGB(255, 255,   0)) ;
 
+                                   }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/ 
 //         glDepthMask(1) ;                                         /* Вкл.запись Z-буфера */
 //           glDisable(GL_BLEND) ;                                  /* Откл.смешивание цветов */
              glEndList() ;                                          /* Закрытие группы */
@@ -1102,6 +1149,49 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 	                 glEnd();
 
                                   }
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Отрисовка сферы                               */
+
+  void  RSS_Effect_Blast::iShowSphere(double  r, int  segments, COLORREF  color)
+
+{
+  double  a_step ;
+  double  a  ;
+  double  x  ;
+  double  y  ;
+     int  step ;
+     int  i ;
+
+
+              a_step=2.0*_PI/(double)segments ;
+
+                     glColor4d(GetRValue(color)/256., 
+                               GetGValue(color)/256.,
+                               GetBValue(color)/256., 1.) ;
+
+      for(step=0 ; step<3 ; step++) {
+
+                       glBegin(GL_POLYGON) ;
+
+      for(i=0 ; i<segments ; i++) {
+
+                      a=a_step*i ;
+                      x=r*sin(a) ;
+                      y=r*cos(a) ;
+
+          if(step==0)  glVertex3d(x,  y,  0.) ;
+          if(step==1)  glVertex3d(0., x,  y ) ;
+          if(step==2)  glVertex3d(y,  0., x ) ;
+
+                                  }
+
+	                 glEnd();
+
+                                    }
 }
 
 

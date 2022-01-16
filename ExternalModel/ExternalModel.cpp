@@ -380,7 +380,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 /*********************************************************************/
 /*                                                                   */
-/*	                         Ведение лога                            */
+/*	                         Ведение лога                        */
 
   int  EM_log(char *text)
 
@@ -467,6 +467,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                 }  pars[]={
                            { "ControlFolder=",  __control_folder, 'C', sizeof(__control_folder)  },
                            { "Object=",         __control_object, 'C', sizeof(__control_object)  },
+                           { "Targets=",        __targets_path,   'C', sizeof(__targets_path  )  },
                            {  NULL }
                           } ;
 
@@ -732,17 +733,21 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         HWND  hDlg ;
       time_t  time_0 ;
    struct tm *hhmmss ;
+        char  ctrl_mask[FILENAME_MAX] ;
+    intptr_t  ctrl_group ;
+ _finddata_t  ctrl_file ;
         char  flag[FILENAME_MAX] ;
         char  path[FILENAME_MAX] ;
       Object  data ;
         char  prefix[512] ;
         char  text[512] ;
+        char  command[512] ;
          int  rows_cnt ;
-         int  row_idx ;
          int  status ;
+        char *end ;
          int  i ;
 
-#define    _TEST_LOG_MAX   1000
+#define    _TEST_LOG_MAX   500
 
 /*---------------------------------------------------- Инициализация */
 
@@ -772,7 +777,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
             rows_cnt=LB_GET_COUNT(IDC_LOG) ;
          if(rows_cnt>_TEST_LOG_MAX) {
 
-               for(i=0 ; i<rows_cnt-_TEST_LOG_MAX ; i++)  LB_DEL_ROW(IDC_LOG, i) ;
+               for(i=_TEST_LOG_MAX ; i<rows_cnt ; i++)  LB_DEL_ROW(IDC_LOG, i) ;
                                     }
 /*---------------------------------------- Обнаружение файла запроса */
 
@@ -800,13 +805,22 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                       }
 
                          sprintf(text, "%s - Object request detected: name=%s  type=%s  t=%.2lf", prefix, data.name, data.type, data.t1) ;
-              row_idx=LB_ADD_ROW(IDC_LOG, text) ;
-                      LB_TOP_ROW(IDC_LOG, row_idx) ;
+                      LB_INS_ROW(IDC_LOG, 0, text) ;
 
-              status=EM_process_model(&data) ;
+          if(__targets_time!=data.t1) {
+              status=EM_read_targets(__targets_path) ;
            if(status)  break ;
+                                      }
 
-              status=EM_write_response(&data) ;
+                                                text[0]=0 ; 
+                                             command[0]=0 ;
+              status=EM_process_model(&data, command, text) ;
+           if(text[0]!=0) {
+                                       LB_INS_ROW(IDC_LOG, 0, text) ;
+                          } 
+           if(status)        break ;
+
+              status=EM_write_response(&data, command) ;
            if(status) {
                              sprintf(text, "ERROR - Control file read error %d : %s", status, path) ;
                           EM_message(text) ;
@@ -819,6 +833,61 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*- - - - - - - - - - - - - - - - - - - - -  Если слежение за папкой */
      else                           {
 
+              sprintf(ctrl_mask, "%s\\*.out.flag", __control_folder) ;
+
+            ctrl_group=_findfirst(ctrl_mask, &ctrl_file);
+         if(ctrl_group<0)  continue ; 
+
+       while(1) {                                                   /* Для всех ctrl_file.name... */
+                
+                sprintf(flag, "%s\\%s", __control_folder, ctrl_file.name) ;
+                sprintf(path, "%s\\%s", __control_folder, ctrl_file.name) ;
+            end=strrchr(path, '.') ;
+           *end=0 ;
+
+              status=EM_read_request(path, &data) ;
+           if(status) {
+                             sprintf(text, "ERROR - Control file read error %d : %s", status, path) ;
+                          EM_message(text) ;
+                                   break ;                           
+                      }
+
+              status=unlink(flag) ;
+           if(status) {
+                             sprintf(text, "ERROR - Control file remove error %d : %s", errno, path) ;
+                          EM_message(text) ;
+                                   break ;                           
+                      }
+
+                         sprintf(text, "%s - Object request detected: name=%s  type=%s  t=%.2lf", prefix, data.name, data.type, data.t1) ;
+                      LB_INS_ROW(IDC_LOG, 0, text) ;
+
+          if(__targets_time!=data.t1) {
+              status=EM_read_targets(__targets_path) ;
+           if(status)  break ;
+                                      }
+
+                                                text[0]=0 ; 
+                                             command[0]=0 ;
+              status=EM_process_model(&data, command, text) ;
+           if(text[0]!=0) {
+                                       LB_INS_ROW(IDC_LOG, 0, text) ;
+                          } 
+           if(status)        break ;
+
+              status=EM_write_response(&data, command) ;
+           if(status) {
+                             sprintf(text, "ERROR - Control file read error %d : %s", status, path) ;
+                          EM_message(text) ;
+                                   break ;                           
+                      }
+
+		status=_findnext(ctrl_group, &ctrl_file) ;          /* Выбор следующего файла по маске */
+	     if(status!=0)  break ;
+
+	           }
+
+	                  _findclose(ctrl_group) ;
 
                                     }
 /*------------------------------------------------------- Общий цикл */
@@ -829,6 +898,132 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*-------------------------------------------------------------------*/
                                     
   return(0) ;
+}
+
+
+/********************************************************************/
+/*                                                                  */
+/*                      Считывание файла целей                      */
+
+     int  EM_read_targets(char *path)
+
+{
+    FILE *file ;
+  Object  data ;
+    char  text[1024] ;
+    char *key ;
+    char  value[128] ;
+    char *end ;
+     int  row ;
+     int  i ;
+
+  static  char *keys[]={"\"name\":\"", 
+                        "\"x\":\"",    "\"y\":\"",    "\"z\":\"",
+                        "\"azim\":\"", "\"elev\":\"", "\"roll\":\"",
+                        "\"v_x\":\"",  "\"v_y\":\"",  "\"v_z\":\"",
+                         NULL} ;
+
+/*--------------------------------------------------- Открытие файла */
+
+        file=fopen(path, "r") ;
+     if(file==NULL) {
+                           sprintf(text, "Targets file open error %d : %s", errno, path) ;
+                        EM_message(text) ;
+                             return(-1) ;
+                    }  
+/*-------------------------------------------- Построчное считывание */
+
+           __targets_cnt=0 ;
+
+   for(row=0 ; row<_TARGETS_MAX ; row++) {
+
+          memset(text, 0, sizeof(text)) ;
+           fgets(text, sizeof(text)-1, file) ;
+/*- - - - - - - - - - - - - - - - - - - - - - -  Обработка заголовка */
+     if(row==0) {
+
+#define  _KEY  "\"t1\":\""
+
+        key=strstr(text, _KEY) ;
+     if(key==NULL) {
+                          fclose(file) ;
+                         sprintf(text, "Targets file - Header attribute %s is missed", _KEY) ;
+                      EM_message(text) ;
+                           return(-1) ;
+                   } 
+
+            memset(value, 0, sizeof(value)) ;
+           strncpy(value, key+strlen(_KEY), sizeof(value)-1) ;
+        end=strchr(value, '"')  ;
+     if(end==NULL) {
+                          fclose(file) ;
+                         sprintf(text, "Targets file - Invalid value for parameter %s", _KEY) ;
+                      EM_message(text) ;
+                           return(-1) ;
+                   } 
+
+                      *end=0 ;
+            __targets_time=strtod(value, &end) ;
+
+                    continue ;
+#undef  _KEY
+                }
+/*- - - - - - - - - - - - - - - - - - - - - - - Обработка сроки цели */
+      for(i=0 ; keys[i]!=NULL ; i++) {
+
+           key=strstr(text, keys[i]) ;
+        if(key==NULL) {
+                             fclose(file) ;
+                            sprintf(text, "Targets file, row %d - Parameter %s is missed", row+1, keys[i]) ;
+                         EM_message(text) ;
+                              return(-1) ;
+                      } 
+
+               memset(value, 0, sizeof(value)) ;
+              strncpy(value, key+strlen(keys[i]), sizeof(value)-1) ;
+           end=strchr(value, '"')  ;
+        if(end==NULL) {
+                             fclose(file) ;
+                            sprintf(text, "Targets file, row %d - Invalid value for parameter %s", row+1, keys[i]) ;
+                         EM_message(text) ;
+                              return(-1) ;
+                      } 
+
+          *end=0 ;
+
+        if(i==0)  strcpy(data.name, value) ;  
+        if(i==1)         data.x     =strtod(value, &end) ;
+        if(i==2)         data.y     =strtod(value, &end) ;
+        if(i==3)         data.z     =strtod(value, &end) ;
+        if(i==4)         data.a_azim=strtod(value, &end) ;
+        if(i==5)         data.a_elev=strtod(value, &end) ;
+        if(i==6)         data.a_roll=strtod(value, &end) ;
+        if(i==7)         data.v_x   =strtod(value, &end) ;
+        if(i==8)         data.v_y   =strtod(value, &end) ;
+        if(i==9)         data.v_z   =strtod(value, &end) ;
+
+        if(!strcmp(data.name, "$END_OF_LIST$"))  break ;
+
+                                     } 
+        if(!strcmp(data.name, "$END_OF_LIST$"))  break ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - Регистрация цели */
+       if(__targets[__targets_cnt]==NULL)
+            __targets[__targets_cnt]=(Object *)calloc(1, sizeof(Object)) ;
+
+           *__targets[__targets_cnt]=data ;
+                      __targets_cnt++ ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+                                         }
+/*--------------------------------------------------- Закрытие файла */
+
+          fclose(file) ;
+
+/*---------------------------------------------------- Разбор данных */
+
+/*-------------------------------------------------------------------*/
+
+    return(0) ;
 }
 
 
@@ -846,11 +1041,11 @@ int APIENTRY WinMain(HINSTANCE hInstance,
    char *end ;
     int  i ;
 
-  static  char *keys[]={"\"name\":\"", "\"t1\":\"",   "\"t2\":\"",
-                        "\"x\":\"",    "\"y\":\"",    "\"z\":\"",
-                        "\"azim\":\"", "\"elev\":\"", "\"roll\":\"",
-                        "\"v_x\":\"",  "\"v_y\":\"",  "\"v_z\":\"",
-                        "\"type\":\"",
+  static  char *keys[]={"\"name\":\"", "\"t1\":\"",     "\"t2\":\"",
+                        "\"x\":\"",    "\"y\":\"",      "\"z\":\"",
+                        "\"azim\":\"", "\"elev\":\"",   "\"roll\":\"",
+                        "\"v_x\":\"",  "\"v_y\":\"",    "\"v_z\":\"",
+                        "\"type\":\"", "\"target\":\"",
                          NULL} ;
 
 /*------------------------------------------------- Считывание файла */
@@ -903,6 +1098,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
      if(i==10)         data->v_y   =strtod(value, &end) ;
      if(i==11)         data->v_z   =strtod(value, &end) ;
      if(i==12)  strcpy(data->type, value) ;  
+     if(i==13)  strcpy(data->target, value) ;  
 
                                   } 
 /*-------------------------------------------------------------------*/
@@ -915,7 +1111,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*                                                                  */
 /*                      Запись файла ответа                         */
 
-     int  EM_write_response(Object *data)
+     int  EM_write_response(Object *data, char *command)
 
 {
   char  path[FILENAME_MAX] ;
@@ -925,7 +1121,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
   char  text[4096] ;
 
 
-/*-------------------------------------------- Формирование запроса */
+/*---------------------------------------------- Формирование ответа */
 
          memset(text, 0, sizeof(text)) ;
 
@@ -936,6 +1132,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
         sprintf(value, "\"azim\":\"%.2lf\";\"elev\":\"%.2lf\";\"roll\":\"%.2lf\"\n", data->a_azim, data->a_elev, data->a_roll) ;
          strcat(text, value) ;  
         sprintf(value, "\"v_x\":\"%.2lf\";\"v_y\":\"%.2lf\";\"v_z\":\"%.2lf\"\n", data->v_x, data->v_y, data->v_z) ;
+         strcat(text, value) ;
+        sprintf(value, "\"message\":\"%s\"\n", command) ;
          strcat(text, value) ;  
 
 /*--------------------------------------------- Запись файла ответа */
@@ -972,14 +1170,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*                                                                  */
 /*                          Расчет модели                           */
 
-     int  EM_process_model(Object *data)
+     int  EM_process_model(Object *data, char *command, char *error)
 
 {
    int  status ;
   char  text[1024] ;
 
 
-    if(!stricmp(data->type, "Missile"))   status=EM_model_missile(data) ;
+    if(!stricmp(data->type, "Missile"))   status=EM_model_missile(data, command, error) ;
     else                                {
 
                 sprintf(text, "Неизвестная модель %s для объекта %s", data->type, data->name) ;

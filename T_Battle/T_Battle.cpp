@@ -23,6 +23,7 @@
 #include "..\RSS_Feature\RSS_Feature.h"
 #include "..\RSS_Object\RSS_Object.h"
 #include "..\RSS_Kernel\RSS_Kernel.h"
+#include "..\O_External\O_External.h"
 #include "..\F_Hit\F_Hit.h"
 
 #include "T_Battle.h"
@@ -929,6 +930,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     int  attempt ;
                     int  hit_sum ;
                  double  hit_avg ;
+                   char *tmp ;
                    char *end ;
                    char  name[1024] ;
                    char  text[1024] ;
@@ -984,6 +986,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------- Подготовка исполнения */
 
      if(callback==NULL)  callback=(char *)calloc(1, _CALLBACK_SIZE) ;
+
+             RSS_Object_External::targets_init=1 ;                  /* Метка инициализации описания целей для внешних моделей */
 
 /*----------------------------------------------------- Цикл попыток */
  
@@ -1218,12 +1222,29 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      strcpy(frame.action, "EXEC") ;
                      strcpy(frame.command, cmd+strlen("EXEC ")) ;
                                                             }
+                else
+                if(!memicmp(cmd, "EVENT ", strlen("EVENT "))) {
+
+                           strcpy(text, cmd+strlen("EVENT ")) ;
+                       tmp=strchr(text, ' ') ;
+                    if(tmp==NULL) {
+                             sprintf(text, "BATTLE - Некорректная структура команды EVENT: %s", cmd) ;
+                          SEND_ERROR(text) ;
+                              exit_flag=1 ;
+                                   break ;
+                                  }
+                                      *tmp=0 ;
+
+                     strcpy(frame.action, "EVENT") ;
+                     strcpy(frame.event,   text) ;
+                     strcpy(frame.object,  tmp+1) ;
+                                                            }
                 else                                        {
 
-                      sprintf(text, "BATTLE - Неизвестная операция: %s", cmd) ;
-                   SEND_ERROR(text) ;
-                          exit_flag=1 ;
-                                break ;
+                             sprintf(text, "BATTLE - Неизвестная операция: %s", cmd) ;
+                          SEND_ERROR(text) ;
+                              exit_flag=1 ;
+                                   break ;
                                                             }
 
                     iFrameExecute(&frame, time_c, 0) ;

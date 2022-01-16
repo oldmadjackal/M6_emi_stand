@@ -103,6 +103,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_External::cInfo },
+ { "copy",    "cp", "#COPY - копировать объект",
+                    " COPY <Имя образца> <Имя нового объекта>\n"
+                    "   Копировать объект",
+                    &RSS_Module_External::cCopy },
  { "owner",   "o",  "#OWNER - назначить носитель ракеты",
                     " OWNER <Имя> <Носитель>\n"
                     "   Назначить объект - носитель ракеты",
@@ -796,6 +800,76 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      (WPARAM)_USER_SHOW_INFO, (LPARAM)info.c_str()) ;
                   }
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции COPY                    */
+/*								    */
+/*       COPY <Имя образца> <Имя нового объекта>                    */
+
+  int  RSS_Module_External::cCopy(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                  char  *pars[_PARS_MAX] ;
+                  char  *name ;
+                  char  *copy ;
+   RSS_Object_External  *sample ;
+            RSS_Object  *object ;
+                  char  *end ;
+                   int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                     copy=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: COPY <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       sample=(RSS_Object_External *)FindObject(name, 1) ;        /* Ищем объект-цель по имени */
+    if(sample==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(copy==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-копии. \n"
+                                 "Например: COPY <Имя образца> <Имя нового объекта>") ;
+                                     return(-1) ;
+                   }
+
+//     object=FindObject(copy, 0) ;                                 /* Ищем объект-носитель по имени */
+//  if(object!=NULL) {
+//                    SEND_ERROR("Oбъект-копия уже существует") ;
+//                                   return(-1) ;
+//                   }
+/*---------------------------------------------- Копирование объекта */
+
+            object=sample->vCopy(copy) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -1993,6 +2067,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 
 /********************************************************************/
+/*								    */
+/*		       Статические переменные			    */
+
+ O_EXTERNAL_API                            char *RSS_Object_External::targets     =NULL ;
+ O_EXTERNAL_API                          double  RSS_Object_External::targets_time=  0. ;
+ O_EXTERNAL_API                             int  RSS_Object_External::targets_init=  0 ;
+ O_EXTERNAL_API  struct RSS_Object_ExternalLink *RSS_Object_External::targets_links[_TARGETS_LINKS_MAX] ;
+ O_EXTERNAL_API                             int  RSS_Object_External::targets_links_cnt ;
+
+
+/********************************************************************/
 /*                                                                  */
 /*                       Конструктор класса                         */
 
@@ -2022,6 +2107,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       z_velocity=   0. ;
       v_abs     =   0. ;
       g_ctrl    = 100. ;
+
+    strcpy(object_type,        "") ;
 
     strcpy(iface_type,         "") ;
     strcpy(iface_file_folder,  "") ;
@@ -2130,6 +2217,68 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
 /********************************************************************/
+/*								    */
+/*                        Копировать объект		            */
+
+    class RSS_Object *RSS_Object_External::vCopy(char *name)
+
+{
+        RSS_Model_data  create_data ;
+   RSS_Object_External *object ;
+                   int  i ;
+
+/*------------------------------------- Копирование базового объекта */
+
+                 memset(&create_data, 0, sizeof(create_data)) ;
+
+ if(name!=NULL)  strcpy( create_data.name, name) ;
+                 strcpy( create_data.path, this->model_path) ;
+
+    for(i=0 ; i<this->Parameters_cnt ; i++) {
+         sprintf(create_data.pars[i].text,  "PAR%d", i) ;
+         sprintf(create_data.pars[i].value, "%lf", this->Parameters[i].value) ;
+                                            }
+
+                 create_data.pars[i].text [0]=0 ;
+                 create_data.pars[i].value[0]=0 ;
+
+       object=(RSS_Object_External *)this->Module->vCreateObject(&create_data) ;
+    if(object==NULL)  return(NULL) ;
+ 
+            strcpy(object->owner,  this->owner) ;
+                   object->o_owner=this->o_owner ;
+
+            strcpy(object->object_type,        this->object_type) ;
+
+            strcpy(object->iface_type,         this->iface_type) ;
+            strcpy(object->iface_file_folder,  this->iface_file_folder) ;
+            strcpy(object->iface_file_control, this->iface_file_control) ;
+            strcpy(object->iface_file_targets, this->iface_file_targets) ;
+
+   if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
+
+/*---------------------------------------------- Копирование свойств */
+
+/*
+    for(i=0 ; i<this->Features_cnt ; i++)
+      if(!stricmp(this->Features[i]->Type, "Hit"))
+             hit_1=(RSS_Feature_Hit *)this->Features[i] ;
+
+    for(i=0 ; i<object->Features_cnt ; i++)
+      if(!stricmp(object->Features[i]->Type, "Hit"))
+             hit_2=(RSS_Feature_Hit *)object->Features[i] ;
+
+           hit_2->hit_range =hit_1->hit_range ;
+           hit_2->any_target=hit_1->any_target ;
+           hit_2->any_weapon=hit_1->any_weapon ;
+*/
+/*-------------------------------------------------------------------*/
+
+   return(object) ;
+}
+
+
+/********************************************************************/
 /*                                                                  */
 /*                      Записать данные в строку                    */
 
@@ -2203,7 +2352,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
     Matrix2d  Sum_Matrix ;
     Matrix2d  Oper_Matrix ;  
-    Matrix2d  Velo_Matrix ;  
+    Matrix2d  Velo_Matrix ;
+        char  flag[FILENAME_MAX] ;
+        char  name[128] ;
          int  i ; 
 
 #define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
@@ -2257,6 +2408,23 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          this->y_velocity=Velo_Matrix.GetCell(1, 0) ;
          this->z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
+/*----------------------- Очистка обменных данных для внешней модели */
+
+   if(this->CalculateExt_use==1) {
+/*- - - - - - - - - - - - - - - - - - -  Очистка для интерфейса FILE */
+     if(!stricmp(this->iface_type, "FILE")) {
+
+                                    strcpy(name, this->iface_file_control) ;
+      if(!stricmp(name, "$NAME$"))  strcpy(name, this->Name) ;
+
+            sprintf(flag, "%s/%s.out.flag", this->iface_file_folder, name) ;
+             unlink(flag) ;
+            sprintf(flag, "%s/%s.in.flag", this->iface_file_folder, name) ;
+             unlink(flag) ;
+
+                                            }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+                                 }  
 /*------------------------------------------------ Очистка контекста */
 
     this->iSaveTracePoint("CLEAR") ;
@@ -2299,8 +2467,87 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   FILE *file ;
   char  value[128] ;
   char  text[4096] ;
+   int  i ;
 
-/*-------------------------------------- Формирование файла объектов */
+/*------------------------------------- Формирование списка объектов */
+
+#define   OBJECTS       this->Module->kernel_objects 
+#define   OBJECTS_CNT   this->Module->kernel_objects_cnt 
+
+    if(targets_init==1) {
+                            targets_time=-1. ;
+                            targets_init= 0 ;
+                        }
+    if(targets_time<t1) {
+
+       if(targets==NULL)   targets=(char *)calloc(1, _TARGETS_MAX) ;
+
+                          *targets=0 ;
+
+        sprintf(text, "\"t1\":\"%.2lf\";\"t2\":\"%.2lf\";[\n", t1, t2) ;
+         strcat(targets, text) ;  
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)
+         if(OBJECTS[i]->battle_state) {
+
+#define   O    OBJECTS[i]
+
+             sprintf(text, "{ \"name\":\"%s\";"
+                             "\"x\":\"%.2lf\";\"y\":\"%.2lf\";\"z\":\"%.2lf\";"
+                             "\"azim\":\"%.2lf\";\"elev\":\"%.2lf\";\"roll\":\"%.2lf\";"
+                             "\"v_x\":\"%.2lf\";\"v_y\":\"%.2lf\";\"v_z\":\"%.2lf\"};\n",
+                                O->Name,
+                                O->x_base,     O->y_base,     O->z_base,
+                                O->a_azim,     O->a_elev,     O->a_roll,
+                                O->x_velocity, O->y_velocity, O->z_velocity  ) ;
+
+              strcat(targets, text) ;  
+
+#undef    O
+                                      }
+
+        sprintf(text, "{\"name\":\"$END_OF_LIST$\"}\n]\n") ;
+         strcat(targets, text) ;  
+
+                                  targets_time=t1 ;
+                        } 
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
+
+/*----------------------------------------- Отправка списка объектов */
+
+   do {
+/*- - - - - - - - - - - - - - - - - - -  Проверка повторной отправки */
+         for(i=0 ; i<targets_links_cnt ; i++)
+           if(!strcmp(targets_links[i]->link, this->iface_file_targets))  break ;
+
+           if(i<targets_links_cnt) {
+                  if(targets_links[i]->time_mark==t1)  break ;      /* Если список объектов по данной ссылке уже формировался */ 
+                                   }
+           else                    {
+                       targets_links[i]=(struct RSS_Object_ExternalLink *)calloc(1, sizeof(struct RSS_Object_ExternalLink)) ;
+                strcpy(targets_links[i]->link, this->iface_file_targets) ;
+                       targets_links_cnt++ ;
+                                   }
+
+                     targets_links[i]->time_mark=t1 ;
+/*- - - - - - - - - - - - - -  Отправка запроса через интерфейс FILE */
+   if(!stricmp(this->iface_type, "FILE")) {
+
+         file=fopen(this->iface_file_targets, "w") ;
+      if(file==NULL) {
+                          sprintf(text, "Ошибка создания файла объектов: %s", this->iface_file_targets) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+
+             fwrite(targets, 1, strlen(targets), file) ;
+             fclose(file) ;
+
+                                          }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+      } while(0) ;
 
 /*------------------------------ Отправка запроса на рассчет запроса */
 /*- - - - - - - - - - - - - - - - - - - - - - - Формирование запроса */
@@ -2314,7 +2561,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          strcat(text, value) ;  
         sprintf(value, "\"v_x\":\"%.2lf\";\"v_y\":\"%.2lf\";\"v_z\":\"%.2lf\"\n", this->x_velocity, this->y_velocity, this->z_velocity) ;
          strcat(text, value) ;  
-        sprintf(value, "\"type\":\"%s\"\n", this->object_type) ;
+        sprintf(value, "\"type\":\"%s\";\"target\":\"%s\"\n", this->object_type, this->target) ;
          strcat(text, value) ;  
 /*- - - - - - - - - - - - - -  Отправка запроса через интерфейс FILE */
    if(!stricmp(this->iface_type, "FILE")) {
@@ -2359,8 +2606,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     char  em_name[128] ;
   double  em_t1 ;
   double  em_t2 ;
+    char  em_message[1024] ;
      int  status ;
-    char  value[128] ;
+    char  value[1024] ;
     char  text[4096] ;
     char *key ;
     char *end ;
@@ -2370,6 +2618,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                         "\"x\":\"",    "\"y\":\"",    "\"z\":\"",
                         "\"azim\":\"", "\"elev\":\"", "\"roll\":\"",
                         "\"v_x\":\"",  "\"v_y\":\"",  "\"v_z\":\"",
+                        "\"message\":\"",
                          NULL} ;
 
 /*------------------------------------------ Ожидание расчета модели */
@@ -2445,8 +2694,77 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(i== 9)         this->x_velocity=strtod(value, &end) ;
      if(i==10)         this->y_velocity=strtod(value, &end) ;
      if(i==11)         this->z_velocity=strtod(value, &end) ;
+     if(i==12)    strcpy(em_message, value) ;  
 
                                   } 
+/*------------------------------- Формирование команд обратной связи */
+
+  while(em_message[0]!=0) {
+
+         end=strchr(em_message, ';') ;
+      if(end==NULL) {
+                         sprintf(text, "Command element terminator ';' missed") ;
+                      SEND_ERROR(text) ;
+                           return(-1) ;
+                    }             
+
+        *end=0 ;
+
+#define  _KEY  "DESTROY"
+
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+            sprintf(value, "KILL %s;", this->Name) ;
+
+                                                }
+
+#undef   _KEY
+#define  _KEY  "STOP"
+
+   else
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+            sprintf(value, "STOP %s;", this->Name) ;
+
+                                                }
+
+#undef   _KEY
+#define  _KEY  "HIT"
+
+   else
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+            sprintf(value, "EVENT HITED %s;", em_message+strlen(_KEY)+1) ;
+
+                                                }
+
+#undef   _KEY
+#define  _KEY  "BLAST-A"
+
+   else
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+               strcpy(name, em_message+strlen(_KEY)+1) ;
+            sprintf(value, "EXEC BLAST CR/A blast_%s 0 10 %s;START blast_%s;", name, name, name) ;
+
+                                                }
+   else                                         {
+
+            sprintf(text, "Unknown elements in command: %s", em_message) ;
+         SEND_ERROR(text) ;
+              return(-1) ;
+                                                }
+
+      if(strlen(callback)+strlen(value)>=callback_size-8) {
+                         sprintf(text, "Callback buffer overflow") ;
+                      SEND_ERROR(text) ;
+                           return(-1) ;
+                                                          }
+
+                        strcat(callback, value) ;
+                       memmove(em_message, end+1, strlen(end+1)+1) ;
+                 } 
+
 /*-------------------------------------------------------------------*/
 
   return(0) ;

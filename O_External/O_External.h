@@ -45,7 +45,24 @@
                                    COLORREF  color ;
                                  } ;
 
+struct RSS_Object_ExternalLink {
+                                     char  link[FILENAME_MAX] ;
+                                   double  time_mark ;
+                               } ;
+
   class O_EXTERNAL_API RSS_Object_External : public RSS_Object {
+
+    public : 
+
+#define                       _TARGETS_MAX     256000
+#define                 _TARGETS_LINKS_MAX       1000
+
+         static                            char *targets ;                           /* Описание целей */
+         static                          double  targets_time ;                      /* Метка времени для описания целей */
+         static                             int  targets_init ;                      /* Метка инициализации описания целей */
+
+         static  struct RSS_Object_ExternalLink *targets_links[_TARGETS_LINKS_MAX] ; /* Список адресов выгрузки описания целей */
+         static                             int  targets_links_cnt ;
 
     public:
                         char  model_path[FILENAME_MAX] ;         /* Файл модели */
@@ -70,20 +87,22 @@
                          int  mTrace_dlist ;
 
     public:
-               virtual void  vFree          (void) ;            /* Освободить ресурсы */
-               virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
-               virtual void  vPop           (void) ;            /* Восстановить состояние объекта */
-               virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
+
+         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
+         virtual       void  vPush          (void) ;            /* Сохранить состояние объекта */
+         virtual       void  vPop           (void) ;            /* Восстановить состояние объекта */
+         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateExt1 (double, double,
+         virtual        int  vCalculateExt1 (double, double,
                                                      char *, int) ;
-               virtual  int  vCalculateExt2 (double, double,
+         virtual        int  vCalculateExt2 (double, double,
                                                      char *, int) ;
-               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-               virtual  int  vEvent         (char *, double) ;  /* Обработка событий */
-               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+         virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
+         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
+         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
                        void  iShowTrace     (void) ;            /* Отображение траектории */
@@ -115,6 +134,7 @@
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
                      int  cCreate       (char *) ;                     /* Инструкция CREATE */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
+                     int  cCopy         (char *) ;                     /* Инструкция COPY */ 
                      int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
                      int  cTarget       (char *) ;                     /* Инструкция TARGET */ 
                      int  cBase         (char *) ;                     /* Инструкция BASE */ 

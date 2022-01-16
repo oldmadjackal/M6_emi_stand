@@ -16,7 +16,7 @@
 #define   _PROGRAM_TITLE   "ExternalModel"
 
 #undef    _VERSION
-#define   _VERSION   "30.12.2021"
+#define   _VERSION   "16.01.2022"
 
 /*--------------------------------------------------- Система команд */
 
@@ -75,6 +75,7 @@
 
   _EXTERNAL    char  __control_folder[FILENAME_MAX] ;      /* Папка управляющих файлов */
   _EXTERNAL    char  __control_object[FILENAME_MAX] ;      /* Отслеживаемый объект - по умолчанию или * - все */
+  _EXTERNAL    char  __targets_path[FILENAME_MAX] ;        /* Файл списка целей */
   
   typedef struct {                                   /* Параметры объекта */
                       char  name[128] ;               /* Название */
@@ -87,6 +88,27 @@
                     double  v_x, v_y, v_z ;           /* Проекции скорости */
 
                  } Object ;
+
+#define        _TARGETS_MAX   1000
+
+  _EXTERNAL  Object *__targets[_TARGETS_MAX] ;        /* Список целей */
+  _EXTERNAL     int  __targets_cnt ;
+  _EXTERNAL  double  __targets_time ;
+
+/*---------------------------------------------- Хранилище контекста */
+
+  typedef struct {                                   /* Контекст объекта */
+                      char  name[128] ;               /* Название */
+                    double  t1 ;                      /* Период моделирования */
+                    double  x, y, z ;                 /* Координаты объекта */
+                    double  x_t, y_t, z_t ;           /* Координаты цели */
+                       int  missed ;                  /* Признак промаха */
+                 } Context ;
+
+#define        _CONTEXTS_MAX   100
+
+  _EXTERNAL  Context *__contexts[_CONTEXTS_MAX] ;        /* Список контекстов объектов */
+  _EXTERNAL      int  __contexts_cnt ;
 
 /*-------------------------------------------------------- Прототипы */
 
@@ -101,9 +123,10 @@
              int  EM_create_path   (char *) ;                       /* Формирование пути к разделу */
              int  EM_text_subst    (char *, char *, char *, int) ;  /* Подстановка полей данных */
              int  EM_json_subst    (char *, char *, char *) ;       /* Подстановка поля данных по ключу */
+             int  EM_read_targets  (char *) ;                       /* Считывание файла целей */
              int  EM_read_request  (char *, Object *) ;             /* Считывание файла запроса */
-             int  EM_write_response(Object *) ;                     /* Записать файл ответа */
-             int  EM_process_model (Object *) ;                     /* Расчет модели */
+             int  EM_write_response(Object *, char *) ;             /* Записать файл ответа */
+             int  EM_process_model (Object *, char *, char *) ;     /* Расчет модели */
 
     DWORD WINAPI  Processing_Tread (LPVOID) ;
 
@@ -111,4 +134,4 @@
 INT_PTR CALLBACK  EM_console_dialog(HWND, UINT, WPARAM, LPARAM) ;
 
 /* EM_missile.cpp */
-             int  EM_model_missile(Object *) ;                      /* Расчет модели */
+             int  EM_model_missile(Object *, char *, char *) ;      /* Расчет модели */

@@ -32,6 +32,10 @@
   class E_BLAST_API RSS_Effect_Blast : public RSS_Object {
 
     public:
+                        int  blast_type ;                       /* Тип взрыва */
+#define                        _GROUND_BLAST  0                  /*  Наземный взрыв */
+#define                           _AIR_BLAST  1                  /*  Воздушный взрыв */
+
                      double  hit_range ;                        /* Радиус поражения */
 
                      double  range_max ;                        /* Максимальный радиус вспышки */
@@ -58,6 +62,7 @@
                         int  iShowBlast     (void) ;                 /* Отрисовка эффекта */
                         int  iShowBlast_    (void) ;                 /* Отрисовка эффекта с передачей контекста */
                        void  iShowCone      (double, double, int, COLORREF) ;
+                       void  iShowSphere    (double, int, COLORREF) ;
 
 	                     RSS_Effect_Blast() ;                    /* Конструктор */
 	                    ~RSS_Effect_Blast() ;                    /* Деструктор */

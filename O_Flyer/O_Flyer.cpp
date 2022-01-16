@@ -2228,16 +2228,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  _KEY_WORD  "BATTLE "
       if(!memicmp(text, _KEY_WORD, strlen(_KEY_WORD))) {
 /*- - - - - - - - - - - - - - - - - - - - - - - - Формирование кадра */
-               end=text+strlen(_KEY_WORD) ;
-            if(*end==0) {
+             end=text+strlen(_KEY_WORD) ;
+         if(*end==0) {
                           sprintf(error, "Строка %d - оператор BATTLE не содержит передаваемую команду", row) ;
                        SEND_ERROR(error) ;
                              return(-1) ;
-                        }  
+                     }  
 
             memset(&frame, 0, sizeof(frame)) ;
                     frame.battle_flag=1 ;
            strncpy( frame.used, end, sizeof(frame.used)-1) ;
+/*- - - - - - - - - - - - - - - - - - - - -  Расшифровка подстановок */
+            end=strchr(frame.used, '*') ;
+         if(end!=NULL) {
+                           memmove(end+1, end+strlen(object->Name), strlen(end+1)+1) ;
+                            memcpy(end, object->Name, strlen(object->Name)) ;
+                       }
 /*- - - - - - - - - - - - - - - - - - - - Сохранение кадра программы */
          if(program->frames_cnt>=_PFRAMES_MAX) {
                sprintf(error, "Строка %d - количество кадров программы превышает допустимый предел - %d", row, _PFRAMES_MAX) ;
@@ -3425,8 +3431,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        x_new =this->x_base ;
                                        value =WAIT.x ;
 
-       if(x_new>x_prv)  status=iAngleInCheck(value, x_prv, x_new) ;
-       else             status=iAngleInCheck(value, x_new, x_prv) ;
+       if( (value>=x_new && value<=x_prv) ||
+           (value>=x_prv && value<=x_new)   )  status=0 ;
 
        if(!status)   p_frame++ ;
                                   }
@@ -3435,8 +3441,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        y_new =this->y_base ;
                                        value =WAIT.y ;
 
-       if(y_new>y_prv)  status=iAngleInCheck(value, y_prv, y_new) ;
-       else             status=iAngleInCheck(value, y_new, y_prv) ;
+       if( (value>=y_new && value<=y_prv) ||
+           (value>=y_prv && value<=y_new)   )  status=0 ;
 
        if(!status)   p_frame++ ;
                                   }
@@ -3445,8 +3451,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        z_new =this->z_base ;
                                        value =WAIT.z ;
 
-       if(z_new>z_prv)  status=iAngleInCheck(value, z_prv, z_new) ;
-       else             status=iAngleInCheck(value, z_new, z_prv) ;
+       if( (value>=z_new && value<=z_prv) ||
+           (value>=z_prv && value<=z_new)   )  status=0 ;
 
        if(!status)   p_frame++ ;
                                   }

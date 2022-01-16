@@ -1,0 +1,107 @@
+#step 0.
+
+#file tests\keys.keys
+
+marker cr m1 cross red
+m1 base -400 100 0
+
+marker cr m2 cross red
+m2 base 2000 100 10000
+
+marker cr m3 cross red
+m3 base  500 100 12000
+
+;------------------------- Бак-гроунд
+
+body cr b1 плоскость 4000 25000
+sc color b1 green
+b1 angle/e 90
+b1 base -2000 0 24000 
+
+zoom 5000
+lf m1
+eye>50
+
+!save l
+
+;------------------------- Носитель
+
+flyer cr zrk стрела-10
+
+zrk base 0 0 0
+zrk angle/a 0
+zrk v 10
+zrk path 0
+
+;------------------------- Ракеты
+
+external cr r1 ракета-1 0.2 3
+r1 itype FILE missile
+r1 ifile/f d:/tmp/ext
+r1 ifile/t d:/tmp/ext/targets.dat
+r1 owner zrk
+
+r1 copy r2
+r2 owner zrk
+
+scene visible r1 0
+scene visible r2 0
+
+;------------------------- БЛА
+
+flyer cr bla1 летун-1 5 0.3 6 0.2 0.5
+bla1 base -1500 500 12000
+bla1 angle/a 180
+bla1 v 100
+bla1 program tests\hited.pgm
+bla1 event HITED hited
+bla1 path 1
+
+flyer cr bla2 летун-1 5 0.3 6 0.2 0.5
+bla2 base  1500 500 12000
+bla2 angle/a 180
+bla2 v 100
+bla2 program tests\hited.pgm
+bla2 event HITED hited
+bla2 path 1
+
+;------------------------- Прикрываемые танки
+
+flyer cr tank1 танк
+flyer cr tank2 танк
+flyer cr tank3 танк
+tank1 base -100 0 300
+tank2 base    0 0 300
+tank3 base  100 0 300
+tank1 angle/a 0
+tank2 angle/a 0
+tank3 angle/a 0
+tank1 v 10
+tank2 v 10
+tank3 v 10
+tank1 path 0
+tank2 path 0
+tank3 path 0
+tank1 program tests\hited_tank.pgm
+tank2 program tests\hited_tank.pgm
+tank3 program tests\hited_tank.pgm
+tank1 event HITED hited_tank
+tank2 event HITED hited_tank
+tank3 event HITED hited_tank
+hit category/t tank1
+hit category/t tank2
+hit category/t tank3
+
+z 300
+la zrk
+
+;------------------------- Бой
+
+;bla.radar show 0
+;bla.control show 9
+battle map 8
+battle map/c zrk green
+battle map/cq tank# blue
+battle map/cq bla# red
+;battle map/t bla
+battle program tests\Daniel.battle

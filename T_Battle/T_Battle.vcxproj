@@ -294,6 +294,9 @@
       <Project>{d49e8e3a-a93e-4fe2-a036-485349a8df42}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\O_External\O_External.vcxproj">
+      <Project>{c7f9387b-6db9-40ff-99b0-8e379ff669a3}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\RSS_feature\RSS_feature.vcxproj">
       <Project>{6532543f-8d20-45ce-a126-e0d503aef651}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>

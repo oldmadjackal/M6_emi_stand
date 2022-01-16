@@ -37,28 +37,76 @@
 #pragma warning(disable : 4267)
 
 #define   _GRD_TO_RAD   0.017453
+#define   _RAD_TO_GRD  57.296
 
 
 /********************************************************************/
 /*                                                                  */
 /*                          Расчет модели                           */
 
-     int  EM_model_missile(Object *data)
+     int  EM_model_missile(Object *data, char *command, char *error)
 
 {
+   Object *target ;
    double  dt ;
    double  azim ;
    double  elev ;
+   double  dx, dy, dz ;         /* Вектор на цель */
+   double  s ;                  /* Расстояние до цели */
+   double  r ;                  /* Радиус маневра */
+   double  h ;
+   double  ds ;
+   double  a ;                  /* Ометываемый угол маневра */
+   double  b ;
+   double  dv_max ;             /* Максимальная возможная длина вектора изменение скорости */
+   double  dv_x, dv_y, dv_z ;   /* Требуемое изменение скорости */
+   double  dv_s ;               /* Длина вектора требуемого изменения скорости */
+   double  p_x, p_y, p_z ;      /* Предыдущее положение цели */
+   double  pv_x, pv_y, pv_z ;   /* Предыдущий вектор скорости  */
+      int  hit_check ;          /* Проверка поражения цели */
+      int  idx ;
+      int  i ;
 
-#define    _V     300
+#define    _V     300.
+#define    _G     200.
+#define    _R      15.
 
 /*------------------------------------------------------- Подготовка */
 
-            dt=data->t2-data->t1 ;
+               *command=0 ;
 
+              dt=data->t2-data->t1 ;
+
+             p_x=data->x ;
+             p_y=data->y ;
+             p_z=data->z ;
+            pv_x=data->v_x ;
+            pv_y=data->v_y ;
+            pv_z=data->v_z ;
+
+/*------------------------------------------------------- Поиск цели */
+
+                              target=NULL ;
+
+   if(data->target[0]!=0) {
+
+     if(__targets_time!=data->t1) {
+                          sprintf(error, "Несовпадение временных меток объекта и списка целей") ;
+                                       return(-1) ;
+                                  }
+ 
+      for(i=0 ; i<__targets_cnt ; i++)
+        if(!stricmp(__targets[i]->name, data->target)) {
+                            target=__targets[i] ;
+                                         break ;
+                                                     }
+
+        if(target==NULL)  sprintf(error, "Цель не найдена - %s", data->target) ;
+
+                          }
 /*---------------------------------------------- Неуправляемый полет */
 
-   if(data->target[0]==0) {
+   if(target==NULL) {
                                    azim   =data->a_azim*_GRD_TO_RAD ;
                                    elev   =data->a_elev*_GRD_TO_RAD ;
            
@@ -71,9 +119,131 @@
                                 data->z  +=data->v_z ;
 
                                         return(0) ;
-                          }
+                    }
 /*---------------------------------------------------- Самонаведение */
 
+                 hit_check=0 ;
+
+   do {
+/*- - - - - - - - - - - - - - Параметры относительного движения цели */
+                       dx=(target->x+2.*dt*target->v_x)-data->x ;      /* Вектор на цель */
+                       dy=(target->y+2.*dt*target->v_y)-data->y ;
+                       dz=(target->z+2.*dt*target->v_z)-data->z ;
+                        s=sqrt(dx*dx+dy*dy+dz*dz) ;
+/*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
+                        r= _V*_V/_G ;                               /* Максимальный вектор изменения */
+                        a= _V*dt/(2.*r) ;
+                   dv_max= 2.*_V*sin(0.5*a) ;
+/*- - - - - - - - - - - Расчет требуемого изменения вектора скорости */
+                       dx=dx*_V/s ;                                 /* Нормируем вектор на цель по скорости */
+                       dy=dy*_V/s ;
+                       dz=dz*_V/s ;
+
+                     dv_x=dx-data->v_x ;                            /* Требуемый вектор изменения скорости */
+                     dv_y=dy-data->v_y ;
+                     dv_z=dz-data->v_z ;
+                     dv_s=sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
+/*- - - - - - - - - -  Проверка ухода из поля видимости 180 градусов */
+     if(dv_s>1.4*_V) {
+                         data->x+=data->v_x*dt ;
+                         data->y+=data->v_y*dt ;
+                         data->z+=data->v_z*dt ;
+
+                        hit_check=1 ;
+                             break ;
+                     }
+/*- - - - - - - - - - - - - - - - - - Расчет нового вектора скорости */
+     if(dv_s>dv_max) {                                              /* Если требуемое изменение не может быть обеспечено по перегрузке... */
+                            b=asin(0.5*dv_s/_V) ;
+                            h=sqrt(_V*_V-0.25*dv_s*dv_s) ;
+
+                           ds=h*tan(a-b)+0.5*dv_s ;
+
+                          data->v_x+=dv_x*ds/dv_s ;
+                          data->v_y+=dv_y*ds/dv_s ;
+                          data->v_z+=dv_z*ds/dv_s ;
+                               dv_s =sqrt(data->v_x*data->v_x+
+                                          data->v_y*data->v_y+
+                                          data->v_z*data->v_z ) ;
+                          data->v_x*=_V/dv_s ;
+                          data->v_y*=_V/dv_s ;
+                          data->v_z*=_V/dv_s ;
+                     }
+     else            {
+                          data->v_x =dx ;
+                          data->v_y =dy ;
+                          data->v_z =dz ;
+                     }
+/*- - - - - - - - - - - - - - - - - - - - -  Изменение базовой точки */
+             data->x+=0.5*(data->v_x+pv_x)*dt ;
+             data->y+=0.5*(data->v_y+pv_y)*dt ;
+             data->z+=0.5*(data->v_z+pv_z)*dt ;
+
+                  s=sqrt((data->v_x-pv_x)*(data->v_x-pv_x)+
+                         (data->v_y-pv_y)*(data->v_y-pv_y)+
+                         (data->v_z-pv_z)*(data->v_z-pv_z) ) ;
+/*- - - - - - - - - - - - - - - - - - - - Изменение углов ориентации */
+             data->a_azim=atan2(data->v_x, data->v_z)*_RAD_TO_GRD ;
+             data->a_elev=atan2(data->v_y, sqrt(data->v_x*data->v_x+data->v_z*data->v_z))*_RAD_TO_GRD ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+      } while(0) ;
+
+/*------------------------------------------ Идентификация контекста */
+
+      for(idx=0 ; idx<__contexts_cnt ; idx++) 
+        if(!stricmp(__contexts[idx]->name, data->name))  break ;
+
+        if(idx==__contexts_cnt) {
+
+           __contexts[idx]=(Context *)calloc(1, sizeof(Context)) ;
+           __contexts_cnt++ ;
+
+               strcpy(__contexts[idx]->name, data->name) ;
+                                }
+/*------------------------------------------ Проверка поражения цели */
+                    
+   if(hit_check==1 && __contexts[idx]->missed==0) {
+
+            dx  =__contexts[idx]->x_t-__contexts[idx]->x ;
+            dy  =__contexts[idx]->y_t-__contexts[idx]->y ;
+            dz  =__contexts[idx]->z_t-__contexts[idx]->z ;
+
+            dv_x=(target->x-__contexts[idx]->x_t)-(p_x-__contexts[idx]->x) ;
+            dv_y=(target->y-__contexts[idx]->y_t)-(p_y-__contexts[idx]->y) ;
+            dv_z=(target->z-__contexts[idx]->z_t)-(p_z-__contexts[idx]->z) ;
+
+            dt  =-(dx*dv_x+dy*dv_y+dz*dv_z)/(dx*dx+dy*dy+dz*dz) ;
+            ds  =sqrt( (dx+dv_x*dt)*(dx+dv_x*dt)+
+                       (dy+dv_y*dt)*(dy+dv_y*dt)+
+                       (dz+dv_z*dt)*(dz+dv_z*dt) ) ;
+
+              __contexts[idx]->missed=1 ;
+
+//                  EM_message(error) ;
+
+          if(ds<_R) {
+                       sprintf(error, "HIT time %0.3lf, miss %0.3lf", dt, ds) ;
+
+                       sprintf(command, "DESTROY;HIT %s;BLAST-A %s;", data->target, data->target) ;
+                    }
+          else      {
+                       sprintf(error, "MISSED time %0.3lf, miss %0.3lf", dt, ds) ;
+
+                    }
+                                                  }
+   else                                           {
+
+          if(hit_check==0)  __contexts[idx]->missed=0 ;
+                                                  }
+
+/*--------------------------------- Сохранение данных объекта и цели */
+
+                __contexts[idx]->x  =  p_x ;
+                __contexts[idx]->y  =  p_y ;
+                __contexts[idx]->z  =  p_z ;
+                __contexts[idx]->x_t=target->x ;
+                __contexts[idx]->y_t=target->y ;
+                __contexts[idx]->z_t=target->z ;
 
 /*-------------------------------------------------------------------*/
 

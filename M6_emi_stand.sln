@@ -42,6 +42,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "O_Missile", "O_Missile\O_Missile.vcxproj", "{C7F9387B-6DB9-40FF-99B0-8E379FF669A2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "T_Battle", "T_Battle\T_Battle.vcxproj", "{6B8A2EE7-4C91-4124-B59F-A411FFD607C8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C7F9387B-6DB9-40FF-99B0-8E379FF669A3} = {C7F9387B-6DB9-40FF-99B0-8E379FF669A3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "F_Hit", "F_Hit\F_Hit.vcxproj", "{D49E8E3A-A93E-4FE2-A036-485349A8DF42}"
 EndProject

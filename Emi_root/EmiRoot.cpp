@@ -1914,6 +1914,7 @@ typedef  struct {
    int   quiet_flag ;      /* Флаг режима "молчания" */
    int   batch_flag ;      /* Флаг пакетной операции (без обновления экрана) */
   char *name ;
+  char  object_name[128] ;
   char *end ;
    int  prefix_flag ;
    int  i ;
@@ -2000,6 +2001,12 @@ typedef  struct {
                                   return(-1) ;
                                }
                      }
+/*- - - - - - - - - - - - - - - - - - Контроль использования объекта */
+                                     EmiRoot_lookfrom("Main", "Get", object_name) ;
+     if(!strcmp(name, object_name))  EmiRoot_lookfrom("Main", "Set", "") ;
+
+                                     EmiRoot_lookat("Main", "Get", object_name, NULL, NULL, NULL) ;
+     if(!strcmp(name, object_name))  EmiRoot_lookat("Main", "Set", "", NULL, NULL, NULL) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Удаление обьекта */
                                          OBJECTS[i]->vFree() ;      /* Освобождение ресурсов */
                                  delete  OBJECTS[i] ;

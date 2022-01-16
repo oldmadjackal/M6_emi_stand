@@ -1,0 +1,14 @@
+  T=0   start zrk
+  T=0   start tank1
+  T=0   start tank2
+  T=0   start tank3
+  T=0   start bla1
+  T=0   start bla2
+;DT=0   exec zoom/q 1000
+  T=3   exec external target r1 bla1
+ DT=0   start r1
+ DT=0   exec la/q r1
+  T=7   exec external target r2 bla2
+ DT=0   start r2
+  T=35  exec la/q bla2
+  T=60  exit
