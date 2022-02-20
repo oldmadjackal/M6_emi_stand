@@ -46,6 +46,8 @@
 #define               _WARNING_ICON              1
 #define                 _ERROR_ICON              2
 
+  _EXTERNAL  char  __title[FILENAME_MAX] ;        /* Заголовок окна */
+
 /*------------------------------------------------- Общие переменные */
 
   _EXTERNAL            char  __cwd[FILENAME_MAX] ;              /* Рабочий раздел */
@@ -95,6 +97,21 @@
   _EXTERNAL     int  __targets_cnt ;
   _EXTERNAL  double  __targets_time ;
 
+/*------------------------------------------ Параметры моделирования */
+
+                                             /* Модель MISSILE */ 
+  _EXTERNAL  double  __missile_v ;            /* Скорость полета ракеты */
+  _EXTERNAL  double  __missile_g ;            /* Располагаемая перегрузка маневра */
+  _EXTERNAL  double  __missile_hit ;          /* Радиус поражения БЧ */
+
+                                             /* Модель ZRK */ 
+  _EXTERNAL  double  __zrk_v ;                /* Скорость движения шасси */
+  _EXTERNAL  double  __zrk_h_min ;            /* Минимальная высота полета воздушных целей */
+  _EXTERNAL  double  __zrk_r_min ;            /* Минимальная дальность пуска */
+  _EXTERNAL  double  __zrk_r_max ;            /* Максимальная дальность пуска */
+  _EXTERNAL  double  __zrk_firing_interval ;  /* Интервал между пусками */
+  _EXTERNAL    char  __zrk_missile[128] ;     /* "Шаблон" ЗУР */
+
 /*---------------------------------------------- Хранилище контекста */
 
   typedef struct {                                   /* Контекст объекта */
@@ -134,4 +151,7 @@
 INT_PTR CALLBACK  EM_console_dialog(HWND, UINT, WPARAM, LPARAM) ;
 
 /* EM_missile.cpp */
-             int  EM_model_missile(Object *, char *, char *) ;      /* Расчет модели */
+             int  EM_model_missile(Object *, char *, char *) ;      /* Расчет модели УР */
+
+/* EM_ZRK.cpp */
+             int  EM_model_ZRK(Object *, char *, char *) ;          /* Расчет модели ЗРК */

@@ -10,6 +10,9 @@
     <ClCompile Include="EM_missile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EM_ZRK.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ExternalModel.h">

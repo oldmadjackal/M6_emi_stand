@@ -2549,7 +2549,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
       } while(0) ;
 
-/*------------------------------ Отправка запроса на рассчет запроса */
+/*------------------------------- Отправка запроса на рассчет модели */
 /*- - - - - - - - - - - - - - - - - - - - - - - Формирование запроса */
          memset(text, 0, sizeof(text)) ;
 
@@ -2719,6 +2719,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                 }
 
 #undef   _KEY
+#define  _KEY  "START"
+
+   else
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+            sprintf(value, "%s;", em_message) ;
+
+                                                }
+
+#undef   _KEY
 #define  _KEY  "STOP"
 
    else
@@ -2744,8 +2754,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    else
    if(!memicmp(em_message, _KEY, strlen(_KEY))) {
 
-               strcpy(name, em_message+strlen(_KEY)+1) ;
+             strcpy(name, em_message+strlen(_KEY)+1) ;
             sprintf(value, "EXEC BLAST CR/A blast_%s 0 10 %s;START blast_%s;", name, name, name) ;
+
+                                                }
+
+#undef   _KEY
+#define  _KEY  "EXEC"
+
+   else
+   if(!memicmp(em_message, _KEY, strlen(_KEY))) {
+
+            sprintf(value, "%s;", em_message) ;
 
                                                 }
    else                                         {

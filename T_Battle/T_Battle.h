@@ -53,6 +53,7 @@
                    RSS_Object *object ;
                           int  active ;
                        double  cut_time ;    /* Время отслеживания объекта */
+                          int  wait ; 
                 } RSS_Module_Battle_object ;
 
 #define  OBJ  RSS_Module_Battle_object

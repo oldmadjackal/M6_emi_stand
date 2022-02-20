@@ -1149,6 +1149,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
            if(exit_flag)  break ;  
 
+/*------------------------------------ Отметка существующих объектов */
+
+      for(i=0 ; i<mObjects_cnt ; i++)  mObjects[i].wait=0 ;
+
 /*-------------------------------------------------- Обсчет объектов */
 
      for(step=0 ; step<3 ; step++)                                  /* 0 - Внешние модели - вызов 1 */
@@ -1166,6 +1170,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
              mObjects[i].object->vCalculateExt1(time_c-RSS_Kernel::calc_time_step, time_c,
                                                                     callback, _CALLBACK_SIZE-1) ;
+
+             mObjects[i].wait=1 ;
                      }
 /*- - - - - - - - - - - - - - Внутренние модели - обсчет и отрисовка */
          else
@@ -1183,8 +1189,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          else
          if(step==2) {
 
-             mObjects[i].object->vCalculateExt2(time_c-RSS_Kernel::calc_time_step, time_c,
+          if(mObjects[i].wait)
+              mObjects[i].object->vCalculateExt2(time_c-RSS_Kernel::calc_time_step, time_c,
                                                                     callback, _CALLBACK_SIZE-1) ;
+
              mObjects[i].object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 
           if(mObjects[i].cut_time!=    0. &&
@@ -1533,6 +1541,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        static  double  t_last ;
             RSS_IFace  iface ;
            RSS_Object *object ;
+           RSS_Object *unit ;
+                 char  o_name[128] ;          /* Имя объекта */ 
+                 char *u_name ;               /* Имя компонента */
+                 char *word2 ;
+                 char *word3 ;
+                 char  command[1024] ;
                  char  text[1024] ;
                  char *end ;
                   int  status ;
@@ -1567,21 +1581,85 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     else
     if(!stricmp(frame->action, "EXEC" )) {
 
+           memset(command, 0, sizeof(command)) ;
+          strncpy(command, frame->command, sizeof(command)-1) ;
+/*- - - - - - - - - - - - - - - - - - - - - Разыменовывание объектов */
+     do {                                                           /* BLOCK.1 */
+/*- - - - - - - - - - - - - -  Предполагаемое имя объекта/компонента */
+                 memset(o_name, 0, sizeof(o_name)) ;
+                strncpy(o_name, command, sizeof(o_name)-1) ;
+             end=strchr(o_name, ' ') ;                              /* Вырезаем первое слово команды */
+          if(end!=NULL)  *end=0 ;
+
+          if(o_name[0]!='.') {
+                   u_name=strchr(o_name, '.') ;                     /* Если надо -разделяем имена объекта и компонента */
+                if(u_name!=NULL)  {
+                                     *u_name=0 ;
+                                      u_name++ ;
+                                  }
+                             } 
+/*- - - - - - - - - - - - - - - - - - - - - -  Идентификация объекта */
+                     object=NULL ;
+
+        for(i=0 ; i<OBJECTS_CNT ; i++)                              /* Ишем обьект по имени */
+          if(!stricmp(OBJECTS[i]->Name, o_name)) {
+                                                   object=OBJECTS[i] ;
+                                                        break ;
+                                                 } 
+          if(object==NULL)  break ;                                 /* Если такого нет... */
+/*- - - - - - - - - - - - - - - - - - - - - Идентификация компонента */
+       if(u_name!=NULL) {
+                            unit=NULL ;
+
+         for(i=0 ; i<object->Units.List_cnt ; i++)                  /* Ишем компонент по имени */
+          if(!stricmp(object->Units.List[i].object->Name, u_name)) {
+                         unit=object->Units.List[i].object ;
+                                               break ;
+                                                                   }
+
+                                     if(unit==NULL)  break ;        /* Если такого нет... */
+
+                            object=unit ;
+                        }
+/*- - - - - - - - - - - - - - - - - - - - Переформировывание команды */
+       do {
+                word2=strchr(command, ' ') ;
+             if(word2==NULL) {
+                                 word2="" ;
+                                 word3="" ;
+                                  break ;
+                             }
+                word2++ ;
+                word3=strchr(word2, ' ') ;
+             if(word3==NULL)    word3="" ;
+             else            { *word3= 0 ;
+                                word3++ ;  } 
+                           
+          } while(0) ;
+
+           sprintf(text, "%s %s %s %s",                             /* Переформировываем команду */
+                          object->Type, word2, o_name, word3) ;
+            strcpy(command, text) ;
+/*- - - - - - - - - - - - - - - - - - - - - Разыменовывание объектов */
+        } while(0) ;                                                /* BLOCK.1 */
+/*- - - - - - - - - - - - - - - - - - - - - - - - Исполнение команды */
       for(i=0 ; i<RSS_Kernel::kernel->modules_cnt ; i++) {
       
-             status=RSS_Kernel::kernel->modules[i].entry->vExecuteCmd(frame->command) ;
-          if(status==-1)  return(-1) ;
+             status=RSS_Kernel::kernel->modules[i].entry->vExecuteCmd(command) ;
+          if(status==-1)  return(_EXIT_FRAME) ;
           if(status== 0)    break ;
                                                          }
 
-          if(status== 1)
-             status=RSS_Kernel::kernel->vExecuteCmd(frame->command) ;
+          if(status==1)
+             status=RSS_Kernel::kernel->vExecuteCmd(command) ;
+          if(status==-1)  return(_EXIT_FRAME) ;
 
           if(status== 1) {
-                              sprintf(text, "Неизвестная команда: %s", frame->command) ;
+                              sprintf(text, "Неизвестная команда: %s", command) ;
                            SEND_ERROR(text) ;
                                return(_EXIT_FRAME) ;
                          }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*--------------------------------------------------- Операция START */
     else

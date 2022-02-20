@@ -24,28 +24,31 @@ eye>50
 
 !save l
 
-;------------------------- Носитель
+;------------------------- ЗРК
 
-flyer cr zrk стрела-10
+external cr zrk стрела-10
+zrk itype FILE ZRK
+zrk ifile/f d:/tmp/ext/zrk
+zrk ifile/t d:/tmp/ext/targets.dat
 
 zrk base 0 0 0
 zrk angle/a 0
 zrk v 10
-zrk path 0
+;zrk path 0
 
 ;------------------------- Ракеты
 
-external cr r1 ракета-1 0.2 3
-r1 itype FILE missile
-r1 ifile/f d:/tmp/ext
-r1 ifile/t d:/tmp/ext/targets.dat
-r1 owner zrk
+external cr zrk_missile ракета-1 0.2 3
+zrk_missile itype FILE missile
+zrk_missile ifile/f d:/tmp/ext/missiles
+zrk_missile ifile/t d:/tmp/ext/targets.dat
+zrk_missile owner zrk
+scene visible zrk_missile 0
 
-r1 copy r2
-r2 owner zrk
+;r1 copy r2
+;r2 owner zrk
 
-scene visible r1 0
-scene visible r2 0
+;scene visible r2 0
 
 ;------------------------- БЛА
 

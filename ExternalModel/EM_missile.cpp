@@ -43,6 +43,11 @@
 /********************************************************************/
 /*                                                                  */
 /*                          Расчет модели                           */
+/*                                                                  */
+/*  Параметры модели:                                               */
+/*     MissileV    -  Скорость полета ракеты, м/с                   */
+/*     MissileG    -  Располагаемая перегрузка маневра, м/с2        */
+/*     MissileHit  -  Радиус поражения БЧ, м                        */
 
      int  EM_model_missile(Object *data, char *command, char *error)
 
@@ -67,9 +72,15 @@
       int  idx ;
       int  i ;
 
-#define    _V     300.
-#define    _G     200.
-#define    _R      15.
+/*----------------------------------- Контроль параметров настройки  */
+
+                *error=0 ;
+
+      if(__missile_v  ==0.)   sprintf(error, "Не задан параметр MissileV - скорость полета ракеты, м/с") ;
+      if(__missile_g  ==0.)   sprintf(error, "Не задан параметр MissileG - располагаемая перегрузка маневра ракеты, м/с2") ;
+      if(__missile_hit==0.)   sprintf(error, "Не задан параметр MissileHit - радиус поражения БЧ ракеты, м") ;
+
+      if(*error!=0)  return(-1) ;
 
 /*------------------------------------------------------- Подготовка */
 
@@ -110,9 +121,9 @@
                                    azim   =data->a_azim*_GRD_TO_RAD ;
                                    elev   =data->a_elev*_GRD_TO_RAD ;
            
-                                data->v_x =_V*dt*cos(elev)*sin(azim) ;
-                                data->v_y =_V*dt*sin(elev) ;
-                                data->v_z =_V*dt*cos(elev)*cos(azim) ;
+                                data->v_x =__missile_v*dt*cos(elev)*sin(azim) ;
+                                data->v_y =__missile_v*dt*sin(elev) ;
+                                data->v_z =__missile_v*dt*cos(elev)*cos(azim) ;
 
                                 data->x  +=data->v_x ;
                                 data->y  +=data->v_y ;
@@ -131,31 +142,31 @@
                        dz=(target->z+2.*dt*target->v_z)-data->z ;
                         s=sqrt(dx*dx+dy*dy+dz*dz) ;
 /*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
-                        r= _V*_V/_G ;                               /* Максимальный вектор изменения */
-                        a= _V*dt/(2.*r) ;
-                   dv_max= 2.*_V*sin(0.5*a) ;
+                        r= __missile_v*__missile_v/__missile_g ;    /* Максимальный вектор изменения */
+                        a= __missile_v*dt/(2.*r) ;
+                   dv_max= 2.*__missile_v*sin(0.5*a) ;
 /*- - - - - - - - - - - Расчет требуемого изменения вектора скорости */
-                       dx=dx*_V/s ;                                 /* Нормируем вектор на цель по скорости */
-                       dy=dy*_V/s ;
-                       dz=dz*_V/s ;
+                       dx=dx*__missile_v/s ;                                 /* Нормируем вектор на цель по скорости */
+                       dy=dy*__missile_v/s ;
+                       dz=dz*__missile_v/s ;
 
                      dv_x=dx-data->v_x ;                            /* Требуемый вектор изменения скорости */
                      dv_y=dy-data->v_y ;
                      dv_z=dz-data->v_z ;
                      dv_s=sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
 /*- - - - - - - - - -  Проверка ухода из поля видимости 180 градусов */
-     if(dv_s>1.4*_V) {
-                         data->x+=data->v_x*dt ;
-                         data->y+=data->v_y*dt ;
-                         data->z+=data->v_z*dt ;
+     if(dv_s>1.4*__missile_v) {
+                                   data->x+=data->v_x*dt ;
+                                   data->y+=data->v_y*dt ;
+                                   data->z+=data->v_z*dt ;
 
-                        hit_check=1 ;
-                             break ;
-                     }
+                                     hit_check=1 ;
+                                          break ;
+                              }
 /*- - - - - - - - - - - - - - - - - - Расчет нового вектора скорости */
      if(dv_s>dv_max) {                                              /* Если требуемое изменение не может быть обеспечено по перегрузке... */
-                            b=asin(0.5*dv_s/_V) ;
-                            h=sqrt(_V*_V-0.25*dv_s*dv_s) ;
+                            b=asin(0.5*dv_s/__missile_v) ;
+                            h=sqrt(__missile_v*__missile_v-0.25*dv_s*dv_s) ;
 
                            ds=h*tan(a-b)+0.5*dv_s ;
 
@@ -165,9 +176,9 @@
                                dv_s =sqrt(data->v_x*data->v_x+
                                           data->v_y*data->v_y+
                                           data->v_z*data->v_z ) ;
-                          data->v_x*=_V/dv_s ;
-                          data->v_y*=_V/dv_s ;
-                          data->v_z*=_V/dv_s ;
+                          data->v_x*=__missile_v/dv_s ;
+                          data->v_y*=__missile_v/dv_s ;
+                          data->v_z*=__missile_v/dv_s ;
                      }
      else            {
                           data->v_x =dx ;
@@ -221,15 +232,13 @@
 
 //                  EM_message(error) ;
 
-          if(ds<_R) {
-                       sprintf(error, "HIT time %0.3lf, miss %0.3lf", dt, ds) ;
-
-                       sprintf(command, "DESTROY;HIT %s;BLAST-A %s;", data->target, data->target) ;
-                    }
-          else      {
-                       sprintf(error, "MISSED time %0.3lf, miss %0.3lf", dt, ds) ;
-
-                    }
+          if(ds<__missile_hit) {
+                                  sprintf(error, "HIT time %0.3lf, miss %0.3lf", dt, ds) ;
+                                  sprintf(command, "DESTROY;HIT %s;BLAST-A %s;", data->target, data->target) ;
+                               }
+          else                 {
+                                  sprintf(error, "MISSED time %0.3lf, miss %0.3lf", dt, ds) ;
+                               }
                                                   }
    else                                           {
 

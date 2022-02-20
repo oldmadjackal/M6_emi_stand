@@ -105,8 +105,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 /*----------------------------------------- Создание первичного окна */
 
+       if(__title[0]==0)  strcpy(__title, "External objects model") ;
+
     hFrameWindow=CreateWindow("EM_Frame", 
-                              "External objects model", 
+                               __title, 
 //                             WS_OVERLAPPEDWINDOW,
                                WS_OVERLAPPED  |
                                WS_CAPTION     |
@@ -465,9 +467,23 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                   char  type ;
                    int  size ;
                 }  pars[]={
-                           { "ControlFolder=",  __control_folder, 'C', sizeof(__control_folder)  },
-                           { "Object=",         __control_object, 'C', sizeof(__control_object)  },
-                           { "Targets=",        __targets_path,   'C', sizeof(__targets_path  )  },
+                           { "Title=",              __title,              'C', sizeof(__title)           },
+
+                           { "ControlFolder=",      __control_folder,     'C', sizeof(__control_folder)  },
+                           { "Object=",             __control_object,     'C', sizeof(__control_object)  },
+                           { "Targets=",            __targets_path,       'C', sizeof(__targets_path)    },
+
+                           { "MissileV=",          &__missile_v,          'D',    0                      },
+                           { "MissileG=",          &__missile_g,          'D',    0                      },
+                           { "MissileHit=",        &__missile_hit,        'D',    0                      },
+
+                           { "ZrkV=",              &__zrk_v,              'D',    0                      },
+                           { "ZrkHmin=",           &__zrk_h_min,          'D',    0                      },
+                           { "ZrkRmin=",           &__zrk_r_min,          'D',    0                      },
+                           { "ZrkRmax=",           &__zrk_r_max,          'D',    0                      },
+                           { "ZrkFiringInterval=", &__zrk_firing_interval,'D',    0                      },
+                           { "ZrkMissile=",         __zrk_missile,        'C', sizeof(__zrk_missile)     },
+
                            {  NULL }
                           } ;
 
@@ -511,8 +527,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
          if(!memcmp(text, pars[i].key,
                    strlen(pars[i].key ))) {
 
-             if(pars[i].type=='I')  *(int *)pars[i].value=atoi(text+strlen(pars[i].key)) ;
-             else           strncpy((char *)pars[i].value, text+strlen(pars[i].key), pars[i].size-1) ;
+             if(pars[i].type=='I')  *(   int *)pars[i].value=atoi(text+strlen(pars[i].key)) ;
+             else  
+             if(pars[i].type=='D')  *(double *)pars[i].value=strtod(text+strlen(pars[i].key), &end) ;
+             else              strncpy((char *)pars[i].value, text+strlen(pars[i].key), pars[i].size-1) ;
 
                                                 break ;
                                           }
@@ -1177,6 +1195,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
   char  text[1024] ;
 
 
+    if(!stricmp(data->type, "ZRK"    ))   status=EM_model_ZRK    (data, command, error) ;
+    else
     if(!stricmp(data->type, "Missile"))   status=EM_model_missile(data, command, error) ;
     else                                {
 

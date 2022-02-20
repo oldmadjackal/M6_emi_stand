@@ -104,6 +104,7 @@
   <ItemGroup>
     <ClCompile Include="EM_console.cpp" />
     <ClCompile Include="EM_missile.cpp" />
+    <ClCompile Include="EM_ZRK.cpp" />
     <ClCompile Include="ExternalModel.cpp" />
   </ItemGroup>
   <ItemGroup>
