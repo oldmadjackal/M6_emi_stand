@@ -6,4 +6,4 @@
   T=0   start bla2
 ;DT=0   exec zoom/q 1000
  DT=0   exec la/q bla1
-  T=60  exit
+  T=90  exit

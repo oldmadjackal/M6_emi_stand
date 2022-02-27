@@ -852,12 +852,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        range_max  = 3. ;
        range      = 0. ;
 
-           x_base=0 ;
-           y_base=0 ;
-           z_base=0 ;
+        x_base    =0. ;
+        y_base    =0. ;
+        z_base    =0. ;
 
-       dlist1_idx=0 ;
-       dlist2_idx=0 ;
+        x_velocity=0. ;
+        y_velocity=0. ;
+        z_velocity=0. ;
+
+        dlist1_idx=0 ;
+        dlist2_idx=0 ;
 
 }
 

@@ -46,6 +46,7 @@ typedef struct {
                   char  target[128] ;
                    int  target_idx ;
                   char  missile[128] ;
+                double  last_check ;
                    int  active ;
                 double  s ;
                }  Trace ;
@@ -125,9 +126,12 @@ typedef struct {
 /*- - - - - - - - - - - - - - - - - - - -  Выделение воздушных целей */
      if(T->y<__zrk_h_min)  continue ;                               /* Если это - не воздушная цель... */
 /*- - - - - - - - - - - - - - - - - - Выделение приближающихся целей */
-     if(T->v_x==0. &&                                               /* Если неподвижная цель или падающая */
+     if(T->v_x==0. &&                                               /* Если неподвижная цель */
         T->v_z==0. &&
-        T->v_y<=0.   )  continue ;
+        T->v_y==0.   )  continue ;
+
+             v_azim=atan2(fabs(T->v_y), fabs(T->v_x)+fabs(T->v_z)) ;
+     if(T->v_y<0. && fabs(v_azim-_PI/2.)<_PI/10.)  continue ;       /* Если падающая цель  */  
 
              t_azim=atan2(T->z-data->z, T->x-data->x) ;
              v_azim=atan2(T->v_z,       T->v_x      ) ;
@@ -155,9 +159,10 @@ typedef struct {
 
          if(idx<_TRACES_MAX) {
                          strcpy(traces[idx].target, T->name) ;
-                                traces[idx].target_idx=i ;
-                                traces[idx].active    =1 ;
-                                traces[idx].s         =s ;
+                                traces[idx].target_idx= i ;
+                                traces[idx].active    = 1 ;
+                                traces[idx].s         = s ;
+                                traces[idx].last_check= 0 ;
                                     continue ; 
                              }
          else                { 
@@ -191,6 +196,8 @@ typedef struct {
                       (T->z-data->z)*(T->z-data->z) )-
                    dt*(fabs(T->v_x)+fabs(T->v_z))      ;
 
+                 traces[idx].last_check=data->t1 ;
+
             if(s<traces[idx].s)  continue ;                         /* Если ЗУР ещё не достигла цели... */
 
                               }
@@ -198,6 +205,8 @@ typedef struct {
                         traces[idx].missile[0]=0 ;                  /* Отмена назначенной ЗУР */
 
                                     }
+/*- - - - - - - - - - - -  Контроль задержки после поражения/пролета */
+       if(data->t1-traces[idx].last_check < 1.)  continue ;
 /*- - - - - - - - - - - - - - - - - - - - Определение ближайшей цели */
        if(s_min==0. || s_min>traces[idx].s) {
 
@@ -221,6 +230,7 @@ typedef struct {
           sprintf(missile, "%s_%d", __zrk_missile, missiles_fired) ;
 
                    strcpy(traces[idx_firing].missile, missile) ;
+                          traces[idx_firing].last_check=data->t1 ;
 
                          last_firing=data->t1 ;
    

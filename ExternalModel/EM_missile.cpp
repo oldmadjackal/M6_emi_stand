@@ -53,11 +53,15 @@
 
 {
    Object *target ;
+   double  t ;
+   double  t_step ;
    double  dt ;
    double  azim ;
    double  elev ;
    double  dx, dy, dz ;         /* Вектор на цель */
+   double  x_t, y_t, z_t ;      /* Упрежденная точка */
    double  s ;                  /* Расстояние до цели */
+   double  v ;
    double  r ;                  /* Радиус маневра */
    double  h ;
    double  ds ;
@@ -136,17 +140,40 @@
                  hit_check=0 ;
 
    do {
+/*- - - - - - - - - - - - - - - - - - - - - Расчет упрежденной точки */
+                       dx=target->x-data->x ;                       /* Дальность до цели */
+                       dy=target->y-data->y ;
+                       dz=target->z-data->z ;
+                        s=sqrt(dx*dx+dy*dy+dz*dz) ;
+                         
+                        v=__missile_v ;                             /* Скорость ракеты */
+                        t=   0.5*s/v ;
+
+         for(t_step=0.5*t, i=0 ; i<10 ; t_step*=0.5, i++) {         /* Расчет времени сближения с делением шага изменения на 2 */
+
+                        x_t=target->x+t*target->v_x ;
+                        y_t=target->y+t*target->v_y ;
+                        z_t=target->z+t*target->v_z ;
+
+                         dx=x_t-data->x ;
+                         dy=y_t-data->y ;
+                         dz=z_t-data->z ;
+                          s=sqrt(dx*dx+dy*dy+dz*dz) ;
+
+            if(s/t > v)  t+=t_step ;
+            else         t-=t_step ;
+                                                          } 
 /*- - - - - - - - - - - - - - Параметры относительного движения цели */
-                       dx=(target->x+2.*dt*target->v_x)-data->x ;      /* Вектор на цель */
-                       dy=(target->y+2.*dt*target->v_y)-data->y ;
-                       dz=(target->z+2.*dt*target->v_z)-data->z ;
+                       dx=x_t-data->x ;                             /* Вектор на упрежденную точку */
+                       dy=y_t-data->y ;
+                       dz=z_t-data->z ;
                         s=sqrt(dx*dx+dy*dy+dz*dz) ;
 /*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
                         r= __missile_v*__missile_v/__missile_g ;    /* Максимальный вектор изменения */
                         a= __missile_v*dt/(2.*r) ;
                    dv_max= 2.*__missile_v*sin(0.5*a) ;
 /*- - - - - - - - - - - Расчет требуемого изменения вектора скорости */
-                       dx=dx*__missile_v/s ;                                 /* Нормируем вектор на цель по скорости */
+                       dx=dx*__missile_v/s ;                        /* Нормируем вектор на цель по скорости */
                        dy=dy*__missile_v/s ;
                        dz=dz*__missile_v/s ;
 
@@ -223,7 +250,7 @@
             dv_y=(target->y-__contexts[idx]->y_t)-(p_y-__contexts[idx]->y) ;
             dv_z=(target->z-__contexts[idx]->z_t)-(p_z-__contexts[idx]->z) ;
 
-            dt  =-(dx*dv_x+dy*dv_y+dz*dv_z)/(dx*dx+dy*dy+dz*dz) ;
+            dt  =-(dx*dv_x+dy*dv_y+dz*dv_z)/(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
             ds  =sqrt( (dx+dv_x*dt)*(dx+dv_x*dt)+
                        (dy+dv_y*dt)*(dy+dv_y*dt)+
                        (dz+dv_z*dt)*(dz+dv_z*dt) ) ;
