@@ -5,6 +5,7 @@
 /********************************************************************/
 
 #include <windows.h>
+#include <winsock.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <direct.h>
@@ -26,6 +27,9 @@
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 #include "..\F_Hit\F_Hit.h"
+
+#include "..\tcp_lib\exh.h"
+#include "..\tcp_lib\tcp.h"
 
 #include "O_External.h"
 
@@ -164,7 +168,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " ITYPE <Имя>\n"
                     "   Задает параметры интерфейса в диалоговом режиме\n"
                     " ITYPE <Имя> <iface_type> [<object_type>]\n"
-                    "   Задает тип интерфейса (file) и тип объекта\n",
+                    "   Задает тип интерфейса (file, tcp-server) и тип объекта\n",
                     &RSS_Module_External::cIType },
  { "ifile",   "if", "#IFILE - параметры файлового интерфейса с внешним модулем",
                     " IFILE <Имя>\n"
@@ -176,6 +180,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " IFILE/c <Имя> <name>\n"
                     "   Задает имя для входного/выходного файлов данных\n",
                     &RSS_Module_External::cIFile },
+ { "itcp",    "ic", "#ITCP - параметры сетевого интерфейса с внешним модулем",
+                    " ITCP <Имя>\n"
+                    "   Задает параметры в диалоговом режиме\n"
+                    " ITCP/u <Имя> <URL>\n"
+                    "   Задает URL внешнего модуля\n",
+                    &RSS_Module_External::cITcp },
  {  NULL }
                                                             } ;
 
@@ -1881,12 +1891,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                      strupr(pars[1]) ;
 
-   if(stricmp(pars[1], "FILE") &&
-      stricmp(pars[1], "FILE")   ) {
+   if(stricmp(pars[1], "FILE"      ) &&
+      stricmp(pars[1], "TCP-SERVER")   ) {
 
-              SEND_ERROR("Допустимы следующие типы интерфейса: FILE") ;
+              SEND_ERROR("Допустимы следующие типы интерфейса: FILE, TCP-SERVER") ;
                      return(-1) ;
-                                   }
+                                         }
 
                 strcpy(object->iface_type, pars[1]) ;
 
@@ -2002,11 +2012,105 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                }
     else 
     if(t_flag) {
-                  strcpy(object->iface_file_targets, pars[1]) ;
+                  strcpy(object->iface_targets, pars[1]) ;
                }
     else 
     if(c_flag) {
                   strcpy(object->iface_file_control, pars[1]) ;
+               }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*                                                                  */
+/*                    Реализация инструкции ITCP                    */
+/*                                                                  */
+/*       ITCP/U <Имя> <URL>                                         */
+
+  int  RSS_Module_External::cITcp(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                char  *pars[_PARS_MAX] ;
+                char  *name ;
+ RSS_Object_External  *object ;
+                 int   u_flag ;
+                char  *end ;
+                 int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      u_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'u')!=NULL ||
+                   strchr(cmd, 'U')!=NULL   )  u_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+
+       if(u_flag/*+t_flag*/==0) {
+                         SEND_ERROR("Должен быть задан хотя бы один из ключей: U ... \n"
+                                    "Например: ITCP/U <Имя_объекта> ...") ;
+                                           return(-1) ;
+                                }
+       else
+       if(u_flag/*+t_flag*/!=1) {
+                         SEND_ERROR("Должен быть только один из ключей: U ... \n"
+                                    "Например: ITCP/U <Имя_объекта> ...") ;
+                                           return(-1) ;
+                                }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: ITCP <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=(RSS_Object_External *)FindObject(name, 1) ;          /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*--------------------------------------------------- Пропись данных */
+
+    if(pars[1]==NULL) {
+                          SEND_ERROR("Не задано значение параметра") ;
+                                             return(-1) ;
+                      }
+
+    if(u_flag) {
+                  strcpy(object->iface_tcp_connect, pars[1]) ;
+                  strcpy(object->iface_targets,     pars[1]) ;
                }
 /*-------------------------------------------------------------------*/
 
@@ -2108,12 +2212,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       v_abs     =   0. ;
       g_ctrl    = 100. ;
 
+           start_flag=0 ;
+
     strcpy(object_type,        "") ;
 
     strcpy(iface_type,         "") ;
     strcpy(iface_file_folder,  "") ;
     strcpy(iface_file_control, "$NAME$") ;
-    strcpy(iface_file_targets, "") ;
+    strcpy(iface_tcp_connect,  "") ;
+    strcpy(iface_targets,      "") ;
 
       mTrace      =NULL ;
       mTrace_cnt  =  0 ;  
@@ -2253,7 +2360,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             strcpy(object->iface_type,         this->iface_type) ;
             strcpy(object->iface_file_folder,  this->iface_file_folder) ;
             strcpy(object->iface_file_control, this->iface_file_control) ;
-            strcpy(object->iface_file_targets, this->iface_file_targets) ;
+            strcpy(object->iface_tcp_connect,  this->iface_tcp_connect) ;
+            strcpy(object->iface_targets,      this->iface_targets) ;
 
    if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
 
@@ -2350,15 +2458,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_External::vCalculateStart(double  t)
 {
-    Matrix2d  Sum_Matrix ;
-    Matrix2d  Oper_Matrix ;  
-    Matrix2d  Velo_Matrix ;
-        char  flag[FILENAME_MAX] ;
-        char  name[128] ;
-         int  i ; 
+     Matrix2d  Sum_Matrix ;
+     Matrix2d  Oper_Matrix ;  
+     Matrix2d  Velo_Matrix ;
+         char  flag[FILENAME_MAX] ;
+         char  name[128] ;
+         WORD  version ;
+      WSADATA  winsock_data ;        /* Данные системы WINSOCK */
+          int  status ;
+         char  text[1024] ;
+          int  i ; 
+
+  static  int  sockets_init ;
 
 #define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
 #define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
+
+/*------------------------------------------ Инициализация стека TCP */
+
+   if(sockets_init==0) {
+
+                          version=MAKEWORD(1, 1) ;
+        status=WSAStartup(version, &winsock_data) ;                 /* Иниц. Win-Sockets */
+     if(status) {
+                     sprintf(text, "Win-socket DLL loading error: %d", WSAGetLastError()) ;
+                  SEND_ERROR(text) ;
+                       return(-1) ;
+                }
+
+                       }
+
+      sockets_init=1 ;
 
 /*-------------------------------------- Привязка к объекту-носителю */
 
@@ -2412,7 +2542,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(this->CalculateExt_use==1) {
 /*- - - - - - - - - - - - - - - - - - -  Очистка для интерфейса FILE */
-     if(!stricmp(this->iface_type, "FILE")) {
+     if(!stricmp(this->iface_type, "FILE"      )) {
 
                                     strcpy(name, this->iface_file_control) ;
       if(!stricmp(name, "$NAME$"))  strcpy(name, this->Name) ;
@@ -2422,12 +2552,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             sprintf(flag, "%s/%s.in.flag", this->iface_file_folder, name) ;
              unlink(flag) ;
 
-                                            }
+                                                  }
+/*- - - - - - - - - - - - - - - -  Очистка для интерфейса TCP-SERVER */
+     else
+     if(!stricmp(this->iface_type, "TCP-SERVER")) {
+
+
+                                                  }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                  }  
+/*------------------------------- Установка признака начального шага */
+
+            this->start_flag=1 ;
+
 /*------------------------------------------------ Очистка контекста */
 
-    this->iSaveTracePoint("CLEAR") ;
+            this->iSaveTracePoint("CLEAR") ;
+
+/*-------------------------------------------------------------------*/
 
 #undef   OBJECTS
 #undef   OBJECTS_CNT
@@ -2461,13 +2603,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_External::vCalculateExt1(double t1, double t2, char *callback, int callback_size)
 {
-  char  name[128] ;
-  char  flag[FILENAME_MAX] ;
-  char  path[FILENAME_MAX] ;
-  FILE *file ;
-  char  value[128] ;
-  char  text[4096] ;
-   int  i ;
+        char  name[128] ;
+        char  flag[FILENAME_MAX] ;
+        char  path[FILENAME_MAX] ;
+        FILE *file ;
+         Tcp  tcp_server_iface ;
+  Tcp_packet  data ;
+         int  status ;
+        char  value[128] ;
+        char  text[4096] ;
+        char *end ;
+         int  i ;
 
 /*------------------------------------- Формирование списка объектов */
 
@@ -2520,14 +2666,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    do {
 /*- - - - - - - - - - - - - - - - - - -  Проверка повторной отправки */
          for(i=0 ; i<targets_links_cnt ; i++)
-           if(!strcmp(targets_links[i]->link, this->iface_file_targets))  break ;
+           if(!strcmp(targets_links[i]->link, this->iface_targets))  break ;
 
            if(i<targets_links_cnt) {
                   if(targets_links[i]->time_mark==t1)  break ;      /* Если список объектов по данной ссылке уже формировался */ 
                                    }
            else                    {
                        targets_links[i]=(struct RSS_Object_ExternalLink *)calloc(1, sizeof(struct RSS_Object_ExternalLink)) ;
-                strcpy(targets_links[i]->link, this->iface_file_targets) ;
+                strcpy(targets_links[i]->link, this->iface_targets) ;
                        targets_links_cnt++ ;
                                    }
 
@@ -2535,9 +2681,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - -  Отправка запроса через интерфейс FILE */
    if(!stricmp(this->iface_type, "FILE")) {
 
-         file=fopen(this->iface_file_targets, "w") ;
+         file=fopen(this->iface_targets, "w") ;
       if(file==NULL) {
-                          sprintf(text, "Ошибка создания файла объектов: %s", this->iface_file_targets) ;
+                          sprintf(text, "Ошибка создания файла объектов: %s", this->iface_targets) ;
                        SEND_ERROR(text) ;
                             return(-1) ;
                      }
@@ -2546,6 +2692,41 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              fclose(file) ;
 
                                           }
+/*- - - - - - - - - - -  Отправка запроса через интерфейс TCP-SERVER */
+   if(!stricmp(this->iface_type, "TCP-SERVER")) {
+
+              strcpy(value, this->iface_targets) ;
+          end=strchr(value, ':') ;
+       if(end==NULL) {
+                          sprintf(text, "Объект %s - Ошибка формата URL списка целей", this->Name) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+
+                            *end=0 ;
+
+                    tcp_server_iface.mServer_name=value ;
+                    tcp_server_iface.mServer_port=atoi(end+1) ;
+
+           memmove(targets+8, targets, strlen(targets)+1) ;         /* Добавляем префикс типа сообщения */
+            memcpy(targets, "TARGETS:", 8) ;
+
+                                         data.data_out.assign(targets) ;
+          status=tcp_server_iface.Client(&data) ; 
+       if(status) {
+                          sprintf(text, "Объект %s - Ошибка отправки TARGETS-запроса %d", this->Name, status) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                  }  
+
+       if(stricmp(data.data_in.c_str(), "SUCCESS")) {               /* Проверка результата */
+
+                          sprintf(text, "Объект %s - Ошибка исполнения TARGETS-запроса: %s", this->Name, data.data_in.c_str()) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                                                    }
+
+                                                }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
       } while(0) ;
 
@@ -2553,7 +2734,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - Формирование запроса */
          memset(text, 0, sizeof(text)) ;
 
-        sprintf(value, "\"name\":\"%s\";\"t1\":\"%.2lf\";\"t2\":\"%.2lf\"\n", this->Name, t1, t2) ;
+        sprintf(value, "\"name\":\"%s\";\"start\":\"%d\";\"t1\":\"%.2lf\";\"t2\":\"%.2lf\"\n", this->Name, this->start_flag, t1, t2) ;
          strcat(text, value) ;  
         sprintf(value, "\"x\":\"%.2lf\";\"y\":\"%.2lf\";\"z\":\"%.2lf\"\n", this->x_base, this->y_base, this->z_base) ;
          strcat(text, value) ;  
@@ -2592,6 +2773,45 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              fclose(file) ;
  
                                           }
+/*- - - - - - - - - - -  Отправка запроса через интерфейс TCP-SERVER */
+   if(!stricmp(this->iface_type, "TCP-SERVER")) {
+
+              strcpy(value, this->iface_tcp_connect) ;
+          end=strchr(value, ':') ;
+       if(end==NULL) {
+                          sprintf(text, "Объект %s - Ошибка формата URL соединения", this->Name) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+
+                            *end=0 ;
+
+                    tcp_server_iface.mServer_name=value ;
+                    tcp_server_iface.mServer_port=atoi(end+1) ;
+
+           memmove(text+5, text, strlen(text)+1) ;                  /* Добавляем префикс типа сообщения */
+            memcpy(text, "STEP:", 5) ;
+
+                                         data.data_out.assign(text) ;
+          status=tcp_server_iface.Client(&data) ; 
+       if(status) {
+                          sprintf(text, "Объект %s - Ошибка отправки STEP-запроса %d", this->Name, status) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                  }  
+
+       if(stricmp(data.data_in.c_str(), "SUCCESS")) {               /* Проверка результата */
+
+                          sprintf(text, "Объект %s - Ошибка исполнения STEP-запроса: %s", this->Name, data.data_in.c_str()) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                                                    }
+
+                                                }
+/*----------------------------------- Сброс признака начального шага */
+
+                  this->start_flag=0 ;
+
 /*-------------------------------------------------------------------*/
     
   return(0) ;
@@ -2599,20 +2819,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_External::vCalculateExt2(double t1, double t2, char *callback, int callback_size)
 {
-    char  name[128] ;
-    char  flag[FILENAME_MAX] ;
-    char  path[FILENAME_MAX] ;
-    FILE *file ;
-    char  em_name[128] ;
-  double  em_t1 ;
-  double  em_t2 ;
-    char  em_message[1024] ;
-     int  status ;
-    char  value[1024] ;
-    char  text[4096] ;
-    char *key ;
-    char *end ;
-     int  i ;
+        char  name[128] ;
+        char  flag[FILENAME_MAX] ;
+        char  path[FILENAME_MAX] ;
+        FILE *file ;
+         Tcp  tcp_server_iface ;
+  Tcp_packet  data ;
+        char  em_name[128] ;
+      double  em_t1 ;
+      double  em_t2 ;
+        char  em_message[1024] ;
+         int  status ;
+        char  value[1024] ;
+        char  text[4096] ;
+        char *key ;
+        char *end ;
+         int  i ;
 
   static  char *keys[]={"\"name\":\"", "\"t1\":\"",   "\"t2\":\"",
                         "\"x\":\"",    "\"y\":\"",    "\"z\":\"",
@@ -2655,6 +2877,63 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                       break ;
                                           }
+/*- - - - - - - - - - -  Отправка запроса через интерфейс TCP-SERVER */
+   if(!stricmp(this->iface_type, "TCP-SERVER")) {
+
+              strcpy(value, this->iface_tcp_connect) ;
+          end=strchr(value, ':') ;
+       if(end==NULL) {
+                          sprintf(text, "Объект %s - Ошибка формата URL соединения", this->Name) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                     }
+
+                            *end=0 ;
+
+                    tcp_server_iface.mServer_name=value ;
+                    tcp_server_iface.mServer_port=atoi(end+1) ;
+
+          sprintf(text, "GET:\"name\":\"%s\";\"t1\":\"%.2lf\";",   /* Формирование запроса */
+                            this->Name, t1) ;
+
+                                         data.data_out.assign(text) ;
+          status=tcp_server_iface.Client(&data) ; 
+       if(status) {
+                          sprintf(text, "Объект %s - Ошибка отправки GET-запроса %d", this->Name, status) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                  }  
+
+            memset(text, 0, sizeof(text)) ;
+           strncpy(text, data.data_in.c_str(), sizeof(text)-1) ;
+
+       if(!memicmp(text, "WARNING", strlen("WARNING"))) {           /* Результат ещё не готов */
+                         continue ;
+                                                        }
+       else
+       if(!memicmp(text, "ERROR",   strlen("ERROR"  ))) {           /* Ошибка */
+
+                           memset(value, 0, sizeof(value)) ;
+                          strncpy(value, text+6, sizeof(value)-1) ;
+                          sprintf(text, "Объект %s - Ошибка исполнения GET-запроса: %s", this->Name, value) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                                                        }
+       else
+       if(!memicmp(text, "SUCCESS", strlen("SUCCESS"))) {           /* Получен результат */
+
+              memmove(text, text+8, strlen(text+8)+1) ;
+                              break ;
+                                                        }
+       else                                             {
+
+                           memset(value, 0, sizeof(value)) ;
+                          strncpy(value, text, sizeof(value)-1) ;
+                          sprintf(text, "Объект %s - Некорректный ответ на GET-запрос: %s", this->Name, value) ;
+                       SEND_ERROR(text) ;
+                            return(-1) ;
+                                                        }
+                                                }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
              Sleep(10) ;
 

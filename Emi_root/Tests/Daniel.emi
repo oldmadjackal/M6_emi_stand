@@ -27,9 +27,8 @@ eye>50
 ;------------------------- ַ׀Ê
 
 external cr zrk סענוכא-10
-zrk itype FILE ZRK
-zrk ifile/f d:/tmp/ext/zrk
-zrk ifile/t d:/tmp/ext/targets.dat
+zrk itype TCP-SERVER ZRK
+zrk itcp/u 127.0.0.1:5555
 
 zrk base 0 0 0
 zrk angle/a 0

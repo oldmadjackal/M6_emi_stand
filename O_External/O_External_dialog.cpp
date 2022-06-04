@@ -375,26 +375,42 @@
 /*- - - - - - - - - - - - - - Инициализация списка типов компонентов */
                         CB_CLEAR(IDC_IFACE_TYPE) ;
                      CB_ADD_LIST(IDC_IFACE_TYPE, "FILE") ;
+                     CB_ADD_LIST(IDC_IFACE_TYPE, "TCP-SERVER") ;
 /*- - - - - - - - - - - - - - - - - - - - -  Инициализация элементов */
          if(object->iface_type[0]==0)  strcpy(object->iface_type, "FILE") ;
 
              SETc(IDC_IFACE_TYPE,  object->iface_type) ;
              SETs(IDC_OBJECT_TYPE, object->object_type) ;
 
-         if(!stricmp(object->iface_type, "FILE")) {
+         if(!stricmp(object->iface_type, "FILE"      )) {
 
              SETs(IDC_PAR_NAME_1,  "Папка управляющих файлов") ;
              SETs(IDC_PAR_VALUE_1,  object->iface_file_folder) ;
              SETs(IDC_PAR_NAME_2,  "Шаблон имени управляющих файлов") ;
              SETs(IDC_PAR_VALUE_2,  object->iface_file_control) ;
              SETs(IDC_PAR_NAME_3,  "Файл объектов сцены") ;
-             SETs(IDC_PAR_VALUE_3,  object->iface_file_targets) ;
+             SETs(IDC_PAR_VALUE_3,  object->iface_targets) ;
 
              HIDE(IDC_PAR_NAME_4) ;
              HIDE(IDC_PAR_VALUE_4) ;
              HIDE(IDC_PAR_NAME_5) ;
              HIDE(IDC_PAR_VALUE_5) ;
-                                                  }
+                                                        }
+         else
+         if(!stricmp(object->iface_type, "TCP-SERVER")) {
+
+             SETs(IDC_PAR_NAME_1,  "URL внешнего модуля") ;
+             SETs(IDC_PAR_VALUE_1,  object->iface_tcp_connect) ;
+
+             HIDE(IDC_PAR_NAME_2) ;
+             HIDE(IDC_PAR_VALUE_2) ;
+             HIDE(IDC_PAR_NAME_3) ;
+             HIDE(IDC_PAR_VALUE_3) ;
+             HIDE(IDC_PAR_NAME_4) ;
+             HIDE(IDC_PAR_VALUE_4) ;
+             HIDE(IDC_PAR_NAME_5) ;
+             HIDE(IDC_PAR_VALUE_5) ;
+                                                        }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
   			  return(FALSE) ;
   			     break ;
@@ -409,9 +425,19 @@
 /*- - - - - - - - - - - - - - - - - - - - - - -  Сохранение настроек */
      if(elm==IDC_SET) {
 
-                 GETc(IDC_IFACE_TYPE, object->iface_type) ;
+               GETc(IDC_IFACE_TYPE, object->iface_type) ;
 
-        if(!stricmp(object->iface_type, "FILE")) {
+        if(!stricmp(object->iface_type, "TCP-SERVER")) {
+
+               GETs(IDC_OBJECT_TYPE, text) ;
+             strcpy(object->object_type, text) ;
+
+               GETs(IDC_PAR_VALUE_1, text) ;
+             strcpy(object->iface_tcp_connect, text) ;
+
+                                                       }
+        else
+        if(!stricmp(object->iface_type, "FILE"      )) {
 
                GETs(IDC_PAR_VALUE_1, text) ;
           if(access(text, 0x00)!=0) {
@@ -429,8 +455,8 @@
              strcpy(object->iface_file_control, text) ;
 
                GETs(IDC_PAR_VALUE_3, text) ;
-             strcpy(object->iface_file_targets, text) ;
-                                                 }
+             strcpy(object->iface_targets, text) ;
+                                                       }
 
                             EndDialog(hDlg, 0) ;
 

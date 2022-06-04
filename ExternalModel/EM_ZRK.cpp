@@ -103,6 +103,13 @@ typedef struct {
 
               dt=data->t2-data->t1 ;
  
+/*----------------------------- Обработка первого шага моделирования */
+
+   if(data->start) {
+
+//       memset(__contexts[idx], 0, *sizeof(__contexts[idx])) ;     /* Инициализация контекста */
+
+                   }
 /*-------------------------------------------------- Расчет движения */
 
                    azim   =data->a_azim*_GRD_TO_RAD ;
@@ -225,7 +232,8 @@ typedef struct {
     while(idx_firing>=0) {
 
        if(data->t1-last_firing < __zrk_firing_interval)  break ;    /* Контроль задержки от последнего пуска */
-
+/*- - - - - - - - - - - - - - - - - - - - - - Расчет углов наведения */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Регистрация пуска */
                   missiles_fired++;
           sprintf(missile, "%s_%d", __zrk_missile, missiles_fired) ;
 
@@ -233,15 +241,23 @@ typedef struct {
                           traces[idx_firing].last_check=data->t1 ;
 
                          last_firing=data->t1 ;
-   
+/*- - - - - - - - - - - - - - - - - - - - - - Расчет углов наведения */
+               s= sqrt((T->x-data->x)*(T->x-data->x)+
+                       (T->z-data->z)*(T->z-data->z) ) ;
+            azim=atan2(T->x-data->x, T->z-data->z)*_RAD_TO_GRD ;
+            elev=atan2(T->y-data->y,    s        )*_RAD_TO_GRD ;
+/*- - - - - - - - - - - - - - - - - - -  Формирование команд на пуск */ 
          sprintf(command, "EXEC %s COPY %s;"
                           "EXEC %s TARGET %s;"
-                          "START %s;",
+                          "START %s;"
+                          "EXEC %s ANGLE %.0lf %.0lf 0;",
                             __zrk_missile, missile,
                                   missile, T->name,
-                                  missile) ;
+                                  missile,
+                                  missile, azim, elev) ;
 
          sprintf(error, "Firing %s - h=%0.3lf s=%0.3lf", T->name, T->y, traces[idx_firing].s) ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
                                break ;
                          }

@@ -91,8 +91,16 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "U_ModelGuided", "U_ModelGuided\U_ModelGuided.vcxproj", "{ED82B0FB-F552-4B9E-9AA1-0A28463F5798}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "O_External", "O_External\O_External.vcxproj", "{C7F9387B-6DB9-40FF-99B0-8E379FF669A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F079AD27-61D9-4F02-8931-56D11900213E} = {F079AD27-61D9-4F02-8931-56D11900213E}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExternalModel", "ExternalModel\ExternalModel.vcxproj", "{05181477-89B9-4629-B37A-736C6E7B348A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F079AD27-61D9-4F02-8931-56D11900213E} = {F079AD27-61D9-4F02-8931-56D11900213E}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tcp_lib", "tcp_lib\tcp_lib.vcxproj", "{F079AD27-61D9-4F02-8931-56D11900213E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -412,6 +420,12 @@ Global
 		{05181477-89B9-4629-B37A-736C6E7B348A}.Release|Win32.ActiveCfg = Release|x64
 		{05181477-89B9-4629-B37A-736C6E7B348A}.Release|x64.ActiveCfg = Release|x64
 		{05181477-89B9-4629-B37A-736C6E7B348A}.Release|x64.Build.0 = Release|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Debug|Win32.ActiveCfg = Debug|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Debug|x64.ActiveCfg = Debug|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Debug|x64.Build.0 = Debug|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Release|Win32.ActiveCfg = Release|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Release|x64.ActiveCfg = Release|x64
+		{F079AD27-61D9-4F02-8931-56D11900213E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

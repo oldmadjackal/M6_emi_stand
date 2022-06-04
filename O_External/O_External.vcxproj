@@ -161,7 +161,7 @@
       <Culture>0x0419</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\O_External.def</ModuleDefinitionFile>
@@ -258,7 +258,7 @@
       <Culture>0x0419</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;glu32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <ModuleDefinitionFile>.\O_External.def</ModuleDefinitionFile>
@@ -317,6 +317,9 @@
     <ProjectReference Include="..\RSS_object\RSS_object.vcxproj">
       <Project>{d60124ad-c39b-4cc5-9b39-6e001a7802ef}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\tcp_lib\tcp_lib.vcxproj">
+      <Project>{f079ad27-61d9-4f02-8931-56d11900213e}</Project>
     </ProjectReference>
     <ProjectReference Include="..\UD_tools\Ud_tools.vcxproj">
       <Project>{f0e69efd-c8d7-4a63-b1c6-47cecc61a71c}</Project>

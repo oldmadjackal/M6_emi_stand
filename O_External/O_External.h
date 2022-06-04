@@ -54,7 +54,7 @@ struct RSS_Object_ExternalLink {
 
     public : 
 
-#define                       _TARGETS_MAX     256000
+#define                       _TARGETS_MAX     512000
 #define                 _TARGETS_LINKS_MAX       1000
 
          static                            char *targets ;                           /* Описание целей */
@@ -72,11 +72,13 @@ struct RSS_Object_ExternalLink {
 
                          int  g_over ;                           /* Маневр с максимальной перегрузкой */
 
+                         int  start_flag ;                       /* Признак первого шага моделирования */
                         char  object_type[FILENAME_MAX] ;        /* Тип объекта */
-                        char  iface_type[FILENAME_MAX] ;         /* Вид интерфейса: FILE */
+                        char  iface_type[FILENAME_MAX] ;         /* Вид интерфейса: FILE, TCP-SERVER */
                         char  iface_file_folder[FILENAME_MAX] ;  /* Папка для размещения обменных файлов */
-                        char  iface_file_targets[FILENAME_MAX] ; /* Имя файла целей */
+                        char  iface_targets[FILENAME_MAX] ;      /* Имя файла целей или URL соединения для передачи списка целей */
                         char  iface_file_control[FILENAME_MAX] ; /* Имя для входного/выходного файлов данных, расширение - in и out */
+                        char  iface_tcp_connect[FILENAME_MAX] ;  /* URL соединения */
 
    private:
 
@@ -144,6 +146,7 @@ struct RSS_Object_ExternalLink {
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
                      int  cIType        (char *) ;                     /* Инструкция ITYPE */
                      int  cIFile        (char *) ;                     /* Инструкция IFILE */
+                     int  cITcp         (char *) ;                     /* Инструкция ITCP */
 
               RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта типа EXTERNAL по имени */
 
