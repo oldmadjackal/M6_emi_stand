@@ -28,7 +28,7 @@ eye>50
 
 external cr zrk стрела-10
 zrk itype TCP-SERVER ZRK
-zrk itcp/u 127.0.0.1:5555
+zrk itcp/u 192.168.1.58:5555
 
 zrk base 0 0 0
 zrk angle/a 0

@@ -1105,9 +1105,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Контроль носителя */
 
-       object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
-    if(object->o_owner==NULL)  return(-1) ;
+    if(object->owner[0]!=0) {                                       /* Если задан носитель... */
 
+         object->o_owner=FindObject(object->owner, 0) ;             /*   Ищем носитель по имени */
+      if(object->o_owner==NULL)  return(-1) ;
+                            }
 /*------------------------------------------------------ Трассировка */
 
               time_0=this->kernel->vGetTime() ;

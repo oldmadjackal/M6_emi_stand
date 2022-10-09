@@ -1,0 +1,54 @@
+#step 0.
+
+#file tests\keys.keys
+
+marker cr m1 cross red
+m1 base 400 0 0
+marker cr m2 cross red
+m2 base -400 0 0
+marker cr m3 cross green
+m3 base 0 0 0
+marker cr m4 cross blue
+m4 base 0 50000 250000
+marker cr m5 cross blue
+m5 base 0 0 450000
+
+;------------------------- Бакгроунд
+
+body cr b1 плоскость 20000 530000
+sc color b1 green
+b1 angle/e -90
+b1 base -10000 0 -10000
+
+la m5
+zoom 500000
+eye 100000 100000 -20000
+eye>1000
+
+!save l
+
+;------------------------- Искандер - ОФ
+;flyer cr grad1 БМ-21
+
+rocket-lego cr iskander ракета-1 0.92 7.3
+;iskander lego engine EngineSimple
+iskander lego warhead WarHeadSimple
+iskander lego model ModelTable
+;rg.engine p tests/grad.dat
+iskander.model path tests/IskanderTable.csv
+iskander.model format "[,120]Z;Y;X;T"
+iskander.warhead tripping/a 0
+iskander.warhead grenade 15 50
+;rg owner m3
+scene visible iskander 1
+
+;------------------------- Отображение
+
+show
+
+;------------------------- Бой
+
+battle program tests\iskander.battle
+
+;zoom 3000
+;la m1

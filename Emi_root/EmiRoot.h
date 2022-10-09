@@ -102,7 +102,7 @@
       int  EmiRoot_command_processor(char *) ;                /* Процессор команд */
       int  EmiRoot_command_read     (char **) ;               /* Обработчик командного файла */
       int  EmiRoot_command_write    (char *) ;                /* Запись командного файла */
-     void  EmiRoot_command_normalise(char *) ;                /* Нормализация командной строки */
+     void  EmiRoot_command_normalise(char *, int) ;           /* Нормализация командной строки */
 
      void  iDebug                   (char *, char *, int) ;   /* Отладочная печать в файл */ 
      void  iDebug                   (char *, char *) ;

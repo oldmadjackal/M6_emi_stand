@@ -1186,7 +1186,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - Срабатывание по высоте */
   if(this->tripping_type==_BY_ALTITUDE)
    if(t2>5.) 
-    if(this->Owner->y_base<this->tripping_altitude) {
+    if(this->Owner->y_base<=this->tripping_altitude) {
 
                                         blast=1 ;
 

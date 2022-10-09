@@ -242,7 +242,7 @@
 
    if(data->start) {
 
-         memset(__contexts[idx], 0, *sizeof(__contexts[idx])) ;     /* Инициализация контекста */
+         memset(__contexts[idx], 0, sizeof(*__contexts[idx])) ;     /* Инициализация контекста */
 
                    }
 /*------------------------------------------ Проверка поражения цели */

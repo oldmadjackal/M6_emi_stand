@@ -837,6 +837,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
              int  status ;
             char  cmd_buff[1024] ;
             char *next ;
+             int  q_flag ;
             char *name ;
             char *end ;
             char *quotes ;
@@ -891,7 +892,7 @@ typedef  struct {
                                WaitCommandEnd=1 ;
                          }
 
-                EmiRoot_command_normalise(command) ;                /* Нормализация команды */
+                EmiRoot_command_normalise(command, 0) ;             /* Нормализация команды */
 
         if(file_wr_flag) {                                          /* Запись команды в файл */
                             EmiRoot_command_write(command) ;
@@ -1120,10 +1121,16 @@ typedef  struct {
 /*-------------------------------------------- Цикл вложенных команд */
 
                     postfix_flag=0 ;
+                          q_flag=0 ;
 
    for(next=command ; next!=NULL ; command=next+1) {                /* CIRCLE.1 */
 
      for(next=command ; *next ; next++) {
+
+       if(*next=='"')  q_flag=!q_flag ;
+
+       if(q_flag)  continue ;
+
        if(*next==';')            break ;
 //     if(*next=='%') {  postfix_flag=1 ;
 //                               break ;  }
@@ -1133,7 +1140,7 @@ typedef  struct {
       if( next!=NULL) *next=  0 ;
 
                                strcpy(cmd_buff, command) ;
-            EmiRoot_command_normalise(cmd_buff) ;
+            EmiRoot_command_normalise(cmd_buff, 1) ;
 
                               command=cmd_buff ;
 
@@ -1337,7 +1344,7 @@ typedef  struct {
                        }      
 /*--------------------------------- Предварительная обработка строки */
 
-                EmiRoot_command_normalise(buff) ;                   /* Нормализация строки */
+                EmiRoot_command_normalise(buff, 0) ;                /* Нормализация строки */
 
             if(*buff==';')  continue ;                              /* Если комментарий... */
 
@@ -1477,18 +1484,22 @@ typedef  struct {
 /*								    */
 /*                 Нормализация командной строки                    */
 
-  void  EmiRoot_command_normalise(char *command)
+  void  EmiRoot_command_normalise(char *command, int  q_flag)
 
 {
      char *tmp ;
 
 /*----------------------------------- Замена спецсимволов на пробелы */
 
-      for(tmp=command ; *tmp ; tmp++)
-        if(*tmp=='\t' ||
-           *tmp=='\r' ||
-           *tmp=='\n'   )  *tmp=' ' ;
+                   for(tmp=command ; *tmp ; tmp++)
+                     if(*tmp=='\t' ||
+                        *tmp=='\r' ||
+                        *tmp=='\n'   )  *tmp=' ' ;
 
+    if(q_flag) {
+                   for(tmp=command ; *tmp ; tmp++)
+                     if(*tmp=='"')  *tmp=' ' ;
+               } 
 /*------------------------------ Отсечка начальных/конечных пробелов */
 
       for(tmp=command ; *tmp==' ' ; tmp++) ;

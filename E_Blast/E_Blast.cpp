@@ -1002,6 +1002,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Effect_Blast::vCalculateShow(double  t1, double  t2)
 {
+   int i ;
+
+
+   for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
+     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
+                                             this->y_base, 
+                                             this->z_base ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
+                                             this->a_elev, 
+                                             this->a_roll ) ;
+     this->Features[i]->vShow         (NULL) ;
+                                         }
 
   return(0) ;
 }
