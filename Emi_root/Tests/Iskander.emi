@@ -7,40 +7,93 @@ m1 base 400 0 0
 marker cr m2 cross red
 m2 base -400 0 0
 marker cr m3 cross green
-m3 base 0 0 0
+m3 base 10 0 0
 marker cr m4 cross blue
 m4 base 0 50000 250000
 marker cr m5 cross blue
 m5 base 0 0 450000
+marker cr m6 cross red
+m6 base 50000 0 500000
+marker cr m7 cross blue
+m7 base 50000 20000 500000
 
 ;------------------------- Бакгроунд
 
-body cr b1 плоскость 20000 530000
+body cr b1 плоскость 80000 530000
 sc color b1 green
 b1 angle/e -90
 b1 base -10000 0 -10000
 
-la m5
-zoom 500000
+la m7
+zoom 50000
 eye 100000 100000 -20000
 eye>1000
 
 !save l
 
 ;------------------------- Искандер - ОФ
-;flyer cr grad1 БМ-21
 
 rocket-lego cr iskander ракета-1 0.92 7.3
 ;iskander lego engine EngineSimple
 iskander lego warhead WarHeadSimple
 iskander lego model ModelTable
 ;rg.engine p tests/grad.dat
-iskander.model path tests/IskanderTable.csv
-iskander.model format "[,120]Z;Y;X;T"
+;iskander.model path tests/IskanderTable.csv
+;iskander.model path tests/IskanderTable-0.csv
+;iskander.model path tests/IskanderTable-1.csv
+iskander.model path tests/IskanderTable-2.csv
+;iskander.model format "[,44]Z;Y;X;T"
+;iskander.model format "[,44]T;V;Z;Y;X"
+iskander.model format "[,44000]T;V;Z;Y;X"
 iskander.warhead tripping/a 0
 iskander.warhead grenade 15 50
-;rg owner m3
+iskander trace/c 255 0 255
 scene visible iskander 1
+hit category/t iskander
+
+flyer cr test ракета-1 0.92 7.3
+test base 0 15000 400000
+test angle 0 0 0
+test v 1000
+test trace/c 255 0 255
+hit category/t test
+
+;------------------------- ПРО
+
+missile cr MIM_104C ракета-1 0.41 5.3
+MIM_104C velocity 1700
+MIM_104C control/g 300
+hit radius MIM_104C 20
+scene visible MIM_104C 0
+
+zrk cr SAM_1 M901
+SAM_1 firing/r 3000 20000 25000
+SAM_1 firing/b 1
+SAM_1 firing/m MIM_104C 4
+SAM_1 firing/f 2 1
+
+SAM_1 copy SAM_2
+SAM_1 copy SAM_3
+SAM_1 copy SAM_4
+
+scene visible SAM_1 1
+scene visible SAM_2 1
+scene visible SAM_3 1
+scene visible SAM_4 1
+
+marker cr ms1 cross blue
+marker cr ms2 cross blue
+marker cr ms3 cross blue
+marker cr ms4 cross blue
+
+SAM_1 base 40000 0 500000
+ms1   base 40000 0 500000
+SAM_2 base 60000 0 500000
+ms2   base 60000 0 500000
+SAM_3 base 50000 0 490000
+ms3   base 50000 0 490000
+SAM_4 base 50000 0 510000
+ms4   base 50000 0 510000
 
 ;------------------------- Отображение
 
@@ -48,7 +101,10 @@ show
 
 ;------------------------- Бой
 
+time/c 0.02
+hit overall 1
+
 battle program tests\iskander.battle
 
-;zoom 3000
-;la m1
+zoom 100000
+la iskander

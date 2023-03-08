@@ -1,0 +1,63 @@
+#OBJECT=BODY
+#MODEL=gun_turret
+#PICTURE=gun_turred.bmp
+
+#BEGIN FEATURE SHOW
+$BODY CUBE
+$VERTEX001= 0.3  ; 0.   ;  1.4
+$VERTEX002= 1.4  ; 0.   ;  0.9
+$VERTEX003= 1.4  ; 0.   ; -1.0
+$VERTEX004= 0.9  ; 0.   ; -3.5
+$VERTEX005=-0.3  ; 0.   ;  1.4
+$VERTEX006=-1.4  ; 0.   ;  0.9
+$VERTEX007=-1.4  ; 0.   ; -1.0
+$VERTEX008=-0.9  ; 0.   ; -3.5
+$VERTEX009= 0.3  ; 0.8  ;  1.0
+$VERTEX010= 1.1  ; 0.8  ;  0.5
+$VERTEX011= 1.1  ; 0.8  ; -1.0
+$VERTEX012= 0.9  ; 0.8  ; -3.5
+$VERTEX013=-0.3  ; 0.8  ;  1.0
+$VERTEX014=-1.1  ; 0.8  ;  0.5
+$VERTEX015=-1.1  ; 0.8  ; -1.0
+$VERTEX016=-0.97 ; 0.8  ; -3.5
+$VERTEX017= 0.1  ; 0.3  ;  4.5
+$VERTEX018= 0.1  ; 0.5  ;  4.5
+$VERTEX019=-0.1  ; 0.5  ;  4.5
+$VERTEX020=-0.1  ; 0.3  ;  4.5
+$VERTEX021= 0.1  ; 0.3  ;  0.0
+$VERTEX022= 0.1  ; 0.5  ;  0.0
+$VERTEX023=-0.1  ; 0.5  ;  0.0
+$VERTEX024=-0.1  ; 0.3  ;  0.0
+$FACET=17,18,22,21
+$FACET=18,19,23,22
+$FACET=19,20,24,23
+$FACET=20,17,21,24
+$FACET=9,10,11,12,16,15,14,13
+$FACET=1,2,10,9
+$FACET=2,3,11,10
+$FACET=3,4,12,11
+$FACET=4,8,16,12
+$FACET=5,6,14,13
+$FACET=6,7,15,14
+$FACET=7,8,16,15
+$FACET=1,5,13,9
+#END
+
+#BEGIN FEATURE HIT
+$BODY TANK
+$VERTEX001= -1.8  ; 0.0 ;  2.0
+$VERTEX002=  1.8  ; 0.0 ;  2.0
+$VERTEX003=  1.8  ; 0.0 ; -5.0
+$VERTEX004= -1.8  ; 0.0 ; -5.0
+$VERTEX005= -1.8  ; 0.0 ;  0.0
+$VERTEX006=  1.8  ; 0.0 ;  0.0
+$VERTEX007=  1.8  ; 1.4 ;  0.0
+$VERTEX008= -1.8  ; 1.4 ;  0.0
+$VERTEX009= -1.1  ; 1.4 ;  0.0
+$VERTEX010=  1.1  ; 1.4 ;  0.0
+$VERTEX011=  1.1  ; 2.2 ;  0.0
+$VERTEX012= -1.1  ; 2.2 ;  0.0
+$FACET=1,2,3,4
+$FACET=5,6,7,8
+$FACET=9,10,11,12
+#END

@@ -59,7 +59,7 @@
 
                       HWND  hDropsViewWnd ;                    /* Окно распределения точек падения/срабатывания */
 
-   private:
+    public:
 
      RSS_Object_RocketLegoTrace *mTrace ;                      /* Траектория */
                             int  mTrace_cnt ;  

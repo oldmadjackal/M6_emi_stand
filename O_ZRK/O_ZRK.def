@@ -1,0 +1,4 @@
+LIBRARY O_ZRK
+   EXPORTS
+         Identify   DATA
+	 GetEntry   DATA

@@ -831,7 +831,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       missile=(RSS_Object_MissileLego *)FindObject(name, 1) ;      /* Ищем объект-цель по имени */
+       missile=(RSS_Object_MissileLego *)FindObject(name, 1) ;      /* Ищем объект-образец по имени */
     if(missile==NULL)  return(-1) ;
 
 /*------------------------------------------ Контроль имени носителя */
@@ -842,7 +842,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-//     object=FindObject(copy, 0) ;                                 /* Ищем объект-носитель по имени */
+//     object=FindObject(copy, 0) ;                                 /* Ищем объект-копию по имени */
 //  if(object!=NULL) {
 //                    SEND_ERROR("Oбъект-копия уже существует") ;
 //                                   return(-1) ;

@@ -64,16 +64,17 @@
                          int  mTrace_dlist ;
 
     public:
-               virtual void  vFree          (void) ;            /* Освободить ресурсы */
-               virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
-               virtual void  vPop           (void) ;            /* Восстановить состояние объекта */
-               virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
+         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
+         virtual       void  vPush          (void) ;            /* Сохранить состояние объекта */
+         virtual       void  vPop           (void) ;            /* Восстановить состояние объекта */
+         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-               virtual  int  vEvent         (char *, double) ;  /* Обработка событий */
-               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+         virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
+         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
+         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
                        void  iShowTrace     (void) ;            /* Отображение траектории */
@@ -105,6 +106,7 @@
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
                      int  cCreate       (char *) ;                     /* Инструкция CREATE */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
+                     int  cCopy         (char *) ;                     /* Инструкция COPY */ 
                      int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
                      int  cTarget       (char *) ;                     /* Инструкция TARGET */ 
                      int  cBase         (char *) ;                     /* Инструкция BASE */ 

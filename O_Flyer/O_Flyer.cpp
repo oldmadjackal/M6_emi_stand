@@ -167,7 +167,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Моделирование движения объекта в реальном времени\n"
                     " TRACE/P <Имя> <Имя программа> [<Длительность>]\n"
-                    "   Моделирование движения объекта для программы управления\n",
+                    "   Моделирование движения объекта для программы управления\n"
+                    " TRACE/C <Имя> <R> <G> <B>\n"
+                    "   Задание цвета трассы\n",
                     &RSS_Module_Flyer::cTrace },
  { "stream",  "st", "#STREAM - задание файла потока телеметрии",
                     " STREAM <Имя> <Имя файла телеметрии>\n"
@@ -1783,6 +1785,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
 /*       TRACE/P <Имя> <Программа>                                  */
+/*       TRACE/C <Имя> <R> <G> <B>                                  */
 
   int  RSS_Module_Flyer::cTrace(char *cmd)
 
@@ -1799,7 +1802,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            double   time_s ;        /* Последнее время отрисовки */ 
            double   time_w ;        /* Время ожидания */ 
  RSS_Object_Flyer  *object ;
+              int   c_flag ;
               int   program_flag ;  /* Режим программного управления */ 
+              int   color_r, color_g, color_b ;
              char  *end ;
               int   i ;
 
@@ -1811,6 +1816,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      trace_time=0. ;
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
                    program_flag=0 ;
+                         c_flag=0 ;
 
        if(*cmd=='/' ||
           *cmd=='+'   ) {
@@ -1826,6 +1832,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 if(strchr(cmd, 'p')!=NULL ||
                    strchr(cmd, 'P')!=NULL   )  program_flag=1 ;
+
+                if(strchr(cmd, 'c')!=NULL ||
+                   strchr(cmd, 'C')!=NULL   )  c_flag=1 ;
 
                            cmd=end+1 ;
                         }
@@ -1851,6 +1860,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                          return(-1) ;
                                  }
                        }
+      else
+      if(c_flag)       {
+                       }
       else             {
 
            if( pars[1]!=NULL &&
@@ -1870,13 +1882,44 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     if(name==NULL) {                                                /* Если имя не задано... */
                       SEND_ERROR("Не задано имя объекта. \n"
-                                 "Например: ANGLE <Имя_объекта> ...") ;
+                                 "Например: TRACE <Имя_объекта> ...") ;
                                      return(-1) ;
                    }
 
        object=FindObject(name) ;                                    /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
+/*----------------------------------------------- Если задание цвета */
+
+   if(c_flag) {
+
+     if(pars[3]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/C <Имя> <R> <G> <B>") ;
+                                       return(-1) ;
+                       }
+
+        color_r=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || color_r>255) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_g=strtoul(pars[2], &end, 10) ;
+     if(*end!=0 || color_g>255) {
+                     SEND_ERROR("Компонент цвета <G> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_b=strtoul(pars[3], &end, 10) ;
+     if(*end!=0 || color_b>255) {
+                     SEND_ERROR("Компонент цвета <B> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+          object->mTrace_color=RGB(color_r, color_g, color_b) ;
+
+                                       return(0) ;
+              }
 /*------------------------------------ Контроль программы управления */
 
                   object->program=NULL ;

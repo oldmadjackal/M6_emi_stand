@@ -525,8 +525,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 /*- - - - - - - - - - - - - - Исполнение начального командного файла */
         if(wParam==_USER_EXECUTE_START ) {
 
-           if(_access("start.emi", 0x00)==0) 
-                          EmiRoot_command_start("@start.emi") ;
+             if(_access("start.emi", 0x00)==0)  EmiRoot_command_start("@start.emi") ;
+//           if(_access("start_tank.emi", 0x00)==0)  EmiRoot_command_start("@start_tank.emi") ;
 
                              return(FALSE) ;
                                           }

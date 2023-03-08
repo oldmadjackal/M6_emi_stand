@@ -1,2 +1,8 @@
+  T=0   start SAM_1
+  T=0   start SAM_2
+  T=0   start SAM_3
+  T=0   start SAM_4
+; T=0   start test
   T=0   start iskander
-  T=405 exit
+  T=50 exit
+; T=450 exit

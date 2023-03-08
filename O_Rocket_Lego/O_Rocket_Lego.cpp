@@ -121,7 +121,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     &RSS_Module_RocketLego::cLego },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
-                    "   Трассировка траектории объекта в реальном времени\n",
+                    "   Трассировка траектории объекта в реальном времени\n"
+                    " TRACE/C <Имя> <R> <G> <B>\n"
+                    "   Задание цвета трассы\n",
                     &RSS_Module_RocketLego::cTrace },
  { "spawn",   "sp", "#SPAWN - залповый пуск с использованием шаблона объекта",
                     " SPAWN <Имя> <Число пусков> <Периодичность пусков>\n"
@@ -1023,6 +1025,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
+/*       TRACE/C <Имя> <R> <G> <B>                                  */
 
   int  RSS_Module_RocketLego::cTrace(char *cmd)
 
@@ -1038,6 +1041,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 double  time_s ;        /* Последнее время отрисовки */ 
                 double  time_w ;        /* Время ожидания */ 
  RSS_Object_RocketLego *object ;
+                   int  c_flag ;
+                   int   color_r, color_g, color_b ;
                   char  text[1024] ;
                   char *end ;
                    int  quit_flag ;
@@ -1048,6 +1053,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                      trace_time=0. ;
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                             c_flag=0 ;
                           quit_flag=0 ;
 
        if(*cmd=='/') {
@@ -1060,6 +1066,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                        return(-1) ;
                               }
                   *end=0 ;
+
+                if(strchr(cmd, 'c')!=NULL ||
+                   strchr(cmd, 'C')!=NULL   )  c_flag=1 ;
 
                 if(strchr(cmd, 'q')!=NULL ||
                    strchr(cmd, 'Q')!=NULL   )  quit_flag=1 ;
@@ -1077,21 +1086,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   *end=0 ;
                                                  }
 
-
                      name=pars[0] ;
 
-           if( pars[1]!=NULL &&
-              *pars[1]!=  0    ) {
+      if( pars[1]!=NULL &&
+         *pars[1]!=  0    ) {
                                       trace_time=strtod(pars[1], &end) ;
                                    if(trace_time<=0.) {
                                          SEND_ERROR("Задано некорректное время трассировки") ;
                                                            return(-1) ;
                                                       }
-                                 }
-           else                  {
+                            }
+      if(c_flag)            {
+                            }
+      else                  {
                                             trace_time=60. ;
-               if(!quit_flag)  SEND_ERROR("Время трассировки - 60 секунд") ;
-                                 }
+             if(!quit_flag)  SEND_ERROR("Время трассировки - 60 секунд") ;
+                            }
 /*------------------------------------------- Контроль имени объекта */
 
     if(name==NULL) {                                                /* Если имя не задано... */
@@ -1103,6 +1113,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=(RSS_Object_RocketLego *)FindObject(name, 1) ;        /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
+/*----------------------------------------------- Если задание цвета */
+
+   if(c_flag) {
+
+     if(pars[3]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/C <Имя> <R> <G> <B>") ;
+                                       return(-1) ;
+                       }
+
+        color_r=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || color_r>255) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_g=strtoul(pars[2], &end, 10) ;
+     if(*end!=0 || color_g>255) {
+                     SEND_ERROR("Компонент цвета <G> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_b=strtoul(pars[3], &end, 10) ;
+     if(*end!=0 || color_b>255) {
+                     SEND_ERROR("Компонент цвета <B> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+          object->mTrace_color=RGB(color_r, color_g, color_b) ;
+
+                                       return(0) ;
+              }
 /*------------------------------------------------ Контроль носителя */
 
     if(object->owner[0]!=0) {                                       /* Если задан носитель... */
@@ -2015,7 +2056,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   mTrace[mTrace_cnt].x_velocity=this->x_velocity ;
                   mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
                   mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
-                  mTrace[mTrace_cnt].color     =RGB(  0, 0, 127) ;
+                  mTrace[mTrace_cnt].color     = mTrace_color ;
 
                          mTrace_cnt++ ;
 

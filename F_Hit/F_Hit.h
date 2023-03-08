@@ -26,6 +26,7 @@
 
     public:
                      int  cHelp         (char *) ;          /* Инструкция Help */
+                     int  cOverall      (char *) ;          /* Инструкция Overall */
                      int  cRadius       (char *) ;          /* Инструкция Radius */
                      int  cCategory     (char *) ;          /* Инструкция Category */
 
@@ -129,6 +130,9 @@
   class F_HIT_API RSS_Feature_Hit : public RSS_Feature {
 
     public:       
+                      static    int   any_hit ;                     /* Режим подсчета поражения:                                                   */
+                                                                    /*   0 - подсчитывать только пораженные цели                                   */
+                                                                    /*   1 - подсчитывать все события поражения, включая повторное поражение целей */
                       static    int  *hit_count ;                   /* Счетчик поражения */
                                 int   hit_done ;                    /* Признак поражения */
 

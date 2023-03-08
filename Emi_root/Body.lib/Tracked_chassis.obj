@@ -1,0 +1,46 @@
+#OBJECT=BODY
+#MODEL=tracked_chassis
+#PICTURE=tracked_chassis.bmp
+
+#BEGIN FEATURE SHOW
+$BODY CUBE
+$VERTEX001= 1.8  ; 0.0  ;  2.0
+$VERTEX002= 1.8  ; 1.0  ;  3.0
+$VERTEX003= 1.8  ; 1.4  ;  1.5
+$VERTEX004= 1.8  ; 1.4  ; -5.0
+$VERTEX005= 1.8  ; 1.0  ; -5.0
+$VERTEX006= 1.8  ; 0.0  ; -4.0
+$VERTEX007=-1.8  ; 0.0  ;  2.0
+$VERTEX008=-1.8  ; 1.0  ;  3.0
+$VERTEX009=-1.8  ; 1.4  ;  1.5
+$VERTEX010=-1.8  ; 1.4  ; -5.0
+$VERTEX011=-1.8  ; 1.0  ; -5.0
+$VERTEX012=-1.8  ; 0.0  ; -4.0
+
+$FACET=1,2,3,4,5,6
+$FACET=7,8,9,10,11,12
+$FACET=1,2,8,7
+$FACET=2,3,9,8
+$FACET=3,4,10,9
+$FACET=4,5,11,10
+$FACET=5,6,12,11
+#END
+
+#BEGIN FEATURE HIT
+$BODY TANK
+$VERTEX001= -1.8  ; 0.0 ;  2.0
+$VERTEX002=  1.8  ; 0.0 ;  2.0
+$VERTEX003=  1.8  ; 0.0 ; -5.0
+$VERTEX004= -1.8  ; 0.0 ; -5.0
+$VERTEX005= -1.8  ; 0.0 ;  0.0
+$VERTEX006=  1.8  ; 0.0 ;  0.0
+$VERTEX007=  1.8  ; 1.4 ;  0.0
+$VERTEX008= -1.8  ; 1.4 ;  0.0
+$VERTEX009= -1.1  ; 1.4 ;  0.0
+$VERTEX010=  1.1  ; 1.4 ;  0.0
+$VERTEX011=  1.1  ; 2.2 ;  0.0
+$VERTEX012= -1.1  ; 2.2 ;  0.0
+$FACET=1,2,3,4
+$FACET=5,6,7,8
+$FACET=9,10,11,12
+#END

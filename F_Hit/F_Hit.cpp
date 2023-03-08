@@ -90,6 +90,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "help",     "?",  "#HELP   - список доступных команд", 
                       NULL,
                      &RSS_Module_Hit::cHelp       },
+ { "overall",  "o",  "#OVERALL (O) - подсчитывать все события поражения, включая повторные", 
+                     " OVERALL 0 \n"
+                     "   Подсчитывать только пораженные цели\n"
+                     " OVERALL 1 \n"
+                     "   Подсчитывать все события поражения, включая повторное поражение целей\n",
+                     &RSS_Module_Hit::cOverall     },
  { "radius",   "r",  "#RADIUS (R) - радиус поражения", 
                       NULL,
                      &RSS_Module_Hit::cRadius     },
@@ -370,8 +376,53 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                   Реализация инструкции Overall                  */
+/*     OVERALL <Имя> <Flag>                                         */
+
+  int  RSS_Module_Hit::cOverall(char *cmd)
+
+{ 
+#define   _PARS_MAX   4
+        char *pars[_PARS_MAX] ;
+        char *end ;
+         int  i ;
+
+/*------------------------------------------------ Разбор параметров */        
+
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+/*----------------------------------------------- Определение режима */ 
+
+    if(pars[0]==NULL) {                                             /* Если режим не задан... */
+                        SEND_ERROR("Не задан режим подсчета поражений. \n"
+                                   "Например: HIT OVERALL 1"      ) ;
+                                      return(-1) ;
+                      }
+
+         if(!stricmp(pars[0], "0"))  RSS_Feature_Hit::any_hit=0 ;
+    else if(!stricmp(pars[0], "1"))  RSS_Feature_Hit::any_hit=1 ;
+    else                           {
+                    SEND_ERROR("Некорректное режим подсчета поражений - может быть 0 или 1.") ;
+                                     return(-1) ;
+                                   }
+/*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                   Реализация инструкции Radius                   */
-/*     RADIUS <Имя> <Величина>                                      */
+/*								    */
+/*     RADIUS <Имя> <Радиус поражения>                              */
 
   int  RSS_Module_Hit::cRadius(char *cmd)
 
@@ -562,6 +613,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		       Статические переменные			    */
 
+         int  RSS_Feature_Hit::any_hit  =  0 ;
          int *RSS_Feature_Hit::hit_count=NULL ;
 
 
@@ -1230,10 +1282,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
 
-       if(!HIT->hit_done)                                           /* Модифицируем общий счётчик поражения */
-        if(hit_count!=NULL) (*hit_count)++ ;
+       if(!            HIT->hit_done ||                             /* Модифицируем общий счётчик поражения */
+           RSS_Feature_Hit::any_hit    )
+         if(hit_count!=NULL) (*hit_count)++ ;
 
-                          HIT->hit_done=1 ; 
+                          HIT->hit_done=1 ;
 
                        hit_flag=1 ;
                           break ;

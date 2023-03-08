@@ -104,6 +104,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_Missile::cInfo },
+ { "copy",    "cp", "#COPY - копировать объект",
+                    " COPY <Имя образца> <Имя нового объекта>\n"
+                    "   Копировать объект",
+                    &RSS_Module_Missile::cCopy },
  { "owner",   "o",  "#OWNER - назначить носитель ракеты",
                     " OWNER <Имя> <Носитель>\n"
                     "   Назначить объект - носитель ракеты",
@@ -781,6 +785,76 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      (WPARAM)_USER_SHOW_INFO, (LPARAM)info.c_str()) ;
                   }
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции COPY                    */
+/*								    */
+/*       COPY <Имя образца> <Имя нового объекта>                    */
+
+  int  RSS_Module_Missile::cCopy(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                   char  *pars[_PARS_MAX] ;
+                   char  *name ;
+                   char  *copy ;
+     RSS_Object_Missile  *missile ;
+             RSS_Object  *object ;
+                   char  *end ;
+                    int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                     copy=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: COPY <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       missile=(RSS_Object_Missile *)FindObject(name, 1) ;      /* Ищем объект-образец по имени */
+    if(missile==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(copy==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-копии. \n"
+                                 "Например: COPY <Имя образца> <Имя нового объекта>") ;
+                                     return(-1) ;
+                   }
+
+//     object=FindObject(copy, 0) ;                                 /* Ищем объект-копию по имени */
+//  if(object!=NULL) {
+//                    SEND_ERROR("Oбъект-копия уже существует") ;
+//                                   return(-1) ;
+//                   }
+/*---------------------------------------------- Копирование объекта */
+
+            object=missile->vCopy(copy) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -1867,6 +1941,65 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Копировать объект		            */
+
+    class RSS_Object *RSS_Object_Missile::vCopy(char *name)
+
+{
+         RSS_Model_data  create_data ;
+     RSS_Object_Missile *object ;
+        RSS_Feature_Hit *hit_1 ;
+        RSS_Feature_Hit *hit_2 ;
+                    int  i ;
+
+/*------------------------------------- Копирование базового объекта */
+
+                 memset(&create_data, 0, sizeof(create_data)) ;
+
+ if(name!=NULL)  strcpy( create_data.name, name) ;
+                 strcpy( create_data.path, this->model_path) ;
+
+    for(i=0 ; i<this->Parameters_cnt ; i++) {
+         sprintf(create_data.pars[i].text,  "PAR%d", i) ;
+         sprintf(create_data.pars[i].value, "%lf", this->Parameters[i].value) ;
+                                            }
+
+                 create_data.pars[i].text [0]=0 ;
+                 create_data.pars[i].value[0]=0 ;
+
+       object=(RSS_Object_Missile *)this->Module->vCreateObject(&create_data) ;
+    if(object==NULL)  return(NULL) ;
+ 
+            strcpy(object->owner,  this->owner) ;
+                   object->o_owner=this->o_owner ;
+
+                    object->v_abs =this->v_abs ;                    /* Нормальная скорость */
+                    object->g_ctrl=this->g_ctrl ;                   /* Нормальная траекторная перегрузка */
+
+   if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
+
+/*---------------------------------------------- Копирование свойств */
+
+    for(i=0 ; i<this->Features_cnt ; i++)
+      if(!stricmp(this->Features[i]->Type, "Hit"))
+             hit_1=(RSS_Feature_Hit *)this->Features[i] ;
+
+    for(i=0 ; i<object->Features_cnt ; i++)
+      if(!stricmp(object->Features[i]->Type, "Hit"))
+             hit_2=(RSS_Feature_Hit *)object->Features[i] ;
+
+           hit_2->hit_range =hit_1->hit_range ;
+           hit_2->any_target=hit_1->any_target ;
+           hit_2->any_weapon=hit_1->any_weapon ;
+
+/*-------------------------------------------------------------------*/
+
+   return(object) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                    Сохранить состояние объекта                   */
 /*                    Восстановить состояние объекта                */
 
@@ -2058,13 +2191,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Missile::vCalculate(double t1, double t2, char *callback, int cb_size)
 {
+    double  tx_1, tx_2 ;
     double  dx, dy, dz ;         /* Вектор на цель */
     double  s ;                  /* Расстояние до цели */
     double  r ;                  /* Радиус маневра */
     double  h ;
     double  ds ;
     double  a ;                  /* Ометываемый угол маневра */
-    double  b ;
+    double  b, c ;
     double  dv_max ;             /* Максимальная возможная длина вектора изменение скорости */
     double  dv_x, dv_y, dv_z ;   /* Требуемое изменение скорости */
     double  dv_s ;               /* Длина вектора требуемого изменения скорости */
@@ -2087,11 +2221,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------------------- С наведением */
 
    else                     {
-/*- - - - - - - - - - - - - - Параметры относительного движения цели */
-                       dx=o_target->x_base-x_base ;                 /* Вектор на цель */
-                       dy=o_target->y_base-y_base ;
-                       dz=o_target->z_base-z_base ;
-                        s=sqrt(dx*dx+dy*dy+dz*dz) ;
+/*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
+               dx=o_target->x_base-this->x_base ;
+               dy=o_target->y_base-this->y_base ;
+               dz=o_target->z_base-this->z_base ;
+
+                a=o_target ->x_velocity*o_target ->x_velocity
+                 +o_target ->y_velocity*o_target ->y_velocity
+                 +o_target ->z_velocity*o_target ->z_velocity
+                 -this->x_velocity*this->x_velocity
+                 -this->y_velocity*this->y_velocity
+                 -this->z_velocity*this->z_velocity ;
+                b=2.*(o_target->x_velocity*dx+o_target->y_velocity*dy+o_target->z_velocity*dz) ;
+                c=dx*dx+dy*dy+dz*dz ;
+
+             tx_1=(-b-sqrt(b*b-4.*a*c))/(2.*a) ;
+             tx_2=(-b+sqrt(b*b-4.*a*c))/(2.*a) ;
+
+              if(tx_1<0. && tx_2<0.)  tx_1=   0. ;
+         else if(tx_1<0.           )  tx_1=tx_2 ;
+         else if(tx_2<0.           )   ;
+         else if(tx_1>tx_2         )  tx_1=tx_2 ;
+
+                       dx+=o_target->x_velocity*tx_1 ;                /* Вектор в упрежденную точку */
+                       dy+=o_target->y_velocity*tx_1 ;
+                       dz+=o_target->z_velocity*tx_1 ;
+                        s =sqrt(dx*dx+dy*dy+dz*dz) ;
 /*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
                         r= v_abs*v_abs/g_ctrl ;                     /* Максимальный вектор изменения */
                         a= v_abs*(t2-t1)/(2.*r) ;
