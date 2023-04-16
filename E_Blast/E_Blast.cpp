@@ -192,9 +192,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                calloc(this->feature_modules_cnt, 
                                        sizeof(effect->Features[0])) ;
 
-   for(i=0 ; i<this->feature_modules_cnt ; i++)
+   for(i=0 ; i<this->feature_modules_cnt ; i++) {
         effect->Features[i]=this->feature_modules[i]->vCreateFeature(effect, NULL) ;
-
+                                                }
 /*---------------------------------------- Формирование Hit-свойства */
 
     for(i=0 ; i<effect->Features_cnt ; i++)
@@ -209,7 +209,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          hit->vReadSave("FEATURE HIT", &decl, "Blast.1") ;
 
       if(*data->pars[0].value!=0)  hit->hit_range =strtod(data->pars[0].value, &end) ;
-                                   hit->any_weapon= 1 ;
+
+      if(hit->hit_range>0.)  hit->any_weapon= 1 ;
+      else                   hit->any_weapon= 0 ;
 
 /*---------------------------------- Введение объекта в общий список */
 
@@ -1023,7 +1025,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Обработка событий                         */
 
-     int  RSS_Effect_Blast::vEvent(char *event_name, double  t)
+     int  RSS_Effect_Blast::vEvent(char *event_name, double  t, char *callback, int cb_size)
 {
     RSS_Feature_Hit *hit ; 
                 int  i ;

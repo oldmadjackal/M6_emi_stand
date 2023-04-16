@@ -123,7 +123,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n"
                     " TRACE/C <Имя> <R> <G> <B>\n"
-                    "   Задание цвета трассы\n",
+                    "   Задание цвета трассы\n"
+                    " TRACE/W <Имя> <Толщина линии>\n"
+                    "   Задание толщины линии трассы\n",
                     &RSS_Module_RocketLego::cTrace },
  { "spawn",   "sp", "#SPAWN - залповый пуск с использованием шаблона объекта",
                     " SPAWN <Имя> <Число пусков> <Периодичность пусков>\n"
@@ -1042,7 +1044,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 double  time_w ;        /* Время ожидания */ 
  RSS_Object_RocketLego *object ;
                    int  c_flag ;
-                   int   color_r, color_g, color_b ;
+                   int  w_flag ;
+                   int  color_r, color_g, color_b ;
+                   int  width ;
                   char  text[1024] ;
                   char *end ;
                    int  quit_flag ;
@@ -1054,6 +1058,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      trace_time=0. ;
 /*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
                              c_flag=0 ;
+                             w_flag=0 ;
                           quit_flag=0 ;
 
        if(*cmd=='/') {
@@ -1069,6 +1074,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 if(strchr(cmd, 'c')!=NULL ||
                    strchr(cmd, 'C')!=NULL   )  c_flag=1 ;
+
+                if(strchr(cmd, 'w')!=NULL ||
+                   strchr(cmd, 'W')!=NULL   )  w_flag=1 ;
 
                 if(strchr(cmd, 'q')!=NULL ||
                    strchr(cmd, 'Q')!=NULL   )  quit_flag=1 ;
@@ -1096,7 +1104,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                            return(-1) ;
                                                       }
                             }
+      else 
       if(c_flag)            {
+                            }
+      else
+      if(w_flag)            {
                             }
       else                  {
                                             trace_time=60. ;
@@ -1141,6 +1153,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                 }
 
           object->mTrace_color=RGB(color_r, color_g, color_b) ;
+
+                                       return(0) ;
+              }
+/*----------------------------------------------- Если толщины линии */
+
+   if(w_flag) {
+
+     if(pars[1]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/W <Толщина>") ;
+                                       return(-1) ;
+                       }
+
+         width=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || width>5) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 1...5") ;
+                                       return(-1) ;
+                            }
+
+          object->mTrace_width=width ;
 
                                        return(0) ;
               }
@@ -1666,6 +1697,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       mTrace_cnt  =  0 ;  
       mTrace_max  =  0 ; 
       mTrace_color=RGB(0, 0, 127) ;
+      mTrace_width=  1 ;
       mTrace_dlist=  0 ;  
 
       hDropsViewWnd=NULL ;
@@ -1776,8 +1808,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=(RSS_Object_RocketLego *)this->Module->vCreateObject(&create_data) ;
     if(object==NULL)  return(NULL) ;
  
-            strcpy(object->owner,  this->owner) ;
-                   object->o_owner=this->o_owner ;
+            strcpy(object->owner,       this->owner) ;
+                   object->o_owner     =this->o_owner ;
+                   object->mTrace_color=this->mTrace_color ;        /* Параметры трассы */
+                   object->mTrace_width=this->mTrace_width ;
 
    if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
 
@@ -2126,6 +2160,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        GetGValue(mTrace[i].color)/256.,
                        GetBValue(mTrace[i].color)/256., 1.) ;
 
+           glLineWidth(mTrace_width) ;
+
                glBegin(GL_LINE_STRIP) ;
 
             glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
@@ -2148,6 +2184,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      }
 
                  glEnd();
+
+                 glLineWidth(1.0f) ;
 
 /*----------------------------- Восстановление контекста отображения */
 

@@ -103,7 +103,8 @@ struct RSS_Object_ExternalLink {
          virtual        int  vCalculateExt2 (double, double,
                                                      char *, int) ;
          virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
+         virtual        int  vEvent         (char *, double,    /* Обработка событий */
+                                                     char *, int) ;
          virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */

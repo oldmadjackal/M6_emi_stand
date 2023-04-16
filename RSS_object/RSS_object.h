@@ -196,7 +196,8 @@
                                                       char *, int) ;
    virtual              int  vCalculateDirect(RSS_Point *, char *);    /* Задание целевого состояния */
    virtual              int  vCalculateShow  (double, double) ;        /* Отображение результата расчета изменения состояния */
-   virtual              int  vEvent          (char *, double) ;        /* Обработка событий */
+   virtual              int  vEvent          (char *, double,          /* Обработка событий */
+                                                      char *, int) ;
 
    virtual              int  vResetFeatures  (void *) ;                /* Сброс контекста проверки свойств */
    virtual              int  vPrepareFeatures(void *) ;                /* Подготовить свойства к проверке корректности */

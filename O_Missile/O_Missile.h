@@ -53,14 +53,28 @@
                     double  v_abs ;                           /* Нормальная скорость */
                     double  g_ctrl ;                          /* Нормальная траекторная перегрузка */
 
+                       int  homing_type ;                     /* Вид самонаведения */
+#define                              _AHEAD_HOMING    0       /*   Наведение в упрежденную точку (по умолчанию) */
+#define                       _PROPORTIONAL_HOMING    1       /*   Наведение методом пропорционального наведения с заданным коэффициентом */
+                    double  homing_koef ;                     /* Коэффициент пропорционального наведения */
+
+                    double  mark_hit ;                        /* Радиус отметки взрыва при попадании */
+
+                       int  xyz_trg_prv ;                     /* Флаг наличия данных по предыдущему положению цели */ 
+                    double  x_trg_prv ;                       /* Предыдущее направление на цель */
+                    double  y_trg_prv ;
+                    double  z_trg_prv ;
+
                        int  g_over ;                          /* Маневр с максимальной перегрузкой */
 
-   private:
+   public:
 
      RSS_Object_MissileTrace *mTrace ;                        /* Траектория */
                          int  mTrace_cnt ;  
                          int  mTrace_max ;
                     COLORREF  mTrace_color ;
+                    COLORREF  mTrace_color_over ;
+                         int  mTrace_width ; 
                          int  mTrace_dlist ;
 
     public:
@@ -73,7 +87,8 @@
          virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
          virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
+         virtual        int  vEvent         (char *, double,    /* Обработка событий */
+                                                     char *, int) ;
          virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
@@ -113,7 +128,9 @@
                      int  cAngle        (char *) ;                     /* Инструкция ANGLE */ 
                      int  cVelocity     (char *) ;                     /* Инструкция VELOCITY */
                      int  cControl      (char *) ;                     /* Инструкция CONTROL */
+                     int  cHoming       (char *) ;                     /* Инструкция HOMING */
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
+                     int  cMark         (char *) ;                     /* Инструкция MARK */
 
               RSS_Object *FindObject    (char *, int) ;                /* Поиск обьекта типа BODY по имени */
 

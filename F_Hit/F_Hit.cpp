@@ -1273,12 +1273,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      if(this->target[0]==0)                                         /* Если пересечение с произвольной целью и это не цель */
       if(HIT->any_target==0)  continue ;
-     
+
       if(!iOverallTest(HIT))  continue ;                            /* Если габариты объектов не пересекаются... */
 /*- - - - - - - - - - - - - - - - - - - - - - Контроль поражения тел */
      for(i=0 ; i< HIT->Bodies_cnt ; i++) {                          /* CIRCLE.2 - Перебор тел цели  */
 
-//       if(!iFacetsTest(HIT->Bodies[i] ))  continue;     
+//       if(!iFacetsTest(HIT->Bodies[i] ))  continue ;
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
 
@@ -1321,7 +1321,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                                t_min =trgt->track_s    .x ;
                                                t_max =trgt->track_s_prv.x ;
-  if(trgt->track_s.x > this->track_s_prv.x) {  t_min =trgt->track_s_prv.x ;
+  if(trgt->track_s.x > trgt->track_s_prv.x) {  t_min =trgt->track_s_prv.x ;
                                                t_max =trgt->track_s    .x ;  }
 
                                                s_min-= this->hit_range ;
@@ -1338,7 +1338,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                                t_min =trgt->track_s    .y ;
                                                t_max =trgt->track_s_prv.y ;
-  if(trgt->track_s.y > this->track_s_prv.y) {  t_min =trgt->track_s_prv.y ;
+  if(trgt->track_s.y > trgt->track_s_prv.y) {  t_min =trgt->track_s_prv.y ;
                                                t_max =trgt->track_s    .y ;  }
 
                                                s_min-= this->hit_range ;
@@ -1355,7 +1355,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                                t_min =trgt->track_s    .z ;
                                                t_max =trgt->track_s_prv.z ;
-  if(trgt->track_s.z > this->track_s_prv.z) {  t_min =trgt->track_s_prv.z ;
+  if(trgt->track_s.z > trgt->track_s_prv.z) {  t_min =trgt->track_s_prv.z ;
                                                t_max =trgt->track_s    .z ;  }
 
                                                s_min-= this->hit_range ;

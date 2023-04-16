@@ -103,7 +103,8 @@
          virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
          virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-         virtual        int  vEvent         (char *, double) ;  /* Обработка событий */
+         virtual        int  vEvent         (char *, double,    /* Обработка событий */
+                                                     char *, int) ;
          virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */

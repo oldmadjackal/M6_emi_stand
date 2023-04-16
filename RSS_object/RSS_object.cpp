@@ -433,7 +433,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Обработка событий                         */
 
-     int  RSS_Object::vEvent(char *event_name, double  t)
+     int  RSS_Object::vEvent(char *event_name, double  t, char *callback, int cb_size)
 {
   return(-1) ;
 }

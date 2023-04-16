@@ -65,6 +65,7 @@
                             int  mTrace_cnt ;  
                             int  mTrace_max ;
                        COLORREF  mTrace_color ;
+                            int  mTrace_width ; 
                             int  mTrace_dlist ;
 
     public:

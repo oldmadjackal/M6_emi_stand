@@ -20,7 +20,9 @@ m7 base 50000 20000 500000
 ;------------------------- Бакгроунд
 
 body cr b1 плоскость 80000 530000
-sc color b1 green
+;sc color b1 green
+;sc color b1 rgb 181:130:29
+sc color b1 rgb 128:255:128
 b1 angle/e -90
 b1 base -10000 0 -10000
 
@@ -46,14 +48,15 @@ iskander.model path tests/IskanderTable-2.csv
 ;iskander.model format "[,44]T;V;Z;Y;X"
 iskander.model format "[,44000]T;V;Z;Y;X"
 iskander.warhead tripping/a 0
-iskander.warhead grenade 15 50
+iskander.warhead grenade 0 50
 iskander trace/c 255 0 255
+;iskander trace/w 2
 scene visible iskander 1
 hit category/t iskander
 
 flyer cr test ракета-1 0.92 7.3
-test base 0 15000 400000
-test angle 0 0 0
+test base 50000 15000 450000
+test angle 0 -10 0
 test v 1000
 test trace/c 255 0 255
 hit category/t test
@@ -63,6 +66,9 @@ hit category/t test
 missile cr MIM_104C ракета-1 0.41 5.3
 MIM_104C velocity 1700
 MIM_104C control/g 300
+MIM_104C homing/p 2
+MIM_104C mark 500
+;MIM_104C trace/w 2
 hit radius MIM_104C 20
 scene visible MIM_104C 0
 
@@ -101,10 +107,11 @@ show
 
 ;------------------------- Бой
 
-time/c 0.02
+time/c 0.01
 hit overall 1
 
 battle program tests\iskander.battle
 
-zoom 100000
+zoom 30000
 la iskander
+;la test

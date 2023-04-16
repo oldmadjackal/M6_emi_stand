@@ -1357,7 +1357,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------- Передача события на носитель */
 
     if(event_send) {
-                        this->Owner->vEvent(event_name, event_time) ;
+                        this->Owner->vEvent(event_name, event_time, NULL, 0) ;
                            event_send=0 ;
                    }
 /*--------------------------------- Отображение данных на индикаторе */

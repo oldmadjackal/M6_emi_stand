@@ -82,7 +82,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /********************************************************************/
 /********************************************************************/
 /**							           **/
-/**	       ÎÏÈÑÀÍÈÅ ÊËÀÑÑÀ ÇÀÄÀ×È "ÑÎÇÄÀÍÈÅ ËÀÍÄØÀÔÒÀ"              **/
+/**	       ÎÏÈÑÀÍÈÅ ÊËÀÑÑÀ ÇÀÄÀ×È "ÑÎÇÄÀÍÈÅ ËÀÍÄØÀÔÒÀ"         **/
 /**							           **/
 /********************************************************************/
 /********************************************************************/
@@ -1240,11 +1240,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               status=mObjects[i].object->vCheckFeatures(NULL, &checked) ;
            if(status) {
 
-                    mObjects[i].active=mObjects[i].object->vEvent("HIT", time_c) ;
+                    mObjects[i].active=mObjects[i].object->vEvent("HIT", time_c, NULL, 0) ;
 
              for(j=0 ; j<checked.List_cnt ; j++)
                if(!stricmp(checked.List[j].relation, "Hit"))
-                      checked.List[j].object->vEvent("HITED", time_c) ;
+                      checked.List[j].object->vEvent("HITED", time_c, NULL, 0) ;
 
                       }
                                }
@@ -1659,7 +1659,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                       object=OBJECTS[i] ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Ñèãíàë î ñîáûòèè */
-                   object->vEvent(frame->event, t) ;
+                   object->vEvent(frame->event, t, NULL, 0) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*--------------------------------------------------- Îïåðàöèÿ SPAWN */

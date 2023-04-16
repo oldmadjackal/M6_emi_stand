@@ -157,9 +157,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " CONTROL> <Имя> [<Шаг крена> [<Шаг ускорения>]]\n"
                     "   Управление стрелочками\n",
                     &RSS_Module_Missile::cControl },
+ { "homing",   "h", "#HOMING - настройки самонаведения",
+                    " HOMING/А <Имя>\n"
+                    "   Наведение в упрежденную точку (по умолчанию)\n"
+                    " HOMING/P <Имя> <Коэффициент>\n"
+                    "   Наведение методом пропорциональной навигации с заданным коэффициентом\n",
+                    &RSS_Module_Missile::cHoming },
+ { "mark",     "m", "#MARK - отметить попадание взрывом",
+                    " MARK <Имя> <Радиус>\n"
+                    "   Отметить попадание взрывом с заданным радиусом\n",
+                    &RSS_Module_Missile::cMark },
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
-                    "   Трассировка траектории объекта в реальном времени\n",
+                    "   Трассировка траектории объекта в реальном времени\n"
+                    " TRACE/C <Имя> <R> <G> <B>\n"
+                    "   Задание цвета трассы\n"
+                    " TRACE/O <Имя> <R> <G> <B>\n"
+                    "   Задание цвета трассы на участках перегрузки\n"
+                    " TRACE/W <Имя> <Толщина линии>\n"
+                    "   Задание толщины линии трассы\n",
                     &RSS_Module_Missile::cTrace },
  {  NULL }
                                                             } ;
@@ -1659,6 +1675,203 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*		      Реализация инструкции HOMING                  */
+/*								    */
+/*       HOMING/G <Имя>                                             */
+/*       HOMING/P <Имя> <Коэффициент>                               */
+
+  int  RSS_Module_Missile::cHoming(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                char  *pars[_PARS_MAX] ;
+                char  *name ;
+  RSS_Object_Missile  *object ;
+                 int   a_flag, p_flag ;
+                char  *end ;
+              double   value_d ;
+                char  *error ;
+                 int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                      a_flag=0 ;
+                      p_flag=0 ;
+
+       if(*cmd=='/' ||
+          *cmd=='+'   ) {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'a')!=NULL ||
+                   strchr(cmd, 'A')!=NULL   )  a_flag=1 ;
+           else if(strchr(cmd, 'p')!=NULL ||
+                   strchr(cmd, 'P')!=NULL   )  p_flag=1 ;
+
+                           cmd=end+1 ;
+                        }
+
+       if(a_flag+p_flag>1) {
+              SEND_ERROR("Должен быть только один из ключей: A или P. \n"
+                         "Например: HOMING/A <Имя_объекта> ...") ;
+                                return(-1) ;
+                           }
+
+       if(a_flag+p_flag<1) {
+              SEND_ERROR("Должен быть задан хотябы один из ключей: A или P. \n"
+                         "Например: HOMING/A <Имя_объекта> ...") ;
+                                return(-1) ;
+                           }
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: HOMING/A <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*--------------------------------------------------- Пропись данных */
+
+    if(a_flag) {
+                  object->homing_type=_AHEAD_HOMING ;
+               }
+    else 
+    if(p_flag) {
+
+      if(pars[1]==NULL) {
+                          SEND_ERROR("Должен быть задан коэффициант: HOMING/P <Имя> <КОэффициент>") ;
+                                             return(-1) ;
+                        }
+
+         value_d=strtod(pars[1], &end) ;
+
+                         error=  NULL ;
+      if(value_d<1. &&
+         value_d>6.   )  error="Значение параметра должно быть от 1 до 6" ;
+
+      if(error!=NULL) {
+                         SEND_ERROR(error) ;
+                            return(-1) ;
+                      }
+
+                         object->homing_type=_PROPORTIONAL_HOMING ;
+                         object->homing_koef= value_d ;
+
+               }
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции MARK                    */
+/*								    */
+/*       MARK <Имя> <Радиус метки взрыва>                           */
+
+  int  RSS_Module_Missile::cMark(char *cmd)
+
+{
+#define  _COORD_MAX   3
+#define   _PARS_MAX  10
+
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char **xyz ;
+             double   coord[_COORD_MAX] ;
+                int   coord_cnt ;
+ RSS_Object_Missile  *object ;
+               char  *error ;
+               char  *end ;
+                int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name= pars[0] ;
+                      xyz=&pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: MARK <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------------- Разбор координат */
+
+    for(i=0 ; xyz[i]!=NULL && i<_COORD_MAX ; i++) {
+
+             coord[i]=strtod(xyz[i], &end) ;
+        if(*end!=0) {  
+                       SEND_ERROR("Некорректное значение радиуса") ;
+                                       return(-1) ;
+                    }
+                                                  }
+
+                             coord_cnt=i ;
+
+                        error= NULL ;
+      if(coord_cnt==0)  error="Не указан радиус метки взрыва" ;
+
+      if(error!=NULL) {  SEND_ERROR(error) ;
+                               return(-1) ;   }
+
+/*------------------------------------------------- Пропись скорости */
+
+             object->mark_hit=coord[0] ;
+
+/*-------------------------------------------------------------------*/
+
+#undef  _COORD_MAX   
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
@@ -1677,6 +1890,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              double  time_s ;        /* Последнее время отрисовки */ 
              double  time_w ;        /* Время ожидания */ 
  RSS_Object_Missile *object ;
+                int  c_flag ;
+                int  o_flag ;
+                int  w_flag ;
+                int  color_r, color_g, color_b ;
+                int  width ;
            Matrix2d  Sum_Matrix ;
            Matrix2d  Oper_Matrix ;  
            Matrix2d  Velo_Matrix ;  
@@ -1686,6 +1904,33 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------------------------- Разборка командной строки */
 
                      trace_time=0. ;
+/*- - - - - - - - - - - - - - - - - - -  Выделение ключей управления */
+                             c_flag=0 ;
+                             o_flag=0 ;
+                             w_flag=0 ;
+
+       if(*cmd=='/') {
+ 
+                if(*cmd=='/')  cmd++ ;
+
+                   end=strchr(cmd, ' ') ;
+                if(end==NULL) {
+                       SEND_ERROR("Некорректный формат команды") ;
+                                       return(-1) ;
+                              }
+                  *end=0 ;
+
+                if(strchr(cmd, 'c')!=NULL ||
+                   strchr(cmd, 'C')!=NULL   )  c_flag=1 ;
+
+                if(strchr(cmd, 'o')!=NULL ||
+                   strchr(cmd, 'o')!=NULL   )  o_flag=1 ;
+
+                if(strchr(cmd, 'w')!=NULL ||
+                   strchr(cmd, 'W')!=NULL   )  w_flag=1 ;
+
+                           cmd=end+1 ;
+                     }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
     for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
 
@@ -1708,7 +1953,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                            return(-1) ;
                                                       }
                                  }
+           else 
+           if(c_flag)            {
+                                 }
+           if(o_flag)            {
+                                 }
+           else
+           if(w_flag)            {
+                                 }
            else                  {
+
                                        trace_time=60. ;
                                          SEND_ERROR("Время трассировки - 60 секунд") ;
                                  }
@@ -1723,6 +1977,86 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=(RSS_Object_Missile *)FindObject(name, 1) ;           /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
+/*----------------------------------------------- Если задание цвета */
+
+   if(c_flag) {
+
+     if(pars[3]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/C <Имя> <R> <G> <B>") ;
+                                       return(-1) ;
+                       }
+
+        color_r=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || color_r>255) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_g=strtoul(pars[2], &end, 10) ;
+     if(*end!=0 || color_g>255) {
+                     SEND_ERROR("Компонент цвета <G> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_b=strtoul(pars[3], &end, 10) ;
+     if(*end!=0 || color_b>255) {
+                     SEND_ERROR("Компонент цвета <B> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+          object->mTrace_color=RGB(color_r, color_g, color_b) ;
+
+                                       return(0) ;
+              }
+
+   if(o_flag) {
+
+     if(pars[3]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/O <Имя> <R> <G> <B>") ;
+                                       return(-1) ;
+                       }
+
+        color_r=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || color_r>255) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_g=strtoul(pars[2], &end, 10) ;
+     if(*end!=0 || color_g>255) {
+                     SEND_ERROR("Компонент цвета <G> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+        color_b=strtoul(pars[3], &end, 10) ;
+     if(*end!=0 || color_b>255) {
+                     SEND_ERROR("Компонент цвета <B> должен быть числом 0...255") ;
+                                       return(-1) ;
+                                }
+
+          object->mTrace_color_over=RGB(color_r, color_g, color_b) ;
+
+                                       return(0) ;
+              }
+/*----------------------------------------------- Если толщины линии */
+
+   if(w_flag) {
+
+     if(pars[1]==NULL) {
+                          SEND_ERROR("Формат команды: TRACE/W <Толщина>") ;
+                                       return(-1) ;
+                       }
+
+         width=strtoul(pars[1], &end, 10) ;
+     if(*end!=0 || width>5) {
+                     SEND_ERROR("Компонент цвета <R> должен быть числом 1...5") ;
+                                       return(-1) ;
+                            }
+
+          object->mTrace_width=width ;
+
+                                       return(0) ;
+              }
 /*----------------------------------------- Контроль носителя и цели */
 
        object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
@@ -1869,28 +2203,32 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     Context        =new RSS_Transit_Missile ;
     Context->object=this ;
 
-   Parameters    =NULL ;
-   Parameters_cnt=  0 ;
+     Parameters    =  NULL ;
+     Parameters_cnt=    0 ;
 
-     battle_state= 0 ;
+       battle_state=    0 ;
 
-      x_base    =   0. ;
-      y_base    =   0. ;
-      z_base    =   0. ;
-      a_azim    =   0. ;
-      a_elev    =   0. ;
-      a_roll    =   0. ;
-      x_velocity=   0. ;
-      y_velocity=   0. ;
-      z_velocity=   0. ;
-      v_abs     =   0. ;
-      g_ctrl    = 100. ;
+         x_base    =    0. ;
+         y_base    =    0. ;
+         z_base    =    0. ;
+         a_azim    =    0. ;
+         a_elev    =    0. ;
+         a_roll    =    0. ;
+         x_velocity=    0. ;
+         y_velocity=    0. ;
+         z_velocity=    0. ;
+         v_abs     =    0. ;
+         g_ctrl    =  100. ;
+    homing_type    =_AHEAD_HOMING ;
+       mark_hit    =    0. ;
 
-      mTrace      =NULL ;
-      mTrace_cnt  =  0 ;  
-      mTrace_max  =  0 ; 
-      mTrace_color=RGB(0, 0, 127) ;
-      mTrace_dlist=  0 ;  
+       mTrace           =NULL ;
+       mTrace_cnt       =  0 ;  
+       mTrace_max       =  0 ; 
+       mTrace_color     =RGB(  0, 0, 127) ;
+       mTrace_color_over=RGB(255, 0,   0) ;
+       mTrace_width     =  1 ;  
+       mTrace_dlist     =  0 ;  
 }
 
 
@@ -1973,8 +2311,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
             strcpy(object->owner,  this->owner) ;
                    object->o_owner=this->o_owner ;
 
-                    object->v_abs =this->v_abs ;                    /* Нормальная скорость */
-                    object->g_ctrl=this->g_ctrl ;                   /* Нормальная траекторная перегрузка */
+                   object->v_abs            =this->v_abs ;          /* Нормальная скорость */
+                   object->g_ctrl           =this->g_ctrl ;         /* Нормальная траекторная перегрузка */
+                   object->mark_hit         =this->mark_hit ;       /* Радиус отметки взрыва при попадании */
+                   object->homing_type      =this->homing_type ;    /* Параметры самонаведения */
+                   object->homing_koef      =this->homing_koef ;
+                   object->mTrace_color     =this->mTrace_color ;   /* Параметры трассы */
+                   object->mTrace_color_over=this->mTrace_color_over ;
+                   object->mTrace_width     =this->mTrace_width ;
 
    if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
 
@@ -2087,13 +2431,24 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*                        Обработка событий                         */
 
-     int  RSS_Object_Missile::vEvent(char *event_name, double  t)
+     int  RSS_Object_Missile::vEvent(char *event_name, double  t, char *callback, int cb_size)
 {
-//    RSS_Feature_Hit *hit ; 
+     char  text[1024] ;
 
 /*--------------------------------------------------- Поражение цели */
 
    if(!stricmp(event_name, "HIT")) {
+
+     if(this->mark_hit>0.)
+      if(callback!=NULL) {
+                            sprintf(text, "EXEC BLAST CR/A blast_%s %lf %lf %s;"
+                                          "START blast_%s;",
+                                    this->Name, 0., this->mark_hit, this->Name,
+                                    this->Name
+                                   ) ;
+                            strncat(callback, text, cb_size) ;
+                         }
+
                                          return(0) ;
                                    }
 /*-------------------------------------------------------------------*/
@@ -2176,6 +2531,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Очистка контекста */
 
+            xyz_trg_prv=0 ;
+
     this->iSaveTracePoint("CLEAR") ;
 
 #undef   OBJECTS
@@ -2197,18 +2554,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     double  r ;                  /* Радиус маневра */
     double  h ;
     double  ds ;
-    double  a ;                  /* Ометываемый угол маневра */
-    double  b, c ;
+    double  q ;                  /* Ометываемый угол маневра */
+    double  a, b, c ;
     double  dv_max ;             /* Максимальная возможная длина вектора изменение скорости */
     double  dv_x, dv_y, dv_z ;   /* Требуемое изменение скорости */
     double  dv_s ;               /* Длина вектора требуемого изменения скорости */
     double  pv_x, pv_y, pv_z ;   /* Предыдущий вектор скорости  */
+    double  x1, y1, z1 ;
+    double  x2, y2, z2 ;
+    double  s1, s2 ;
+       int  prepare ;
 
 /*------------------------------------------------------- Подготовка */
 
-            pv_x=x_velocity ;
-            pv_y=y_velocity ;
-            pv_z=z_velocity ;
+                     pv_x=x_velocity ;
+                     pv_y=y_velocity ;
+                     pv_z=z_velocity ;
+
+/*-------------------- Расчет предельного изменения вектора скорости */
+
+                        r=v_abs*v_abs/g_ctrl ;                      /* Максимальный вектор изменения */
+                        q=v_abs*(t2-t1)/(2.*r) ;
+                   dv_max=2.*v_abs*sin(0.5*q) ;
 
 /*---------------------------------------------------- Без наведения */
 
@@ -2218,9 +2585,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                z_base+=z_velocity*(t2-t1) ;
                                g_over = 0 ;
                             }
-/*----------------------------------------------------- С наведением */
+/*------------------------------------ Наведение в упрежденную точку */
 
-   else                     {
+   else
+   if(this->homing_type==_AHEAD_HOMING) {
 /*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
                dx=o_target->x_base-this->x_base ;
                dy=o_target->y_base-this->y_base ;
@@ -2247,10 +2615,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        dy+=o_target->y_velocity*tx_1 ;
                        dz+=o_target->z_velocity*tx_1 ;
                         s =sqrt(dx*dx+dy*dy+dz*dz) ;
-/*- - - - - - - - - -  Расчет предельного изменения вектора скорости */
-                        r= v_abs*v_abs/g_ctrl ;                     /* Максимальный вектор изменения */
-                        a= v_abs*(t2-t1)/(2.*r) ;
-                   dv_max= 2.*v_abs*sin(0.5*a) ;
 /*- - - - - - - - - - - Расчет требуемого изменения вектора скорости */
                        dx=dx*v_abs/s ;                              /* Нормируем вектор на цель по скорости */
                        dy=dy*v_abs/s ;
@@ -2260,7 +2624,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      dv_y=dy-y_velocity ;
                      dv_z=dz-z_velocity ;
                      dv_s=sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
-/*- - - - - - - - - -  Проверка ухода из поля видимости 180 градусов */
+/*- - - - - - - - - - - Проверка ухода из поля видимости 90 градусов */
      if(dv_s>1.4*v_abs) {
                                x_base+=x_velocity*(t2-t1) ;
                                y_base+=y_velocity*(t2-t1) ;
@@ -2274,7 +2638,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                             b=asin(0.5*dv_s/v_abs) ;
                             h=sqrt(v_abs*v_abs-0.25*dv_s*dv_s) ;
 
-                           ds=h*tan(a-b)+0.5*dv_s ;
+                           ds=h*tan(q-b)+0.5*dv_s ;
 
                          x_velocity+=dv_x*ds/dv_s ;
                          y_velocity+=dv_y*ds/dv_s ;
@@ -2297,15 +2661,116 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              x_base+=0.5*(x_velocity+pv_x)*(t2-t1) ;
              y_base+=0.5*(y_velocity+pv_y)*(t2-t1) ;
              z_base+=0.5*(z_velocity+pv_z)*(t2-t1) ;
-
-                  s=sqrt((x_velocity-pv_x)*(x_velocity-pv_x)+
-                         (y_velocity-pv_y)*(y_velocity-pv_y)+
-                         (z_velocity-pv_z)*(z_velocity-pv_z) ) ;
 /*- - - - - - - - - - - - - - - - - - - - Изменение углов ориентации */
                   a_azim=atan2(x_velocity, z_velocity)*_RAD_TO_GRD ;
                   a_elev=atan2(y_velocity, sqrt(x_velocity*x_velocity+z_velocity*z_velocity))*_RAD_TO_GRD ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-                            }
+                                        }
+/*--------------------------------------- Пропорциональное наведение */
+
+   else
+   if(this->homing_type==_PROPORTIONAL_HOMING) {
+
+               dx=o_target->x_base-this->x_base ;
+               dy=o_target->y_base-this->y_base ;
+               dz=o_target->z_base-this->z_base ;
+/*- - - - - - - - - - - - - - - - - - - - - Начальный момент времени */
+       if(xyz_trg_prv==0) {
+                               x_base+=x_velocity*(t2-t1) ;
+                               y_base+=y_velocity*(t2-t1) ;
+                               z_base+=z_velocity*(t2-t1) ;
+                               g_over = 0 ;
+
+                           xyz_trg_prv= 1 ;
+                             x_trg_prv=dx ;
+                             y_trg_prv=dy ;
+                             z_trg_prv=dz ;
+                  
+                                return(0) ; 
+                          }   
+/*- - - - - - - - - - - Проверка ухода из поля видимости 90 градусов */
+             s =v_abs / sqrt(dx*dx+dy*dy+dz*dz) ;
+
+          dv_x =dx*s ;                                              /* Нормируем вектор на цель по скорости */
+          dv_y =dy*s ;
+          dv_z =dz*s ;
+
+          dv_x-=x_velocity ;                                        /* Определяем разницу векторов скорости и направления на цель */
+          dv_y-=y_velocity ;
+          dv_z-=z_velocity ;
+
+          dv_s =sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
+       if(dv_s>1.4*v_abs) {                                         /* Если угол между векторами на цель и вектором скорости >90 градусов... */
+                               x_base+=x_velocity*(t2-t1) ;
+                               y_base+=y_velocity*(t2-t1) ;
+                               z_base+=z_velocity*(t2-t1) ;
+                               g_over = 0 ;
+
+                                   return(0) ;
+                          }
+/*- - - - - - - - - - - - - -  Определение изменения вектора на цель */
+             s=sqrt(dx*dx+dy*dy+dz*dz) / sqrt(x_trg_prv*x_trg_prv+y_trg_prv*y_trg_prv+z_trg_prv*z_trg_prv) ;
+
+          dv_x=dx-x_trg_prv*s ;
+          dv_y=dy-y_trg_prv*s ;
+          dv_z=dz-z_trg_prv*s ;
+
+            b =2.*asin( 0.5*sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) / sqrt(dx*dx+dy*dy+dz*dz) ) ;
+            b*=this->homing_koef ; 
+
+                 g_over = 0 ;
+
+       if(b>q) {                                                    /* Если требуемая перегрузка превышает располагаемую - используем располагаемую */
+                      b = q ;
+                 g_over = 1 ;
+               }
+/*- - - - - - - - - - - - - - - - - - Расчет нового вектора скорости */
+                 r=v_abs / sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
+                 s= 1. ;
+                ds= 0.5 ;
+           prepare= 1 ;
+
+    do {
+             x1=dv_x*r*s ;
+             y1=dv_y*r*s ;
+             z1=dv_z*r*s ;
+
+             x2=x_velocity+x1 ;
+             y2=y_velocity+y1 ;
+             z2=z_velocity+z1 ;
+
+             s1=sqrt(x1*x1+y1*y1+z1*z1) ;
+             s2=sqrt(x2*x2+y2*y2+z2*z2) ;
+             
+             c =acos( (v_abs*v_abs+s2*s2-s1*s1)/(2.*v_abs*s2) ) ;
+
+          if(fabs(c-b)<0.001*b )  break ;                           /* Ведем рассчет до 0.001 от целевого угла */
+
+          if(c>b) {  s-=ds ;  prepare=0 ; }
+          else    {  s+=ds ;              }
+
+          if(prepare==0)  ds*=0.5 ;
+
+       } while(1) ;
+
+                      r=v_abs / sqrt(x2*x2+y2*y2+z2*z2)  ;
+             x_velocity=x2*r ;
+             y_velocity=y2*r ;
+             z_velocity=z2*r ;
+/*- - - - - - - - - - - - - - - - - - - - -  Изменение базовой точки */
+             x_base+=0.5*(x_velocity+pv_x)*(t2-t1) ;
+             y_base+=0.5*(y_velocity+pv_y)*(t2-t1) ;
+             z_base+=0.5*(z_velocity+pv_z)*(t2-t1) ;
+/*- - - - - - - - - - - - - - - - - - - - Изменение углов ориентации */
+                  a_azim=atan2(x_velocity, z_velocity)*_RAD_TO_GRD ;
+                  a_elev=atan2(y_velocity, sqrt(x_velocity*x_velocity+z_velocity*z_velocity))*_RAD_TO_GRD ;
+/*- - - - - - - - - - - - - - - - - - - - - - -  Завершение рассчета */
+                    x_trg_prv=dx ;
+                    y_trg_prv=dy ;
+                    z_trg_prv=dz ;
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+                                               }
 /*-------------------------------------------------------------------*/
 
   return(0) ;
@@ -2377,8 +2842,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
                   mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
 
-      if(g_over)  mTrace[mTrace_cnt].color     =RGB(127, 0,   0) ;
-      else        mTrace[mTrace_cnt].color     =RGB(  0, 0, 127) ;
+      if(g_over)  mTrace[mTrace_cnt].color     =mTrace_color_over ;
+      else        mTrace[mTrace_cnt].color     =mTrace_color ;
 
                          mTrace_cnt++ ;
 
@@ -2440,6 +2905,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        GetGValue(mTrace[i].color)/256.,
                        GetBValue(mTrace[i].color)/256., 1.) ;
 
+
+           glLineWidth(mTrace_width) ;
+
                glBegin(GL_LINE_STRIP) ;
 
             glVertex3d(mTrace[i].x_base, mTrace[i].y_base, mTrace[i].z_base) ;
@@ -2462,6 +2930,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      }
 
                          glEnd();
+
+                   glLineWidth(1.0f) ;
 
                      }
 /*----------------------------- Восстановление контекста отображения */

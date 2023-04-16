@@ -930,13 +930,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     int  attempt ;
                     int  hit_sum ;
                  double  hit_avg ;
-                   char *tmp ;
                    char *end ;
                    char  name[1024] ;
                    char  text[1024] ;
        RSS_Objects_List  checked ;
              RSS_Object *clone ;
-                  FRAME  frame ;
                     int  n_frame ;
                     int  exit_flag ;
                     int  status ;
@@ -1202,61 +1200,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - -  Обработка команд обратной связи */
          if(callback[0]!=0) {
 
-             for(cmd=callback ; *cmd!=0 ; cmd=end+1) {
+              exit_flag=iCallbackExecute(callback, time_c) ;
 
-                  end=strchr(cmd, ';') ;
-                 *end= 0 ;
-
-                if(*cmd==0)  continue ;
-
-                      memset(&frame, 0, sizeof(frame)) ;
-
-                if(!memicmp(cmd, "START ", strlen("START "))) {
-                     strcpy(frame.action, "START") ;
-                     strcpy(frame.object, cmd+strlen("START ")) ;
-                                                              }
-                else
-                if(!memicmp(cmd, "STOP ", strlen("STOP "))) {
-                     strcpy(frame.action, "STOP") ;
-                     strcpy(frame.object, cmd+strlen("STOP ")) ;
-                                                            }
-                else
-                if(!memicmp(cmd, "KILL ", strlen("KILL "))) {
-                     strcpy(frame.action, "KILL") ;
-                     strcpy(frame.object, cmd+strlen("KILL ")) ;
-                                                            }
-                else
-                if(!memicmp(cmd, "EXEC ", strlen("EXEC "))) {
-                     strcpy(frame.action, "EXEC") ;
-                     strcpy(frame.command, cmd+strlen("EXEC ")) ;
-                                                            }
-                else
-                if(!memicmp(cmd, "EVENT ", strlen("EVENT "))) {
-
-                           strcpy(text, cmd+strlen("EVENT ")) ;
-                       tmp=strchr(text, ' ') ;
-                    if(tmp==NULL) {
-                             sprintf(text, "BATTLE - Некорректная структура команды EVENT: %s", cmd) ;
-                          SEND_ERROR(text) ;
-                              exit_flag=1 ;
-                                   break ;
-                                  }
-                                      *tmp=0 ;
-
-                     strcpy(frame.action, "EVENT") ;
-                     strcpy(frame.event,   text) ;
-                     strcpy(frame.object,  tmp+1) ;
-                                                            }
-                else                                        {
-
-                             sprintf(text, "BATTLE - Неизвестная операция: %s", cmd) ;
-                          SEND_ERROR(text) ;
-                              exit_flag=1 ;
-                                   break ;
-                                                            }
-
-                    iFrameExecute(&frame, time_c, 0) ;
-                                                     }
                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                if(exit_flag)  break ;
@@ -1311,17 +1256,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
       for(i=0 ; i<mObjects_cnt ; i++)
         if(mObjects[i].active) {
+/*- - - - - - - - - - - - - - - - - - -  Определение факта поражения */
+                     memset(callback, 0, sizeof(callback)) ;
+
                                                                checked.Clear() ;
               status=mObjects[i].object->vCheckFeatures(NULL, &checked) ;
            if(status) {
 
-                    mObjects[i].active=mObjects[i].object->vEvent("HIT", time_c) ;
+                    mObjects[i].active=mObjects[i].object->vEvent("HIT", time_c, callback, _CALLBACK_SIZE-1) ;
 
              for(j=0 ; j<checked.List_cnt ; j++)
                if(!stricmp(checked.List[j].relation, "Hit"))
-                      checked.List[j].object->vEvent("HITED", time_c) ;
+                      checked.List[j].object->vEvent("HITED", time_c, callback, _CALLBACK_SIZE-1) ;
 
                       }
+/*- - - - - - - - - - - - - - - - -  Обработка команд обратной связи */
+         if(callback[0]!=0) {
+
+              exit_flag=iCallbackExecute(callback, time_c) ;
+           if(exit_flag)  break ;
+
+                            }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                }
 /*-------------------------------------------------- Отрисовка сцены */
 
@@ -1337,7 +1293,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                                        }
 /*-------------------------------------- Главный исполнительный цикл */
 
-     } while(!exit_flag) ;  
+     } while(!exit_flag) ;
 
                     hit_sum+=mHit_cnt ;
                     hit_avg =((double)hit_sum)/(attempt+1.) ;
@@ -1523,6 +1479,95 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    return(0) ;
 }
 
+
+/********************************************************************/
+/*								    */
+/*              Исполнение блока команд обратной связи              */
+
+  int  RSS_Module_Battle::iCallbackExecute(char *commands, double  t)
+
+{ 
+   FRAME  frame ;
+     int  exit_flag ;
+    char *cmd ;
+    char  text[1024] ;
+    char *tmp ;
+    char *end ;
+ 
+/*--------------------------------------------------- Перебор команд */
+
+                              exit_flag=0 ;
+
+
+    for(cmd=commands ; *cmd!=0 ; cmd=end+1) {
+
+                  end=strchr(cmd, ';') ;
+                 *end= 0 ;
+
+      if(*cmd==0)  continue ;
+
+/*----------------------------------------------- Podgotowka команды */
+
+                      memset(&frame, 0, sizeof(frame)) ;
+
+      if(!memicmp(cmd, "START ", strlen("START "))) {               /* Ввод активного объекта в сцену */
+
+                     strcpy(frame.action, "START") ;
+                     strcpy(frame.object, cmd+strlen("START ")) ;
+                                                    }
+      else
+      if(!memicmp(cmd, "STOP ", strlen("STOP ")  )) {               /* Вывод активного объекта из сцены */
+
+                     strcpy(frame.action, "STOP") ;
+                     strcpy(frame.object, cmd+strlen("STOP ")) ;
+                                                    }
+      else
+      if(!memicmp(cmd, "KILL ", strlen("KILL ")  )) {               /* Удаление объекта */
+
+                     strcpy(frame.action, "KILL") ;
+                     strcpy(frame.object, cmd+strlen("KILL ")) ;
+                                                    }
+      else
+      if(!memicmp(cmd, "EXEC ", strlen("EXEC ")  )) {               /* Исполнение команды */
+
+                     strcpy(frame.action, "EXEC") ;
+                     strcpy(frame.command, cmd+strlen("EXEC ")) ;
+                                                    }
+      else
+      if(!memicmp(cmd, "EVENT ", strlen("EVENT "))) {               /* Обработка события */
+
+               strcpy(text, cmd+strlen("EVENT ")) ;
+           tmp=strchr(text, ' ') ;
+        if(tmp==NULL) {
+                             sprintf(text, "BATTLE - Некорректная структура команды EVENT: %s", cmd) ;
+                          SEND_ERROR(text) ;
+                              exit_flag=1 ;
+                                   break ;
+                      }
+                                      *tmp=0 ;
+
+                     strcpy(frame.action, "EVENT") ;
+                     strcpy(frame.event,   text) ;
+                     strcpy(frame.object,  tmp+1) ;
+                                                    }
+      else                                          {
+
+                             sprintf(text, "BATTLE - Неизвестная операция: %s", cmd) ;
+                          SEND_ERROR(text) ;
+                              exit_flag=1 ;
+                                   break ;
+                                                    }
+/*----------------------------------------------- Исполнение команды */
+
+                    iFrameExecute(&frame, t, 0) ;
+
+/*--------------------------------------------------- Перебор команд */
+
+                                             }
+
+     return(exit_flag) ;
+
+}
 
 /********************************************************************/
 /*								    */
@@ -1804,7 +1849,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                       object=OBJECTS[i] ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - Сигнал о событии */
-                   object->vEvent(frame->event, t) ;
+                   object->vEvent(frame->event, t, NULL, 0) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                          }
 /*--------------------------------------------------- Операция SPAWN */

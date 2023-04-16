@@ -137,23 +137,24 @@
                     RSS_Transit_Battle *Context ;
 
     public:
-     virtual         int  vExecuteCmd   (const char *) ;          /* Выполнить команду */
-     virtual         int  vExecuteCmd   (const char *, RSS_IFace *) ;
-     virtual        void  vReadSave     (std::string *) ;         /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;         /* Записать данные в строку */
-     virtual         int  vGetParameter (char *, char *) ;        /* Получить параметр */
-     virtual        void  vChangeContext(void)  ;                 /* Выполнить действие в контексте потока */
+     virtual         int  vExecuteCmd     (const char *) ;          /* Выполнить команду */
+     virtual         int  vExecuteCmd     (const char *, RSS_IFace *) ;
+     virtual        void  vReadSave       (std::string *) ;         /* Чтение данных из строки */
+     virtual        void  vWriteSave      (std::string *) ;         /* Записать данные в строку */
+     virtual         int  vGetParameter   (char *, char *) ;        /* Получить параметр */
+     virtual        void  vChangeContext  (void)  ;                 /* Выполнить действие в контексте потока */
 
     public:
-                     int  cHelp         (char *, RSS_IFace *) ;   /* Инструкция HELP */
-                     int  cClear        (char *, RSS_IFace *) ;   /* Инструкция CLEAR */
-                     int  cAdd          (char *, RSS_IFace *) ;   /* Инструкция ADD */
-                     int  cList         (char *, RSS_IFace *) ;   /* Инструкция LIST */
-                     int  cProgram      (char *, RSS_IFace *) ;   /* Инструкция PROGRAM */
-                     int  cRun          (char *, RSS_IFace *) ;   /* Инструкция RUN */
-                     int  cMap          (char *, RSS_IFace *) ;   /* Инструкция MAP */
+                     int  cHelp           (char *, RSS_IFace *) ;   /* Инструкция HELP */
+                     int  cClear          (char *, RSS_IFace *) ;   /* Инструкция CLEAR */
+                     int  cAdd            (char *, RSS_IFace *) ;   /* Инструкция ADD */
+                     int  cList           (char *, RSS_IFace *) ;   /* Инструкция LIST */
+                     int  cProgram        (char *, RSS_IFace *) ;   /* Инструкция PROGRAM */
+                     int  cRun            (char *, RSS_IFace *) ;   /* Инструкция RUN */
+                     int  cMap            (char *, RSS_IFace *) ;   /* Инструкция MAP */
 
-                     int  iFrameExecute (FRAME *, double, int) ;  /* Реализация инструкций сервисной задачи */
+                     int  iCallbackExecute(char *, double) ;        /* Исполнение блока команд обратной связи */
+                     int  iFrameExecute   (FRAME *, double, int) ;  /* Реализация инструкций сервисной задачи */
 
     public:
 	                  RSS_Module_Battle() ;               /* Конструктор */

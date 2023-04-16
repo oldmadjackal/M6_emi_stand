@@ -377,7 +377,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                          if(*end==':') green=strtoul(end+1  , &end, 10) ;
                          if(*end==':')  blue=strtoul(end+1  , &end, 10) ;
 
-                                       color=RGB(red, green, blue) ;                                          
+                                       color=RGB(red, green, blue) ;
                                    }
                                              } 
          else                                {
