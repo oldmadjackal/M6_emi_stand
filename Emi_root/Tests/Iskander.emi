@@ -40,7 +40,6 @@ rocket-lego cr iskander ракета-1 0.92 7.3
 iskander lego warhead WarHeadSimple
 iskander lego model ModelTable
 ;rg.engine p tests/grad.dat
-;iskander.model path tests/IskanderTable.csv
 ;iskander.model path tests/IskanderTable-0.csv
 ;iskander.model path tests/IskanderTable-1.csv
 iskander.model path tests/IskanderTable-2.csv
