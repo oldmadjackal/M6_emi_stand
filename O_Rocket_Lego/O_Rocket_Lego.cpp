@@ -122,8 +122,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
  { "trace",    "t", "#TRACE - трассировка траектории объекта",
                     " TRACE <Имя> [<Длительность>]\n"
                     "   Трассировка траектории объекта в реальном времени\n"
-                    " TRACE/C <Имя> <R> <G> <B>\n"
-                    "   Задание цвета трассы\n"
+                    " TRACE/C <Имя> <R>:<G>:<B> [...]\n"
+                    "   Задание цветов трассы\n"
                     " TRACE/W <Имя> <Толщина линии>\n"
                     "   Задание толщины линии трассы\n",
                     &RSS_Module_RocketLego::cTrace },
@@ -1027,12 +1027,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*		      Реализация инструкции TRACE                   */
 /*								    */
 /*       TRACE <Имя> [<Длительность>]                               */
-/*       TRACE/C <Имя> <R> <G> <B>                                  */
+/*       TRACE/C <Имя> <R>:<G>:<B> [...]                            */
 
   int  RSS_Module_RocketLego::cTrace(char *cmd)
 
 {
-#define   _PARS_MAX  10
+#define   _PARS_MAX  20
 
                   char *pars[_PARS_MAX] ;
                   char *name ;
@@ -1129,32 +1129,37 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    if(c_flag) {
 
-     if(pars[3]==NULL) {
-                          SEND_ERROR("Формат команды: TRACE/C <Имя> <R> <G> <B>") ;
+       if(pars[1]==NULL) {
+                            SEND_ERROR("Формат команды: TRACE/C <Имя> <R>:<G>:<B> [...]") ;
                                        return(-1) ;
-                       }
+                         }
 
-        color_r=strtoul(pars[1], &end, 10) ;
-     if(*end!=0 || color_r>255) {
+     for(i=0 ; pars[i+1]!=NULL ; i++) {
+
+           color_r=strtoul(pars[i+1], &end, 10) ;
+       if(*end!=':' || color_r>255) {
                      SEND_ERROR("Компонент цвета <R> должен быть числом 0...255") ;
                                        return(-1) ;
-                                }
+                                    }
 
-        color_g=strtoul(pars[2], &end, 10) ;
-     if(*end!=0 || color_g>255) {
+          color_g=strtoul(end+1, &end, 10) ;
+       if(*end!=':' || color_g>255) {
                      SEND_ERROR("Компонент цвета <G> должен быть числом 0...255") ;
                                        return(-1) ;
-                                }
+                                    }
 
-        color_b=strtoul(pars[3], &end, 10) ;
-     if(*end!=0 || color_b>255) {
+          color_b=strtoul(end+1, &end, 10) ;
+       if(*end!=0 || color_b>255) {
                      SEND_ERROR("Компонент цвета <B> должен быть числом 0...255") ;
                                        return(-1) ;
                                 }
 
-          object->mTrace_color=RGB(color_r, color_g, color_b) ;
+           object->mTrace_colors[i] =RGB(color_r, color_g, color_b) ;
+           object->mTrace_colors_cnt=i+1 ;
 
-                                       return(0) ;
+                                      }
+
+                        return(0) ;
               }
 /*----------------------------------------------- Если толщины линии */
 
@@ -1693,12 +1698,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
   memset(owner,  0, sizeof(owner )) ;
        o_owner =NULL ;   
 
-      mTrace      =NULL ;
-      mTrace_cnt  =  0 ;  
-      mTrace_max  =  0 ; 
-      mTrace_color=RGB(0, 0, 127) ;
-      mTrace_width=  1 ;
-      mTrace_dlist=  0 ;  
+         mTrace      =    NULL ;
+         mTrace_cnt  =      0 ;  
+         mTrace_max  =      0 ; 
+         mTrace_width=      1 ;
+  memset(mTrace_colors, 0, sizeof(mTrace_colors)) ; 
+         mTrace_colors[0]=RGB(0, 0, 127) ;
+         mTrace_colors_cnt= 1 ;
+         mTrace_dlist     = 0 ;  
 
       hDropsViewWnd=NULL ;
 }
@@ -1808,10 +1815,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        object=(RSS_Object_RocketLego *)this->Module->vCreateObject(&create_data) ;
     if(object==NULL)  return(NULL) ;
  
-            strcpy(object->owner,       this->owner) ;
-                   object->o_owner     =this->o_owner ;
-                   object->mTrace_color=this->mTrace_color ;        /* Параметры трассы */
-                   object->mTrace_width=this->mTrace_width ;
+            strcpy(object->owner,            this->owner) ;
+                   object->o_owner          =this->o_owner ;
+                   object->mTrace_width     =this->mTrace_width ;
+            memcpy(object->mTrace_colors,    this->mTrace_colors, sizeof(this->mTrace_colors)) ;
+                   object->mTrace_colors_cnt=this->mTrace_colors_cnt ;
 
    if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
 
@@ -2081,16 +2089,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               }
 /*------------------------------------------------- Сохранение точки */
                   
-                  mTrace[mTrace_cnt].x_base    =this->x_base ;
-                  mTrace[mTrace_cnt].y_base    =this->y_base ;
-                  mTrace[mTrace_cnt].z_base    =this->z_base ;
-                  mTrace[mTrace_cnt].a_azim    =this->a_azim ;
-                  mTrace[mTrace_cnt].a_elev    =this->a_elev ;
-                  mTrace[mTrace_cnt].a_roll    =this->a_roll ;
-                  mTrace[mTrace_cnt].x_velocity=this->x_velocity ;
-                  mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
-                  mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
-                  mTrace[mTrace_cnt].color     = mTrace_color ;
+                  mTrace[mTrace_cnt].x_base    = this->x_base ;
+                  mTrace[mTrace_cnt].y_base    = this->y_base ;
+                  mTrace[mTrace_cnt].z_base    = this->z_base ;
+                  mTrace[mTrace_cnt].a_azim    = this->a_azim ;
+                  mTrace[mTrace_cnt].a_elev    = this->a_elev ;
+                  mTrace[mTrace_cnt].a_roll    = this->a_roll ;
+                  mTrace[mTrace_cnt].x_velocity= this->x_velocity ;
+                  mTrace[mTrace_cnt].y_velocity= this->y_velocity ;
+                  mTrace[mTrace_cnt].z_velocity= this->z_velocity ;
+                  mTrace[mTrace_cnt].color     =mTrace_colors[this->state_idx % mTrace_colors_cnt] ;
 
                          mTrace_cnt++ ;
 

@@ -875,8 +875,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                     t_start=pars[this->t_idx] ;
 
        if(this->azim_idx!=-1)  this->a_azim=pars[this->azim_idx] ;
-       if(this->elev_idx!=-1)  this->a_azim=pars[this->elev_idx] ;
-       if(this->roll_idx!=-1)  this->a_azim=pars[this->roll_idx] ;
+       if(this->elev_idx!=-1)  this->a_elev=pars[this->elev_idx] ;
+       if(this->roll_idx!=-1)  this->a_roll=pars[this->roll_idx] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -995,6 +995,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       else            { 
                          parent->a_roll=0 ; 
                       }
+
+      if( clr_idx>=0) {
+                         parent->state_idx=pars_1[clr_idx]+(pars_2[clr_idx]-pars_1[clr_idx])*dt ;
+                      }
+      else            { 
+                         parent->state_idx=0 ; 
+                      }
 /*-------------------------------------------------------------------*/
 
   return(0) ;
@@ -1070,11 +1077,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*           V - скорость                                            */
 /*           Vx, Vy, Vz - проекции скорости                          */
 /*           A, E, R - углы ориентации: азимут угол возвышения, крен */
+/*           C - индекс цвета                                        */
 /*           ? - поле игнорируется                                   */
 /*   Поля V, Vx, Vy, Vz, A, E, R являются необязательными            */
 /*                                                                   */
-/*   Например: [,2]T;V;?;X;Y;Z",                                     */
-
+/*   Например: [,2]T;V;?;X;Y;Z;C",                                   */
 
     int  RSS_Unit_ModelTable::iFormatDecode(char *format)
 
@@ -1097,6 +1104,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            azim_idx=-1 ;
            elev_idx=-1 ;
            roll_idx=-1 ;
+            clr_idx=-1 ;
 
        memset(fmt, 0, sizeof(fmt)) ;
       strncpy(fmt, format, sizeof(fmt)-1) ;
@@ -1191,6 +1199,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                       idx++ ;
                         i+=2 ;
                                                                        }
+    else
+    if( fmt[i]=='C' && (IS_SEPARATOR || fmt[i+1]==0)) {
+              clr_idx=idx  ;
+                      idx++ ;
+                        i++ ;
+                                                      }
     else                                                               {
                                    return(-1) ;
                                                                        }

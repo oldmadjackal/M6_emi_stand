@@ -4,5 +4,5 @@
   T=0   start SAM_4
 ; T=0   start test
   T=0   start iskander
-  T=52 exit
+  T=100 exit
 ; T=450 exit

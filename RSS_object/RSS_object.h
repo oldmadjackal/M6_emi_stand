@@ -160,6 +160,8 @@
                        char   target[128] ;       /* Объект-цель */
                  RSS_Object  *o_target ;
 
+                        int   state_idx ;         /* Идентификатор состояния */
+
                         int   ErrorEnable ;       /* Флаг выдачи сообщений об ошибках */
 
                         int   CalculateExt_use ;  /* При моделировании объект использует методы vCalculateExt1 и vCalculateExt2, */

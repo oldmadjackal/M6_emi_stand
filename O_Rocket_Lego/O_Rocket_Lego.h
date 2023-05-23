@@ -64,7 +64,8 @@
      RSS_Object_RocketLegoTrace *mTrace ;                      /* Траектория */
                             int  mTrace_cnt ;  
                             int  mTrace_max ;
-                       COLORREF  mTrace_color ;
+                       COLORREF  mTrace_colors[32] ;
+                            int  mTrace_colors_cnt ;
                             int  mTrace_width ; 
                             int  mTrace_dlist ;
 

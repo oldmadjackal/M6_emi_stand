@@ -42,14 +42,14 @@ iskander lego model ModelTable
 ;rg.engine p tests/grad.dat
 ;iskander.model path tests/IskanderTable-0.csv
 ;iskander.model path tests/IskanderTable-1.csv
-iskander.model path tests/IskanderTable-2.csv
-;iskander.model format "[,44]Z;Y;X;T"
-;iskander.model format "[,44]T;V;Z;Y;X"
-iskander.model format "[,44000]T;V;Z;Y;X"
+;iskander.model path tests/IskanderTable-2.csv
+iskander.model path tests/IskanderTable-3.csv
+iskander.model format "[,2]T;V;Z;Y;X;C"
+;iskander.model format "[,44000]T;V;Z;Y;X"
 iskander.warhead tripping/a 0
 iskander.warhead grenade 0 50
-iskander trace/c 255 0 255
-;iskander trace/w 2
+iskander trace/c 255:0:255 0:0:255
+iskander trace/w 3
 scene visible iskander 1
 hit category/t iskander
 
@@ -72,7 +72,7 @@ hit radius MIM_104C 20
 scene visible MIM_104C 0
 
 zrk cr SAM_1 M901
-SAM_1 firing/r 3000 20000 25000
+SAM_1 firing/r 3000 30000 30000
 SAM_1 firing/b 1
 SAM_1 firing/m MIM_104C 4
 SAM_1 firing/f 2 1

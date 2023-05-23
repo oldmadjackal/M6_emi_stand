@@ -36,6 +36,7 @@
                                int  azim_idx ;
                                int  elev_idx ;
                                int  roll_idx ;
+                               int  clr_idx ;
 
                             double  pars_1[20] ;            /* Границы "кадра" данных */
                             double  pars_2[20] ;
