@@ -2219,6 +2219,8 @@ typedef  struct {
 
 /*--------------------- Определение проекций стрелочных перемещений  */
 
+    if(arrow_flag) {
+
                Point_Matrix.LoadZero   (3, 1) ;
                Point_Matrix.SetCell    (xyz_idx, 0, inverse*coord[0]) ;
 
@@ -2229,6 +2231,7 @@ typedef  struct {
                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
                Point_Matrix.LoadMul    (&Sum_Matrix, &Point_Matrix) ;
 
+                   }
 /*------------------------------------------------ Пропись координат */
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - -  Стрелочки */
         if(arrow_flag) {
