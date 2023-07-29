@@ -42,10 +42,10 @@ iskander lego model ModelTable
 ;rg.engine p tests/grad.dat
 ;iskander.model path tests/IskanderTable-0.csv
 ;iskander.model path tests/IskanderTable-1.csv
-;iskander.model path tests/IskanderTable-2.csv
-iskander.model path tests/IskanderTable-3.csv
-iskander.model format "[,2]T;V;Z;Y;X;C"
-;iskander.model format "[,44000]T;V;Z;Y;X"
+iskander.model path tests/IskanderTable-2.csv
+;iskander.model path tests/IskanderTable-3.csv
+;iskander.model format "[,2]T;V;Z;Y;X;C"
+iskander.model format "[,44000]T;V;Z;Y;X"
 iskander.warhead tripping/a 0
 iskander.warhead grenade 0 50
 iskander trace/c 255:0:255 0:0:255
@@ -64,15 +64,15 @@ hit category/t test
 
 missile cr MIM_104C ракета-1 0.41 5.3
 MIM_104C velocity 1700
-MIM_104C control/g 300
+MIM_104C control/g 250
 MIM_104C homing/p 2
 MIM_104C mark 500
 ;MIM_104C trace/w 2
-hit radius MIM_104C 20
+hit radius MIM_104C 5
 scene visible MIM_104C 0
 
 zrk cr SAM_1 M901
-SAM_1 firing/r 3000 30000 30000
+SAM_1 firing/r 3000 26000 20000
 SAM_1 firing/b 1
 SAM_1 firing/m MIM_104C 4
 SAM_1 firing/f 2 1
@@ -91,14 +91,14 @@ marker cr ms2 cross blue
 marker cr ms3 cross blue
 marker cr ms4 cross blue
 
-SAM_1 base 40000 0 500000
-ms1   base 40000 0 500000
-SAM_2 base 60000 0 500000
-ms2   base 60000 0 500000
-SAM_3 base 50000 0 490000
-ms3   base 50000 0 490000
-SAM_4 base 50000 0 510000
-ms4   base 50000 0 510000
+SAM_1 base 45000 0 500000
+ms1   base 45000 0 500000
+SAM_2 base 55000 0 500000
+ms2   base 55000 0 500000
+SAM_3 base 50000 0 495000
+ms3   base 50000 0 495000
+SAM_4 base 50000 0 505000
+ms4   base 50000 0 505000
 
 ;------------------------- Отображение
 
