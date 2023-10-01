@@ -21,108 +21,6 @@ typedef  struct {
                    char  program_name[128] ;
                 } RSS_Unit_Program_Embeded ;
 
-#define  _ROUTE_MAX  100
-#define  _DROPS_MAX   10
-   
-typedef  struct {
-                   char  program_name[128] ;
-
-       struct {
-                 double  x ;
-                 double  z ;
-              }          route[_ROUTE_MAX] ;
-                    int  route_cnt ;
-                    int  route_idx ;
-                    int  route_dir ;
-
-                 double  g ;
-                 double  e_max ;
-                 double  e_rate ;
-                 double  h_min ;
-                 double  column_spacing ;
-                 double  jump_distance ;
-                 double  drop_height ;
-                 double  drop_distance ;
-                    int  drops_number ;
-                 double  drops_interval ;
-       struct {
-                   char  weapon[64] ;
-              }          drops[_DROPS_MAX] ;
-                    int  drops_cnt ;
-
-                   char  stage_0_event[1024] ;
-                   char  stage_4_event[1024] ;                  
-                 double  stage_4_after ;
-                   char  stage_1_radar[1024] ;
-                 double  stage_2_time ;
-                   char  stage_4_radar[1024] ;
-
-                 double  stage ;
-                 double  x_direct ;
-                 double  z_direct ;
-                 double  a_direct ;
-                 double  e_direct ;
-                 double  check_time ;
-                    int  dropped ;
-                    int  stage_4_event_done ;
-
-                } RSS_Unit_Program_Embeded_ColumnHunter ;
-
-typedef  struct {
-                   char  program_name[128] ;
-
-       struct {
-                 double  x ;
-                 double  z ;
-              }          route[_ROUTE_MAX] ;
-                    int  route_cnt ;
-                    int  route_idx ;
-                    int  route_dir ;
-
-                 double  g ;
-                 double  e_max ;
-                 double  e_rate ;
-                 double  h_min ;
-                 double  jump_distance ;
-                 double  drop_height ;
-                 double  drop_distance ;
-                    int  drops_number ;
-                 double  drops_interval ;
-       struct {
-                   char  weapon[64] ;
-              }          drops[_DROPS_MAX] ;
-                    int  drops_cnt ;
-
-                   char  stage_0_event[1024] ;
-                   char  stage_1_event[1024] ;
-                   char  stage_4_event[1024] ;                  
-                 double  stage_4_after ;
-                   char  stage_1_radar[1024] ;
-                 double  stage_2_time ;
-                   char  stage_4_radar[1024] ;
-
-                 double  stage ;
-                 double  x_0 ;
-                 double  z_0 ;
-                   char  target[64] ;
-                 double  vx_target ;
-                 double  vz_target ;
-                 double  x_direct ;
-                 double  z_direct ;
-                 double  a_direct ;
-                 double  e_direct ;
-                 double  check_time ;
-                 double  lock_min ;
-                 double  lock_max ;
-                 double  lock_angle ;
-                   char  lock_target[128] ;
-                   char  fired[512] ;
-                    int  dropped ;
-                    int  stage_1_event_done ;
-                    int  stage_4_event_done ;
-
-                } RSS_Unit_Program_Embeded_LoneHunter ;
-
 /*---- Описание класса контекста компонента "Программное управление" */
 
   class U_PROGRAM_API RSS_Transit_Program : public RSS_Transit {
@@ -154,16 +52,21 @@ typedef  struct {
                       HWND  hWnd ;                                 /* Окно индикатора */ 
 
     public:
-               virtual void  vFree          (void) ;            /* Освободить ресурсы */
-               virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
-                                                     char *, int) ;
-               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+               virtual void  vFree              (void) ;                         /* Освободить ресурсы */
+               virtual void  vWriteSave         (std::string *) ;                /* Записать данные в строку */
+               virtual  int  vCalculateStart    (double) ;                       /* Подготовка расчета изменения состояния */
+               virtual  int  vCalculate         (double, double,                 /* Расчет изменения состояния */
+                                                         char *, int) ;
+               virtual  int  vCalculateShow     (double, double) ;               /* Отображение результата расчета изменения состояния */
+               virtual  int  vSpecial           (char *, void *) ;               /* Специальные действия */
+
+                        int  StartColumnHunter  (double  t) ;
+                        int  StartLoneHunter    (double  t) ;
+                        int  StartInterceptFAD  (double  t) ;
 
                         int  EmbededColumnHunter(double, double, char *, int) ;
                         int  EmbededLoneHunter  (double, double, char *, int) ;
+                        int  EmbededInterceptFAD(double, double, char *, int) ;
 
 	                     RSS_Unit_Program() ;           /* Конструктор */
 	                    ~RSS_Unit_Program() ;           /* Деструктор */
@@ -179,21 +82,24 @@ typedef  struct {
       struct RSS_Module_Program_instr *mInstrList ;      /* Список команд */
 
     public:
-     virtual  RSS_Object *vCreateObject (RSS_Model_data *) ; /* Создание объекта */ 
-     virtual         int  vGetParameter (char *, char *) ;   /* Получить параметр */
-     virtual         int  vExecuteCmd   (const char *) ;     /* Выполнить команду */
-     virtual        void  vReadSave     (std::string *) ;    /* Чтение данных из строки */
-     virtual        void  vWriteSave    (std::string *) ;    /* Записать данные в строку */
+     virtual  RSS_Object *vCreateObject   (RSS_Model_data *) ; /* Создание объекта */ 
+     virtual         int  vGetParameter   (char *, char *) ;   /* Получить параметр */
+     virtual         int  vExecuteCmd     (const char *) ;     /* Выполнить команду */
+     virtual        void  vReadSave       (std::string *) ;    /* Чтение данных из строки */
+     virtual        void  vWriteSave      (std::string *) ;    /* Записать данные в строку */
 
     public:
-                     int  cHelp         (char *) ;                     /* Инструкция HELP */ 
-                     int  cInfo         (char *) ;                     /* Инструкция INFO */ 
-                     int  cProgram      (char *) ;                     /* Инструкция PROGRAM */ 
-                     int  cEmbeded      (char *) ;                     /* Инструкция EMBEDED */ 
-                     int  cShow         (char *) ;                     /* Инструкция SHOW */ 
+                     int  cHelp           (char *) ;                     /* Инструкция HELP */ 
+                     int  cInfo           (char *) ;                     /* Инструкция INFO */ 
+                     int  cProgram        (char *) ;                     /* Инструкция PROGRAM */ 
+                     int  cEmbeded        (char *) ;                     /* Инструкция EMBEDED */ 
+                     int  cShow           (char *) ;                     /* Инструкция SHOW */ 
 
-                RSS_Unit *FindUnit      (char *) ;                     /* Поиск компонента по имени */
-                    void *ReadEmbeded   (char *, char *) ;             /* Считывание настроек встроенной программы */
+                RSS_Unit *FindUnit        (char *) ;                     /* Поиск компонента по имени */
+                    void *ReadEmbeded     (char *, char *) ;             /* Считывание настроек встроенной программы */
+                    void *ReadColumnHunter(char *, char *) ;
+                    void *ReadLoneHunter  (char *, char *) ;
+                    void *ReadInterceptFAD(char *, char *) ;
 
     public:
 	                  RSS_Module_Program() ;              /* Конструктор */
@@ -211,9 +117,48 @@ typedef  struct {
             int (RSS_Module_Program::*process)(char *) ;   /* Процедура выполнения команды */
                                      }  ;
 
+/*---------------------------------- Переменные библиотечных функций */
+
+#ifdef  __U_PROGRAM_MAIN__
+#define   _EXTERNAL_LOCAL   
+#else
+#define   _EXTERNAL_LOCAL   extern
+#endif
+
+     _EXTERNAL_LOCAL  RSS_Unit_Program *EventUnit ;
+     _EXTERNAL_LOCAL        RSS_Object *EventObject ;
+     _EXTERNAL_LOCAL              char *EventCallback ;
+     _EXTERNAL_LOCAL               int  EventCallback_size ;
+
 /*--------------------------------------------- Диалоговые процедуты */
 
-/* Файл  U_Program.cpp */
+/* Файл  U_Program_Library.cpp */
+         int  Program_emb_Log         (char *text) ;
+         int  Program_emb_Turn        (char *angle, double  a_target, double  dt, char *limit_type, double  g) ;
+         int  Program_emb_ToPoint     (double  x_target, double  z_target, double  dt, char *limit_type, double  g) ;
+         int  Program_emb_ToLine      (double  x_target, double  z_target, 
+                                       double  a_target, double  dt, char *limit_type, double  g) ;
+         int  Program_emb_GetTargets  (char *unit_name,  RSS_Unit_Target **targets, int *targets_cnt, char *error) ;
+         int  Program_emb_DetectOrder (RSS_Unit_Target  *targets, int  targets_cnt,
+                                       RSS_Unit_Target **orders,  int *orders_cnt,
+                                       double  spacing,  char *error) ;
+         int  Program_emb_GetGlobalXYZ(RSS_Unit_Target *rel, RSS_Unit_Target *abs) ;
+      double  Program_emb_Distance    (double  x, double  z) ;
+
+#include "..\DCL_kernel\dcl.h"
+
+    Dcl_decl *Program_dcl_Message     (Lang_DCL *,             Dcl_decl **, int) ;    /* Выдача сообщения на экран с ожиданием */
+    Dcl_decl *Program_dcl_Log         (Lang_DCL *,             Dcl_decl **, int) ;    /* Запись в лог */
+    Dcl_decl *Program_dcl_StateSave   (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Сохранение состояния объекта */
+    Dcl_decl *Program_dcl_StateRead   (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Считывание состояния объекта */
+    Dcl_decl *Program_dcl_Turn        (Lang_DCL *,             Dcl_decl **, int) ;    /* Изменение направления движения */
+    Dcl_decl *Program_dcl_Distance    (Lang_DCL *,             Dcl_decl **, int) ;    /* Определение дистанции */
+    Dcl_decl *Program_dcl_ToPoint     (Lang_DCL *,             Dcl_decl **, int) ;    /* Движение в точку */
+    Dcl_decl *Program_dcl_ToLine      (Lang_DCL *,             Dcl_decl **, int) ;    /* Выход на линию */
+    Dcl_decl *Program_dcl_GetTargets  (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Получение списка наблюдаемых целей */
+    Dcl_decl *Program_dcl_DetectOrder (Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Выделение организованных построений */
+    Dcl_decl *Program_dcl_GetGlobalXYZ(Lang_DCL *, Dcl_decl *, Dcl_decl **, int) ;    /* Рассчёт абсолютных координат по относительным */
+    Dcl_decl *Program_dcl_Battle      (Lang_DCL *,             Dcl_decl **, int) ;    /* Команда Battle */
 
 /* Файл  U_Program_dialog.cpp */
   INT_PTR CALLBACK  Unit_Program_Help_dialog  (HWND, UINT, WPARAM, LPARAM) ;

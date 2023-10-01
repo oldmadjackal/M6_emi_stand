@@ -281,7 +281,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="U_Program.cpp" />
+    <ClCompile Include="U_Program_ColumnHunter.cpp" />
     <ClCompile Include="U_Program_dialog.cpp" />
+    <ClCompile Include="U_Program_Library.cpp" />
+    <ClCompile Include="U_Program_LoneHunter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
