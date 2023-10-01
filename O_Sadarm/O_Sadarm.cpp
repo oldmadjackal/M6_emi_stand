@@ -560,20 +560,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 object=(RSS_Object_Sadarm *)vCreateObject(&create_data) ;
              if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
-       entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
-       entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
-       entry=strstr(buff, "Z_BASE=") ; object->z_base=atof(entry+strlen("Z_BASE=")) ;
-       entry=strstr(buff, "A_AZIM=") ; object->a_azim=atof(entry+strlen("A_AZIM=")) ;
-       entry=strstr(buff, "A_ELEV=") ; object->a_elev=atof(entry+strlen("A_ELEV=")) ;
-       entry=strstr(buff, "A_ROLL=") ; object->a_roll=atof(entry+strlen("A_ROLL=")) ;
+       entry=strstr(buff, "X_BASE=") ; object->state.x   =atof(entry+strlen("X_BASE=")) ;
+       entry=strstr(buff, "Y_BASE=") ; object->state.y   =atof(entry+strlen("Y_BASE=")) ;
+       entry=strstr(buff, "Z_BASE=") ; object->state.z   =atof(entry+strlen("Z_BASE=")) ;
+       entry=strstr(buff, "A_AZIM=") ; object->state.azim=atof(entry+strlen("A_AZIM=")) ;
+       entry=strstr(buff, "A_ELEV=") ; object->state.elev=atof(entry+strlen("A_ELEV=")) ;
+       entry=strstr(buff, "A_ROLL=") ; object->state.roll=atof(entry+strlen("A_ROLL=")) ;
 
    for(i=0 ; i<object->Features_cnt ; i++) {
-        object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                                  object->y_base, 
-                                                  object->z_base ) ;
-        object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
-                                                  object->a_elev, 
-                                                  object->a_roll ) ;
+        object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                                  object->state.y, 
+                                                  object->state.z ) ;
+        object->Features[i]->vBodyAngles   (NULL, object->state.azim, 
+                                                  object->state.elev, 
+                                                  object->state.roll ) ;
                                            }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                                 }                   /* END.1 */
@@ -768,7 +768,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "View   % 8.2lf\r\n" 
                     "\r\n",
                         object->Name, object->Type, 
-                        object->x_base, object->y_base, object->z_base,
+                        object->state.x, object->state.y, object->state.z,
                         object->v_abs, object->scan_altitude, 
                         object->scan_tilt, object->scan_rotation, object->scan_view
                     ) ;
@@ -859,14 +859,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------ Установка базовой точки */
 
-    if(pars[2]!=NULL)  object->x_base=strtod(pars[2], &end) ;
-    if(pars[3]!=NULL)  object->y_base=strtod(pars[3], &end) ;
-    if(pars[4]!=NULL)  object->z_base=strtod(pars[4], &end) ;
+    if(pars[2]!=NULL)  object->state.x=strtod(pars[2], &end) ;
+    if(pars[3]!=NULL)  object->state.y=strtod(pars[3], &end) ;
+    if(pars[4]!=NULL)  object->state.z=strtod(pars[4], &end) ;
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                               object->y_base, 
-                                               object->z_base ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                               object->state.y, 
+                                               object->state.z ) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1019,32 +1019,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
    if(delta_flag) {
 
-          if(xyz_flag=='X')   object->x_base+=inverse*coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base+=inverse*coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base+=inverse*coord[0] ;
+          if(xyz_flag=='X')   object->state.x+=inverse*coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y+=inverse*coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z+=inverse*coord[0] ;
                   }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
    else           {
 
-          if(xyz_flag=='X')   object->x_base=coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base=coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base=coord[0] ;
+          if(xyz_flag=='X')   object->state.x=coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y=coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z=coord[0] ;
      else                   {
-                              object->x_base=coord[0] ;
-                              object->y_base=coord[1] ;
-                              object->z_base=coord[2] ;
+                              object->state.x=coord[0] ;
+                              object->state.y=coord[1] ;
+                              object->state.z=coord[2] ;
                             }
                   }
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                               object->y_base, 
-                                               object->z_base ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                               object->state.y, 
+                                               object->state.z ) ;
 
 /*------------------------------------------------------ Отображение */
 
-                      this->kernel->vShow(NULL) ;
+                 this->kernel->vShow(NULL) ;
+
+               object->state_0=object->state ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1124,7 +1126,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Пропись скорости */
 
-                          object->v_abs=coord[0] ;
+               object->v_abs  =coord[0] ;
+
+               object->state_0=object->state ; 
 
 /*-------------------------------------------------------------------*/
 
@@ -1360,6 +1364,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000) ;
 #pragma warning(default : 4244)
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
+         object->state_0=object->state ; 
+
          object->vCalculate    (time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
          object->vCalculateShow(time_c-RSS_Kernel::calc_time_step, time_c) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
@@ -1371,7 +1377,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               this->kernel->vShow(NULL) ;
                                                        }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
-           if(object->y_base<=0.)  break ;
+           if(object->state.y<=0.)  break ;
 
        } while(1) ;                                                 /* END CIRCLE.1 - Цикл трассировки */
 
@@ -1452,12 +1458,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
  battle_state   =  0 ; 
 
-      x_base    =  0. ;
-      y_base    =  0. ;
-      z_base    =  0. ;
-      a_azim    =  0. ;
-      a_elev    =  0. ;
-      a_roll    =  0. ;
    scan_altitude=200. ;
    scan_tilt    = 30. ;
    scan_rotation= 10. ;
@@ -1588,12 +1588,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------------------------- Данные */
 
     sprintf(field, "NAME=%s\n",       this->Name      ) ;  *text+=field ;
-    sprintf(field, "X_BASE=%.10lf\n", this->x_base    ) ;  *text+=field ;
-    sprintf(field, "Y_BASE=%.10lf\n", this->y_base    ) ;  *text+=field ;
-    sprintf(field, "Z_BASE=%.10lf\n", this->z_base    ) ;  *text+=field ;
-    sprintf(field, "A_AZIM=%.10lf\n", this->a_azim    ) ;  *text+=field ;
-    sprintf(field, "A_ELEV=%.10lf\n", this->a_elev    ) ;  *text+=field ;
-    sprintf(field, "A_ROLL=%.10lf\n", this->a_roll    ) ;  *text+=field ;
+    sprintf(field, "X_BASE=%.10lf\n", this->state.x   ) ;  *text+=field ;
+    sprintf(field, "Y_BASE=%.10lf\n", this->state.y   ) ;  *text+=field ;
+    sprintf(field, "Z_BASE=%.10lf\n", this->state.z   ) ;  *text+=field ;
+    sprintf(field, "A_AZIM=%.10lf\n", this->state.azim) ;  *text+=field ;
+    sprintf(field, "A_ELEV=%.10lf\n", this->state.elev) ;  *text+=field ;
+    sprintf(field, "A_ROLL=%.10lf\n", this->state.roll) ;  *text+=field ;
     sprintf(field, "MODEL=%s\n",      this->model_path) ;  *text+=field ;
 
   for(i=0 ; i<this->Parameters_cnt ; i++) {
@@ -1641,7 +1641,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Sadarm::vCalculateStart(double  t)
 {
-     this->a_azim=this->Module->gGaussianValue(0., 360.) ;
+     this->state.azim=this->Module->gGaussianValue(0., 360.) ;
 
   return(0) ;
 }
@@ -1696,13 +1696,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------ Контроль прохождения высоты начала сканирования */
        
-   if(this->y_base+dy<this->scan_altitude) {
+   if(this->state.y+dy<this->scan_altitude) {
                                                hit->any_weapon=1 ;
-                                           }
+                                            }
 /*------------------------------------ Контроль прохождения 0-уровня */
        
-   if(this->y_base+dy<0) {
-                                         dy=-this->y_base ;
+   if(this->state.y+dy<0) {
+                                         dy=-this->state.y ;
                             hit->any_weapon=  0 ;
 
                        sprintf(cb_command,
@@ -1711,11 +1711,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               ) ;
                        strncat(callback, cb_command, cb_size-1) ;
 
-                         }
+                          }
 /*------------------------------------------ Расчет нового положения */
 
-          this->y_base+=dy ;
-          this->a_azim+=da ;
+          this->state.y   +=dy ;
+          this->state.azim+=da ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1733,12 +1733,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
-     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
-                                             this->y_base, 
-                                             this->z_base ) ;
-     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
-                                             this->a_elev, 
-                                             this->a_roll ) ;
+     this->Features[i]->vBodyBasePoint(NULL, this->state.x, 
+                                             this->state.y, 
+                                             this->state.z ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->state.azim, 
+                                             this->state.elev, 
+                                             this->state.roll ) ;
                                          }
 
   return(0) ;
@@ -1775,10 +1775,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------- Входной контроль */
 
-     if(this->y_base> this->scan_altitude ||
-        this->y_base<=  0                   ) {
+     if(this->state.y> this->scan_altitude ||
+        this->state.y<=  0                   ) {
                                                    return(0) ;
-                                              }
+                                               }
 /*------------------------------------- Обработка дисплейных списков */
 
      if(view_dlist==0)  view_dlist=RSS_Kernel::display.GetList(2) ;
@@ -1787,11 +1787,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------------- Расчет поля зрения */
 
-           r=this->y_base  *tan(this->scan_tilt*_GRD_TO_RAD) ;
-         x_c=this->x_base+r*sin(this->a_azim*_GRD_TO_RAD) ;
+           r=this->state.y  *tan(this->scan_tilt*_GRD_TO_RAD) ;
+         x_c=this->state.x+r*sin(this->state.azim*_GRD_TO_RAD) ;
          y_c= 0. ; 
-         z_c=this->z_base+r*cos(this->a_azim*_GRD_TO_RAD) ;
-           r=this->y_base/cos(this->scan_tilt*_GRD_TO_RAD)*sin(this->scan_view*0.5*_GRD_TO_RAD) ;
+         z_c=this->state.z+r*cos(this->state.azim*_GRD_TO_RAD) ;
+           r=this->state.y/cos(this->scan_tilt*_GRD_TO_RAD)*sin(this->scan_view*0.5*_GRD_TO_RAD) ;
 
 /*----------------------------------- Перебор контекстов отображения */
 
@@ -1813,16 +1813,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 //                     glBegin(GL_POLYGON) ;
                        glBegin(GL_TRIANGLE_FAN) ;
-                    glVertex3d(this->x_base, this->y_base, this->z_base) ;
-                    glVertex3d( x_c+0.462*r,       y_c,     z_c+0.191*r) ;
-                    glVertex3d( x_c+0.191*r,       y_c,     z_c+0.462*r) ;
-                    glVertex3d( x_c-0.191*r,       y_c,     z_c+0.462*r) ;
-                    glVertex3d( x_c-0.462*r,       y_c,     z_c+0.191*r) ;
-                    glVertex3d( x_c-0.462*r,       y_c,     z_c-0.191*r) ;
-                    glVertex3d( x_c-0.191*r,       y_c,     z_c-0.462*r) ;
-                    glVertex3d( x_c+0.191*r,       y_c,     z_c-0.462*r) ;
-                    glVertex3d( x_c+0.462*r,       y_c,     z_c-0.191*r) ;
-                    glVertex3d( x_c+0.462*r,       y_c,     z_c+0.191*r) ;
+                    glVertex3d(this->state.x, this->state.y, this->state.z) ;
+                    glVertex3d( x_c+0.462*r,       y_c,        z_c+0.191*r) ;
+                    glVertex3d( x_c+0.191*r,       y_c,        z_c+0.462*r) ;
+                    glVertex3d( x_c-0.191*r,       y_c,        z_c+0.462*r) ;
+                    glVertex3d( x_c-0.462*r,       y_c,        z_c+0.191*r) ;
+                    glVertex3d( x_c-0.462*r,       y_c,        z_c-0.191*r) ;
+                    glVertex3d( x_c-0.191*r,       y_c,        z_c-0.462*r) ;
+                    glVertex3d( x_c+0.191*r,       y_c,        z_c-0.462*r) ;
+                    glVertex3d( x_c+0.462*r,       y_c,        z_c-0.191*r) ;
+                    glVertex3d( x_c+0.462*r,       y_c,        z_c+0.191*r) ;
 
 	                 glEnd();
 /*- - - - - - - - - - - - - - - - - - - - - -  Формирование выстрела */
@@ -1834,7 +1834,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                GetBValue(color)/256., 1.0) ;
 
                        glBegin(GL_LINES) ;
-                    glVertex3d(this->x_base,      this->y_base,      this->z_base     ) ;
+                    glVertex3d(this->state.x,     this->state.y,     this->state.z    ) ;
                     glVertex3d(this->hit_point.x, this->hit_point.y, this->hit_point.z) ;
 	                 glEnd();
 
@@ -1962,8 +1962,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              h   =this->track_s_prv.y   +dh*j ;
              a   =this->track_s_prv.azim+da*j ;
              r   =h*tan(sadarm->scan_tilt*_GRD_TO_RAD) ;
-             x[j]=sadarm->x_base+r*sin(a*_GRD_TO_RAD) ;
-             z[j]=sadarm->z_base+r*cos(a*_GRD_TO_RAD) ;
+             x[j]=sadarm->state.x+r*sin(a*_GRD_TO_RAD) ;
+             z[j]=sadarm->state.z+r*cos(a*_GRD_TO_RAD) ;
                            }
 /*------------------------------------------------- Обсчет поражения */
 
@@ -1990,9 +1990,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        if(!iBodyTest(&HIT->Bodies[i], x, z, 10))  continue;     
 
          sadarm->hit_flag   =1 ; 
-         sadarm->hit_point.x=object->x_base ; 
-         sadarm->hit_point.y=object->y_base ; 
-         sadarm->hit_point.z=object->z_base ; 
+         sadarm->hit_point.x=object->state_0.x ; 
+         sadarm->hit_point.y=object->state_0.y ; 
+         sadarm->hit_point.z=object->state_0.z ; 
 
          checked->Add(object, this->Type) ;                         /* Регистрируем CHECK-связь */
 

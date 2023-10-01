@@ -593,13 +593,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                strcpy(object->Name, name) ;
                strcpy(object->Type, "Terrain") ;
-                      object->Module=this ;
-                      object->x_base=x_base ;  
-                      object->y_base=0. ;  
-                      object->z_base=z_base ;  
-                      object->a_azim=0. ;  
-                      object->a_elev=0. ;  
-                      object->a_roll=0. ;  
+                      object->Module    =this ;
+                      object->state.x   =x_base ;  
+                      object->state.y   =0. ;  
+                      object->state.z   =z_base ;  
+                      object->state.azim=0. ;  
+                      object->state.elev=0. ;  
+                      object->state.roll=0. ;  
 
                       object->land_state=1 ;
 
@@ -1146,8 +1146,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for(i=1 ; i<VERTEXES_CNT ; i++) {
 
-           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
-               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+           rad=(VERTEXES[i].x-object->state.x)*(VERTEXES[i].x-object->state.x)+
+               (VERTEXES[i].z-object->state.z)*(VERTEXES[i].z-object->state.z) ;
 
       if(i==1 || rad<rad_min) {
                                  rad_min=rad ;
@@ -1159,9 +1159,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         if(n<  1          )  n = 1 ;
         if(n>=VERTEXES_CNT)  n =VERTEXES_CNT-1 ;
 
-                     object->x_base=VERTEXES[n].x ;
-                     object->y_base=VERTEXES[n].y ;
-                     object->z_base=VERTEXES[n].z ;
+                     object->state.x=VERTEXES[n].x ;
+                     object->state.y=VERTEXES[n].y ;
+                     object->state.z=VERTEXES[n].z ;
 
 #undef  VERTEXES     
 #undef  VERTEXES_CNT 
@@ -1170,7 +1170,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                         sprintf(command, "%s base %s %lf %lf %lf",
                                             object->Type, o_name,
-                                            object->x_base, object->y_base, object->z_base) ;
+                                            object->state.x, object->state.y, object->state.z) ;
     object->Module->vExecuteCmd(command) ;
 
 /*-------------------------------------------------------------------*/
@@ -1281,8 +1281,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for(i=1 ; i<VERTEXES_CNT ; i++) {
 
-           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
-               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+           rad=(VERTEXES[i].x-object->state.x)*(VERTEXES[i].x-object->state.x)+
+               (VERTEXES[i].z-object->state.z)*(VERTEXES[i].z-object->state.z) ;
 
       if(i==1 || rad<rad_min) {
                                  rad_min=rad ;
@@ -1294,9 +1294,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         if(n<  1          )  n = 1 ;
         if(n>=VERTEXES_CNT)  n =VERTEXES_CNT-1 ;
 
-                     object->x_base=VERTEXES[n].x ;
-                     object->y_base=VERTEXES[n].y ;
-                     object->z_base=VERTEXES[n].z ;
+                     object->state.x=VERTEXES[n].x ;
+                     object->state.y=VERTEXES[n].y ;
+                     object->state.z=VERTEXES[n].z ;
 
 #undef  VERTEXES     
 #undef  VERTEXES_CNT 
@@ -1305,7 +1305,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                         sprintf(command, "%s base %s %lf %lf %lf",
                                             object->Type, o_name,
-                                            object->x_base, object->y_base, object->z_base) ;
+                                            object->state.x, object->state.y, object->state.z) ;
     object->Module->vExecuteCmd(command) ;
 
 /*-------------------------------------------------------------------*/
@@ -1429,8 +1429,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    for(i=1 ; i<VERTEXES_CNT ; i++) {
 
-           rad=(VERTEXES[i].x-object->x_base)*(VERTEXES[i].x-object->x_base)+
-               (VERTEXES[i].z-object->z_base)*(VERTEXES[i].z-object->z_base) ;
+           rad=(VERTEXES[i].x-object->state.x)*(VERTEXES[i].x-object->state.x)+
+               (VERTEXES[i].z-object->state.z)*(VERTEXES[i].z-object->state.z) ;
 
       if(i==1 || rad<rad_min) {
                                  rad_min=rad ;
@@ -1442,9 +1442,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       if(delta_flag)  VERTEXES[n].y+=y ;
       else            VERTEXES[n].y =y ;
 
-                     object->x_base=VERTEXES[n].x ;
-                     object->y_base=VERTEXES[n].y ;
-                     object->z_base=VERTEXES[n].z ;
+                     object->state.x=VERTEXES[n].x ;
+                     object->state.y=VERTEXES[n].y ;
+                     object->state.z=VERTEXES[n].z ;
 
 #undef  VERTEXES     
 #undef  VERTEXES_CNT 
@@ -1461,7 +1461,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 #define  VERTEXES        show->Bodies->Vertexes
 
-                     VERTEXES[n].y=object->y_base ;
+                     VERTEXES[n].y=object->state.y ;
 
 #undef  VERTEXES     
 
@@ -1470,7 +1470,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                         sprintf(command, "%s base %s %lf %lf %lf",
                                             object->Type, o_name,
-                                            object->x_base, object->y_base, object->z_base) ;
+                                            object->state.x, object->state.y, object->state.z) ;
     object->Module->vExecuteCmd(command) ;
 
       this->kernel->vShow(NULL) ;
@@ -2597,10 +2597,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int RSS_Feature_Terrain::iOverallTest(RSS_Feature_Terrain *terrain)
 {
 
-   if(this->Object->x_base>=terrain->overall.x_min &&
-      this->Object->x_base<=terrain->overall.x_max &&
-      this->Object->z_base>=terrain->overall.z_min &&
-      this->Object->z_base<=terrain->overall.z_max   )  return(1) ;
+   if(this->Object->state.x>=terrain->overall.x_min &&
+      this->Object->state.x<=terrain->overall.x_max &&
+      this->Object->state.z>=terrain->overall.z_min &&
+      this->Object->state.z<=terrain->overall.z_max   )  return(1) ;
 
   return(0) ;
 }     
@@ -2628,8 +2628,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          body=&terrain->Bodies[n_body ] ;
         facet=&   body->Facets[n_facet] ;
 
-          x_b=this->Object->x_base ;
-          z_b=this->Object->z_base ;
+          x_b=this->Object->state.x ;
+          z_b=this->Object->state.z ;
 
 /*----------------- Проверка нахождения объекта внутри контура грани */
 /* Проверяем, что моменты цепочки векторов ребер грани относительно  */
@@ -2719,27 +2719,27 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*---------------------- Определение положения базовой точки объекта */
 
     if(fabs(facet->b)>0.01)
-          this->Object->y_base=-(facet->a*this->Object->x_base+
-                                 facet->c*this->Object->z_base+ 
-                                 facet->d                      )/
-                                 facet->b ; 
-    else  this->Object->y_base= y0 ;
+          this->Object->state.y=-(facet->a*this->Object->state.x+
+                                  facet->c*this->Object->state.z+ 
+                                  facet->d                        )/
+                                  facet->b ; 
+    else  this->Object->state.y= y0 ;
 
 /*----------------------------------- Определение ориентации объекта */
 
     if(fabs(facet->b)>0.01) {
 /*- - - - - - - - - - - - - - - - - - -  Определение угла возвышения */
-       x1=this->Object->x_base+sin(this->Object->a_azim*_GRD_TO_RAD) ;
-       z1=this->Object->z_base+cos(this->Object->a_azim*_GRD_TO_RAD) ;
+       x1=this->Object->state.x+sin(this->Object->state.azim*_GRD_TO_RAD) ;
+       z1=this->Object->state.z+cos(this->Object->state.azim*_GRD_TO_RAD) ;
 
        y1=-(facet->a*x1+facet->c*z1+facet->d)/facet->b ; 
 
-          this->Object->a_elev=atan(y1-this->Object->y_base)*_RAD_TO_GRD ;
+          this->Object->state.elev=atan(y1-this->Object->state.y)*_RAD_TO_GRD ;
 /*- - - - - - - - - - - - - - - - - - -  Определение угла возвышения */
                 Summary.LoadE      (4, 4) ;                         /* Определение матрицы пересчета в систему кординат объекта */
-                  Local.Load4d_elev(this->Object->a_elev) ;
+                  Local.Load4d_elev(this->Object->state.elev) ;
                 Summary.LoadMul    (&Summary, &Local) ;
-                  Local.Load4d_azim(this->Object->a_azim) ;
+                  Local.Load4d_azim(this->Object->state.azim) ;
                 Summary.LoadMul    (&Summary, &Local) ;
 
        for(i=0 ; i<3 ; i++) {                                       /* Пересчитываем опорные точки плоскости в систему координат объекта */
@@ -2764,12 +2764,12 @@ if(points[0].y_abs!=0.) {
                           points[0].y=points[0].y_abs ;
                         } 
 
-          this->Object->a_roll=atan(facet_o.a/facet_o.b)*_RAD_TO_GRD ;
+          this->Object->state.roll=atan(facet_o.a/facet_o.b)*_RAD_TO_GRD ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                             }
     else                    {
-                               this->Object->a_elev=0. ;
-                               this->Object->a_roll=0. ;
+                               this->Object->state.elev=0. ;
+                               this->Object->state.roll=0. ;
                             }
 /*-------------------------------------------------------------------*/
 

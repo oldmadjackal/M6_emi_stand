@@ -681,9 +681,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*-------------------------------------------------- Координаты цели */
 
     if(this->o_target!=NULL) {
-                                   x=this->o_target->x_base ;
-                                   y=this->o_target->y_base ;
-                                   z=this->o_target->z_base ;
+                                   x=this->o_target->state_0.x ;
+                                   y=this->o_target->state_0.y ;
+                                   z=this->o_target->state_0.z ;
                              } 
 /*-------------------------------------------------------------------*/
 
@@ -802,9 +802,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingSimple::vGetHomingDistance(double *distance)
 
 {
-    *distance=sqrt((this->x-this->Owner->x_base)*(this->x-this->Owner->x_base)+
-                   (this->y-this->Owner->y_base)*(this->y-this->Owner->y_base)+
-                   (this->z-this->Owner->z_base)*(this->z-this->Owner->z_base) ) ;
+    *distance=sqrt((this->x-this->Owner->state.x)*(this->x-this->Owner->state.x)+
+                   (this->y-this->Owner->state.y)*(this->y-this->Owner->state.y)+
+                   (this->z-this->Owner->state.z)*(this->z-this->Owner->state.z) ) ;
 
    return(0) ;
 }

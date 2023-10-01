@@ -1165,16 +1165,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                S.actions[i].done=1 ;
                                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - Подготовка расчета */
-         V.x=this->Owner->x_velocity ;
-         V.y=this->Owner->y_velocity ;
-         V.z=this->Owner->z_velocity ;
+         V.x=this->Owner->state.x_velocity ;
+         V.y=this->Owner->state.y_velocity ;
+         V.z=this->Owner->state.z_velocity ;
 
            v=sqrt(V.x*V.x+V.y*V.y+V.z*V.z) ;
       t_time=this->t_distance/v ;                                   /* Оценка подлетного времени */
 /*- - - - - - - - - - - - - - - - - - - - - Расчет манёвра наведения */
-      T.x=(this->t_xyz.x-this->Owner->x_base)*v/this->t_distance ;  /* Нормируем вектор на цель по скорости */
-      T.y=(this->t_xyz.y-this->Owner->y_base)*v/this->t_distance ;
-      T.z=(this->t_xyz.z-this->Owner->z_base)*v/this->t_distance ;
+      T.x=(this->t_xyz.x-this->Owner->state.x)*v/this->t_distance ; /* Нормируем вектор на цель по скорости */
+      T.y=(this->t_xyz.y-this->Owner->state.y)*v/this->t_distance ;
+      T.z=(this->t_xyz.z-this->Owner->state.z)*v/this->t_distance ;
 
       A.x=2*(T.x-V.x)/t_time ; 
       A.y=2*(T.y-V.y)/t_time ; 
@@ -1446,7 +1446,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  KEY  "$target.x"
          if(!memicmp(next, KEY, strlen(KEY))) {                     /* X цели */
 
-               value=this->Owner->o_target->x_base ;
+               value=this->Owner->o_target->state_0.x ;
                 oper=next+strlen(KEY) ;
                 next=oper+1 ;
                                               }
@@ -1455,7 +1455,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  KEY  "$target.y"
          if(!memicmp(next, KEY, strlen(KEY))) {                     /* Y цели */
 
-               value=this->Owner->o_target->y_base ;
+               value=this->Owner->o_target->state_0.y ;
                 oper=next+strlen(KEY) ;
                 next=oper+1 ;
                                               }
@@ -1464,7 +1464,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 #define  KEY  "$target.z"
          if(!memicmp(next, KEY, strlen(KEY))) {                     /* Z цели */
 
-               value=this->Owner->o_target->z_base ;
+               value=this->Owner->o_target->state_0.z ;
                 oper=next+strlen(KEY) ;
                 next=oper+1 ;
                                               }

@@ -1191,9 +1191,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
         parent=this->Owner ;
 
-             V=sqrt(parent->x_velocity*parent->x_velocity+
-                    parent->y_velocity*parent->y_velocity+
-                    parent->z_velocity*parent->z_velocity ) ;
+             V=sqrt(parent->state.x_velocity*parent->state.x_velocity+
+                    parent->state.y_velocity*parent->state.y_velocity+
+                    parent->state.z_velocity*parent->state.z_velocity ) ;
 
     if(this->mass+this->engine_mass<=0.) {
                 sprintf(error, "RSS_Unit_ModelGuided::vCalculate - Нулевая суммарная масса ракеты %s", parent->Name) ;
@@ -1204,7 +1204,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        sprintf(value, "%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;%lf;",
                         t1, this->engine_thrust, V,
                             this->control_vector.x, this->control_vector.y, this->control_vector.z,
-                            parent->x_base, parent->y_base, parent->z_base) ;
+                            parent->state.x, parent->state.y, parent->state.z) ;
         strcat(text, value) ;
 
 /*----------------------- Приведение управляющей перегрузки к ракете */
@@ -1227,7 +1227,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
               Fa= 0.5*Cx*(V/Vc)*p*this->s_middle ;
           A_size=(this->engine_thrust-Fa)/(this->engine_mass+this->mass)
-                -_G*sin(parent->a_elev) ; 
+                -_G*sin(parent->state.elev) ; 
 
 /*--------------------------------- Определение суммарного ускорения */
 
@@ -1242,25 +1242,25 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                          A.z =0. ;
                      }
 
-                         A.x+=A_size*cos(parent->a_elev*_GRD_TO_RAD)*sin(parent->a_azim*_GRD_TO_RAD) ;
-                         A.y+=A_size*sin(parent->a_elev*_GRD_TO_RAD) ;
-                         A.z+=A_size*cos(parent->a_elev*_GRD_TO_RAD)*cos(parent->a_azim*_GRD_TO_RAD) ;
+                         A.x+=A_size*cos(parent->state.elev*_GRD_TO_RAD)*sin(parent->state.azim*_GRD_TO_RAD) ;
+                         A.y+=A_size*sin(parent->state.elev*_GRD_TO_RAD) ;
+                         A.z+=A_size*cos(parent->state.elev*_GRD_TO_RAD)*cos(parent->state.azim*_GRD_TO_RAD) ;
 
 /*---------------------------------- Определение выходных параметров */
 
 
-             parent->x_base    +=parent->x_velocity*dt+0.5*A.x*dt*dt ;
-             parent->y_base    +=parent->y_velocity*dt+0.5*A.y*dt*dt ;
-             parent->z_base    +=parent->z_velocity*dt+0.5*A.z*dt*dt ;
+             parent->state.x         +=parent->state.x_velocity*dt+0.5*A.x*dt*dt ;
+             parent->state.y         +=parent->state.y_velocity*dt+0.5*A.y*dt*dt ;
+             parent->state.z         +=parent->state.z_velocity*dt+0.5*A.z*dt*dt ;
 
-             parent->x_velocity+=A.x*dt ;
-             parent->y_velocity+=A.y*dt ;
-             parent->z_velocity+=A.z*dt ;
+             parent->state.x_velocity+=A.x*dt ;
+             parent->state.y_velocity+=A.y*dt ;
+             parent->state.z_velocity+=A.z*dt ;
 
-                              V = sqrt(parent->x_velocity*parent->x_velocity+
-                                       parent->z_velocity*parent->z_velocity ) ;
-             parent->a_elev     =atan2(parent->y_velocity, V)*_RAD_TO_GRD ;
-             parent->a_azim     =atan2(parent->x_velocity, parent->z_velocity)*_RAD_TO_GRD ;
+                              V = sqrt(parent->state.x_velocity*parent->state.x_velocity+
+                                       parent->state.z_velocity*parent->state.z_velocity ) ;
+             parent->state.elev =atan2(parent->state.y_velocity, V)*_RAD_TO_GRD ;
+             parent->state.azim =atan2(parent->state.x_velocity, parent->state.z_velocity)*_RAD_TO_GRD ;
 
 /*------------------------------------------------- Сброс телеметрии */
 

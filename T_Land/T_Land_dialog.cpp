@@ -553,7 +553,7 @@
 
 /*********************************************************************/
 /*                                                                   */
-/*            Элемент - индикатор круговых диаграмм                  */
+/*            Элемент - ???                                          */
 
  LRESULT CALLBACK  Task_Land_Map_prc(
                                          HWND  hWnd,     UINT  Msg,
@@ -634,8 +634,8 @@
 
          if(data->mObjects[i].object==NULL)  continue ;
 
-                     x=data->mObjects[i].object->x_base ;
-                     z=data->mObjects[i].object->z_base ;
+                     x=data->mObjects[i].object->state.x ;
+                     z=data->mObjects[i].object->state.z ;
 
          if(i==0) {
                      x_min=x ;
@@ -743,8 +743,8 @@
 
          if(data->mObjects[i].object==NULL)  continue ;
 
-                     x_scr=(data->mObjects[i].object->x_base-x_min)/dx ;
-                     z_scr=(data->mObjects[i].object->z_base-z_min)/dx ;
+                     x_scr=(data->mObjects[i].object->state.x-x_min)/dx ;
+                     z_scr=(data->mObjects[i].object->state.z-z_min)/dx ;
 
                  color=RGB(0, 0, 0) ;
 
@@ -788,9 +788,9 @@
 
             if(trace->points_cnt!=0)                                /* Если объект стоит на месте... */
              if(trace->points[trace->points_cnt-1].x==
-                 data->mObjects[i].object->x_base      &&
+                 data->mObjects[i].object->state.x     &&
                 trace->points[trace->points_cnt-1].z==
-                 data->mObjects[i].object->z_base        )  continue ;
+                 data->mObjects[i].object->state.z       )  continue ;
 
             if(trace->points_cnt==trace->points_max) {
                 trace->points_max+=  1000 ;
@@ -799,14 +799,14 @@
                                              trace->points_max*sizeof(*trace->points)) ;
                                                      }
 
-                trace->points[trace->points_cnt].x=data->mObjects[i].object->x_base ;
-                trace->points[trace->points_cnt].z=data->mObjects[i].object->z_base ;
+                trace->points[trace->points_cnt].x=data->mObjects[i].object->state.x ;
+                trace->points[trace->points_cnt].z=data->mObjects[i].object->state.z ;
                               trace->points_cnt++ ;
 
                  color=RGB(0, 0, 0) ;
 
-          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцвети - */
-            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                              */
+          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцветки - */
+            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                               */
                  if( strlen(data->mObjects[i].object->Name)>=
                      strlen(data->mMapColors[j].object    )  )
                   if(!memicmp(data->mMapColors[j].object,

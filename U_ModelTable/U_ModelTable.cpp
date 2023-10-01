@@ -874,9 +874,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                     t_start=pars[this->t_idx] ;
 
-       if(this->azim_idx!=-1)  this->a_azim=pars[this->azim_idx] ;
-       if(this->elev_idx!=-1)  this->a_elev=pars[this->elev_idx] ;
-       if(this->roll_idx!=-1)  this->a_roll=pars[this->roll_idx] ;
+       if(this->azim_idx!=-1)  this->state.azim=pars[this->azim_idx] ;
+       if(this->elev_idx!=-1)  this->state.elev=pars[this->elev_idx] ;
+       if(this->roll_idx!=-1)  this->state.roll=pars[this->roll_idx] ;
 
 /*-------------------------------------------------------------------*/
 
@@ -936,13 +936,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                 dt=(t2-pars_1[t_idx])/(pars_2[t_idx]-pars_1[t_idx]) ;
 
-             parent->x_base=pars_1[x_idx]+(pars_2[x_idx]-pars_1[x_idx])*dt ;
-             parent->y_base=pars_1[y_idx]+(pars_2[y_idx]-pars_1[y_idx])*dt ;
-             parent->z_base=pars_1[z_idx]+(pars_2[z_idx]-pars_1[z_idx])*dt ;
+             parent->state.x=pars_1[x_idx]+(pars_2[x_idx]-pars_1[x_idx])*dt ;
+             parent->state.y=pars_1[y_idx]+(pars_2[y_idx]-pars_1[y_idx])*dt ;
+             parent->state.z=pars_1[z_idx]+(pars_2[z_idx]-pars_1[z_idx])*dt ;
 
-                         lx=pars_2[x_idx]-pars_1[x_idx] ;
-                         ly=pars_2[y_idx]-pars_1[y_idx] ;
-                         lz=pars_2[z_idx]-pars_1[z_idx] ;
+                          lx=pars_2[x_idx]-pars_1[x_idx] ;
+                          ly=pars_2[y_idx]-pars_1[y_idx] ;
+                          lz=pars_2[z_idx]-pars_1[z_idx] ;
 
                          l =sqrt(lx*lx+ly*ly+lz*lz) ;
                       
@@ -954,46 +954,46 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                       }
 
       if(  vx_idx>=0) {
-                         parent->x_velocity=pars_1[vx_idx]+(pars_2[vx_idx]-pars_1[vx_idx])*dt ;
+                         parent->state.x_velocity=pars_1[vx_idx]+(pars_2[vx_idx]-pars_1[vx_idx])*dt ;
                       }
       else            { 
-                         parent->x_velocity=v*lx/l ;
+                         parent->state.x_velocity=v*lx/l ;
                       }
 
       if(  vy_idx>=0) {
-                         parent->y_velocity=pars_1[vy_idx]+(pars_2[vy_idx]-pars_1[vy_idx])*dt ;
+                         parent->state.y_velocity=pars_1[vy_idx]+(pars_2[vy_idx]-pars_1[vy_idx])*dt ;
                       }
       else            { 
-                         parent->y_velocity=v*ly/l ;
+                         parent->state.y_velocity=v*ly/l ;
                       }
 
       if(  vz_idx>=0) {
-                         parent->z_velocity=pars_1[vz_idx]+(pars_2[vz_idx]-pars_1[vz_idx])*dt ;
+                         parent->state.z_velocity=pars_1[vz_idx]+(pars_2[vz_idx]-pars_1[vz_idx])*dt ;
                       }
       else            { 
-                         parent->z_velocity=v*lz/l ;
+                         parent->state.z_velocity=v*lz/l ;
                       }
 
       if(azim_idx>=0) {
-                         parent->a_azim=pars_1[azim_idx]+(pars_2[azim_idx]-pars_1[azim_idx])*dt ;
+                         parent->state.azim=pars_1[azim_idx]+(pars_2[azim_idx]-pars_1[azim_idx])*dt ;
                       }
       else            { 
-                         parent->a_azim=atan2(parent->x_velocity, parent->z_velocity)*_RAD_TO_GRD ; 
+                         parent->state.azim=atan2(parent->state.x_velocity, parent->state.z_velocity)*_RAD_TO_GRD ; 
                       }
 
       if(elev_idx>=0) {
-                         parent->a_elev=pars_1[elev_idx]+(pars_2[elev_idx]-pars_1[elev_idx])*dt ;
+                         parent->state.elev=pars_1[elev_idx]+(pars_2[elev_idx]-pars_1[elev_idx])*dt ;
                       }
       else            { 
-                         parent->a_elev=atan2(parent->y_velocity, sqrt(parent->x_velocity*parent->x_velocity+
-                                                                       parent->z_velocity*parent->z_velocity ))*_RAD_TO_GRD ; 
+                         parent->state.elev=atan2(parent->state.y_velocity, sqrt(parent->state.x_velocity*parent->state.x_velocity+
+                                                                                 parent->state.z_velocity*parent->state.z_velocity ))*_RAD_TO_GRD ; 
                       }
 
       if(roll_idx>=0) {
-                         parent->a_roll=pars_1[roll_idx]+(pars_2[roll_idx]-pars_1[roll_idx])*dt ;
+                         parent->state.roll=pars_1[roll_idx]+(pars_2[roll_idx]-pars_1[roll_idx])*dt ;
                       }
       else            { 
-                         parent->a_roll=0 ; 
+                         parent->state.roll=0 ; 
                       }
 
       if( clr_idx>=0) {

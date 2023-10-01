@@ -550,20 +550,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 object=(RSS_Object_ZRK *)vCreateObject(&create_data) ;
              if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
-       entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
-       entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
-       entry=strstr(buff, "Z_BASE=") ; object->z_base=atof(entry+strlen("Z_BASE=")) ;
-       entry=strstr(buff, "A_AZIM=") ; object->a_azim=atof(entry+strlen("A_AZIM=")) ;
-       entry=strstr(buff, "A_ELEV=") ; object->a_elev=atof(entry+strlen("A_ELEV=")) ;
-       entry=strstr(buff, "A_ROLL=") ; object->a_roll=atof(entry+strlen("A_ROLL=")) ;
+       entry=strstr(buff, "X_BASE=") ; object->state.x   =atof(entry+strlen("X_BASE=")) ;
+       entry=strstr(buff, "Y_BASE=") ; object->state.y   =atof(entry+strlen("Y_BASE=")) ;
+       entry=strstr(buff, "Z_BASE=") ; object->state.z   =atof(entry+strlen("Z_BASE=")) ;
+       entry=strstr(buff, "A_AZIM=") ; object->state.azim=atof(entry+strlen("A_AZIM=")) ;
+       entry=strstr(buff, "A_ELEV=") ; object->state.elev=atof(entry+strlen("A_ELEV=")) ;
+       entry=strstr(buff, "A_ROLL=") ; object->state.roll=atof(entry+strlen("A_ROLL=")) ;
 
    for(i=0 ; i<object->Features_cnt ; i++) {
-        object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                                  object->y_base, 
-                                                  object->z_base ) ;
-        object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
-                                                  object->a_elev, 
-                                                  object->a_roll ) ;
+        object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                                  object->state.y, 
+                                                  object->state.z ) ;
+        object->Features[i]->vBodyAngles   (NULL, object->state.azim, 
+                                                  object->state.elev, 
+                                                  object->state.roll ) ;
                                            }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                                  }                  /* END.1 */
@@ -762,10 +762,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "Target %s\r\n" 
                     "\r\n",
                         object->Name, object->Type, 
-                        object->x_base, object->y_base, object->z_base,
-                        object->a_azim, object->a_elev, object->a_roll,
+                        object->state.x, object->state.y, object->state.z,
+                        object->state.azim, object->state.elev, object->state.roll,
                         object->v_abs,
-                        object->x_velocity, object->y_velocity, object->z_velocity,
+                        object->state.x_velocity, object->state.y_velocity, object->state.z_velocity,
                         object->owner, object->target
                     ) ;
 
@@ -1149,32 +1149,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
    if(delta_flag) {
 
-          if(xyz_flag=='X')   object->x_base+=inverse*coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base+=inverse*coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base+=inverse*coord[0] ;
+          if(xyz_flag=='X')   object->state.x+=inverse*coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y+=inverse*coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z+=inverse*coord[0] ;
                   }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
    else           {
 
-          if(xyz_flag=='X')   object->x_base=coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base=coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base=coord[0] ;
+          if(xyz_flag=='X')   object->state.x=coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y=coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z=coord[0] ;
      else                   {
-                              object->x_base=coord[0] ;
-                              object->y_base=coord[1] ;
-                              object->z_base=coord[2] ;
+                              object->state.x=coord[0] ;
+                              object->state.y=coord[1] ;
+                              object->state.z=coord[2] ;
                             }
                   }
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                               object->y_base, 
-                                               object->z_base ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                               object->state.y, 
+                                               object->state.z ) ;
 
 /*------------------------------------------------------ Отображение */
 
                       this->kernel->vShow(NULL) ;
+
+               object->state_0=object->state ; 
 
 /*-------------------------------------------------------------------*/
 
@@ -1333,55 +1335,57 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
    if(delta_flag) {
 
-          if(xyz_flag=='A')   object->a_azim+=inverse*coord[0] ;
-     else if(xyz_flag=='E')   object->a_elev+=inverse*coord[0] ;                 
-     else if(xyz_flag=='R')   object->a_roll+=inverse*coord[0] ;
+          if(xyz_flag=='A')   object->state.azim+=inverse*coord[0] ;
+     else if(xyz_flag=='E')   object->state.elev+=inverse*coord[0] ;                 
+     else if(xyz_flag=='R')   object->state.roll+=inverse*coord[0] ;
                   }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
    else           {
 
-          if(xyz_flag=='A')   object->a_azim=coord[0] ;
-     else if(xyz_flag=='E')   object->a_elev=coord[0] ;                 
-     else if(xyz_flag=='R')   object->a_roll=coord[0] ;
+          if(xyz_flag=='A')   object->state.azim=coord[0] ;
+     else if(xyz_flag=='E')   object->state.elev=coord[0] ;                 
+     else if(xyz_flag=='R')   object->state.roll=coord[0] ;
      else                   {
-                              object->a_azim=coord[0] ;
-                              object->a_elev=coord[1] ;
-                              object->a_roll=coord[2] ;
+                              object->state.azim=coord[0] ;
+                              object->state.elev=coord[1] ;
+                              object->state.roll=coord[2] ;
                             }
                   }
 /*- - - - - - - - - - - - - - - - - - - - - -  Нормализация значений */
-     while(object->a_azim> 180.)  object->a_azim-=360. ;
-     while(object->a_azim<-180.)  object->a_azim+=360. ;
+     while(object->state.azim> 180.)  object->state.azim-=360. ;
+     while(object->state.azim<-180.)  object->state.azim+=360. ;
 
-     while(object->a_elev> 180.)  object->a_elev-=360. ;
-     while(object->a_elev<-180.)  object->a_elev+=360. ;
+     while(object->state.elev> 180.)  object->state.elev-=360. ;
+     while(object->state.elev<-180.)  object->state.elev+=360. ;
 
-     while(object->a_roll> 180.)  object->a_roll-=360. ;
-     while(object->a_roll<-180.)  object->a_roll+=360. ;
+     while(object->state.roll> 180.)  object->state.roll-=360. ;
+     while(object->state.roll<-180.)  object->state.roll+=360. ;
 
 /*---------------------------------------------- Перерасчет скорости */
 
        Velo_Matrix.LoadZero   (3, 1) ;
        Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
-        Sum_Matrix.Load3d_azim(-object->a_azim) ;
-       Oper_Matrix.Load3d_elev(-object->a_elev) ;
+        Sum_Matrix.Load3d_azim(-object->state.azim) ;
+       Oper_Matrix.Load3d_elev(-object->state.elev) ;
         Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
        Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
 
-         object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
-         object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
-         object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+         object->state.x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         object->state.y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         object->state.z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles(NULL, object->a_azim, 
-                                            object->a_elev, 
-                                            object->a_roll ) ;
+     object->Features[i]->vBodyAngles(NULL, object->state.azim, 
+                                            object->state.elev, 
+                                            object->state.roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
                 this->kernel->vShow(NULL) ;
+
+               object->state_0=object->state ; 
 
 /*-------------------------------------------------------------------*/
 
@@ -1472,25 +1476,28 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                 Velo_Matrix.LoadZero   (3, 1) ;
                 Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
 
-                 Sum_Matrix.Load3d_azim(-object->a_azim) ;
-                Oper_Matrix.Load3d_elev(-object->a_elev) ;
+                 Sum_Matrix.Load3d_azim(-object->state.azim) ;
+                Oper_Matrix.Load3d_elev(-object->state.elev) ;
                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
                 Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
 
-                       object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
-                       object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
-                       object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+                       object->state.x_velocity=Velo_Matrix.GetCell(0, 0) ;
+                       object->state.y_velocity=Velo_Matrix.GetCell(1, 0) ;
+                       object->state.z_velocity=Velo_Matrix.GetCell(2, 0) ;
                     }
 /*- - - - - - - - - - - - - - - - - - - - - - - -  Проекции скорости */
    else             {
-                       object->x_velocity=coord[0] ;
-                       object->y_velocity=coord[1] ;
-                       object->z_velocity=coord[2] ;
+                       object->state.x_velocity=coord[0] ;
+                       object->state.y_velocity=coord[1] ;
+                       object->state.z_velocity=coord[2] ;
 
-                       object->v_abs     =sqrt(object->x_velocity*object->x_velocity+
-                                               object->y_velocity*object->y_velocity+
-                                               object->z_velocity*object->z_velocity ) ;
+                       object->v_abs=sqrt(object->state.x_velocity*object->state.x_velocity+
+                                          object->state.y_velocity*object->state.y_velocity+
+                                          object->state.z_velocity*object->state.z_velocity ) ;
                     }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+               object->state_0=object->state ; 
+
 /*-------------------------------------------------------------------*/
 
 #undef  _COORD_MAX   
@@ -1568,8 +1575,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*----------------------------------------- Контроль носителя и цели */
 
+  if(object->owner[0]!=0) {
        object->o_owner=FindObject(object->owner, 0) ;               /* Ищем носитель по имени */
     if(object->o_owner==NULL)  return(-1) ;
+                          }
 
   if(object->target[0]!=0) {
        object->o_target=FindObject(object->target, 0) ;             /* Ищем цель по имени */
@@ -1577,25 +1586,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                            }
 /*------------------------------ Привязка стартовой точки к носителю */
 
-       object->x_base=object->o_owner->x_base ;
-       object->y_base=object->o_owner->y_base ;
-       object->z_base=object->o_owner->z_base ;
+  if(object->owner[0]!=0) {
 
-       object->a_azim=object->o_owner->a_azim ;
-       object->a_elev=object->o_owner->a_elev ;
-       object->a_roll=object->o_owner->a_roll ;
+       object->state=object->o_owner->state ;
 
-       Velo_Matrix.LoadZero   (3, 1) ;
-       Velo_Matrix.SetCell    (2, 0, object->v_abs) ;
-        Sum_Matrix.Load3d_azim(-object->a_azim) ;
-       Oper_Matrix.Load3d_elev(-object->a_elev) ;
-        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-       Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
-
-         object->x_velocity=Velo_Matrix.GetCell(0, 0) ;
-         object->y_velocity=Velo_Matrix.GetCell(1, 0) ;
-         object->z_velocity=Velo_Matrix.GetCell(2, 0) ;
-
+                          }
 /*------------------------------------------------------ Трассировка */
 
               time_0=this->kernel->vGetTime() ;
@@ -1618,18 +1613,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            if(time_w>=0)  Sleep(time_w*1000) ;
 #pragma warning(default : 4244)
 /*- - - - - - - - - - - - - - - - - - - - - - Моделирование движения */
+               object->state_0=object->state ; 
+
          object->vCalculate(time_c-RSS_Kernel::calc_time_step, time_c, NULL, 0) ;
          object->iSaveTracePoint("ADD") ;
 /*- - - - - - - - - - - - - - - - - - - - - - Отображение траектории */
          object->iShowTrace_() ;
 /*- - - - - - - - - - - - - - - - - - - - - - -  Отображение объекта */
    for(i=0 ; i<object->Features_cnt ; i++) {
-     object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                               object->y_base, 
-                                               object->z_base ) ;
-     object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
-                                               object->a_elev, 
-                                               object->a_roll ) ;
+     object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                               object->state.y, 
+                                               object->state.z ) ;
+     object->Features[i]->vBodyAngles   (NULL, object->state.azim, 
+                                               object->state.elev, 
+                                               object->state.roll ) ;
                                             }
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Отрисовка сцены */
           time_1=this->kernel->vGetTime() ;
@@ -1952,16 +1949,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      battle_state= 0 ;
 
-      x_base    =   0. ;
-      y_base    =   0. ;
-      z_base    =   0. ;
-      a_azim    =   0. ;
-      a_elev    =   0. ;
-      a_roll    =   0. ;
-      x_velocity=   0. ;
-      y_velocity=   0. ;
-      z_velocity=   0. ;
-      v_abs     =   0. ;
+           v_abs = 0. ;
 
              start_flag=0 ;
 
@@ -2037,34 +2025,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void  RSS_Object_ZRK::vPush(void)
 
 {
-     x_base_stack    =x_base ;
-     y_base_stack    =y_base ;
-     z_base_stack    =z_base ;
-
-     a_azim_stack    =a_azim ;
-     a_elev_stack    =a_elev ;
-     a_roll_stack    =a_roll ;
-
-     x_velocity_stack=x_velocity ;
-     y_velocity_stack=y_velocity ;
-     z_velocity_stack=z_velocity ;
+     state_stack=state ;   
 }
 
 
     void  RSS_Object_ZRK::vPop(void)
 
 {
-     x_base    =x_base_stack ;
-     y_base    =y_base_stack ;
-     z_base    =z_base_stack ;
-
-     a_azim    =a_azim_stack ;
-     a_elev    =a_elev_stack ;
-     a_roll    =a_roll_stack ;
-
-     x_velocity=x_velocity_stack ;
-     y_velocity=y_velocity_stack ;
-     z_velocity=z_velocity_stack ;
+     state=state_stack ;   
 
   if(this->mTrace!=NULL) {
                              free(this->mTrace) ;
@@ -2160,12 +2128,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------------------------- Данные */
 
     sprintf(field, "NAME=%s\n",       this->Name      ) ;  *text+=field ;
-    sprintf(field, "X_BASE=%.10lf\n", this->x_base    ) ;  *text+=field ;
-    sprintf(field, "Y_BASE=%.10lf\n", this->y_base    ) ;  *text+=field ;
-    sprintf(field, "Z_BASE=%.10lf\n", this->z_base    ) ;  *text+=field ;
-    sprintf(field, "A_AZIM=%.10lf\n", this->a_azim    ) ;  *text+=field ;
-    sprintf(field, "A_ELEV=%.10lf\n", this->a_elev    ) ;  *text+=field ;
-    sprintf(field, "A_ROLL=%.10lf\n", this->a_roll    ) ;  *text+=field ;
+    sprintf(field, "X_BASE=%.10lf\n", this->state.x   ) ;  *text+=field ;
+    sprintf(field, "Y_BASE=%.10lf\n", this->state.y   ) ;  *text+=field ;
+    sprintf(field, "Z_BASE=%.10lf\n", this->state.z   ) ;  *text+=field ;
+    sprintf(field, "A_AZIM=%.10lf\n", this->state.azim) ;  *text+=field ;
+    sprintf(field, "A_ELEV=%.10lf\n", this->state.elev) ;  *text+=field ;
+    sprintf(field, "A_ROLL=%.10lf\n", this->state.roll) ;  *text+=field ;
     sprintf(field, "MODEL=%s\n",      this->model_path) ;  *text+=field ;
 
   for(i=0 ; i<this->Parameters_cnt ; i++) {
@@ -2238,26 +2206,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
   if(this->o_owner!=NULL) {
 
-      this->x_base=this->o_owner->x_base ;
-      this->y_base=this->o_owner->y_base ;
-      this->z_base=this->o_owner->z_base ;
+        this->state=this->o_owner->state_0 ;
 
-      this->a_azim=this->o_owner->a_azim ;
-      this->a_elev=this->o_owner->a_elev ;
-      this->a_roll=this->o_owner->a_roll ;
                           }
 /*-------------------------------------------- Перерасчет параметров */
 
        Velo_Matrix.LoadZero   (3, 1) ;
        Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
-        Sum_Matrix.Load3d_azim(-this->a_azim) ;
-       Oper_Matrix.Load3d_elev(-this->a_elev) ;
+        Sum_Matrix.Load3d_azim(-this->state.azim) ;
+       Oper_Matrix.Load3d_elev(-this->state.elev) ;
         Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
        Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
 
-         this->x_velocity=Velo_Matrix.GetCell(0, 0) ;
-         this->y_velocity=Velo_Matrix.GetCell(1, 0) ;
-         this->z_velocity=Velo_Matrix.GetCell(2, 0) ;
+         this->state.x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         this->state.y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         this->state.z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
 /*------------------------------- Установка признака начального шага */
 
@@ -2310,9 +2273,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*-------------------------------------------------------- Положение */
 
-                   x_base+=x_velocity*(t2-t1) ;
-                   y_base+=y_velocity*(t2-t1) ;
-                   z_base+=z_velocity*(t2-t1) ;
+                   state.x += state.x_velocity*(t2-t1) ;
+                   state.y += state.y_velocity*(t2-t1) ;
+                   state.z += state.z_velocity*(t2-t1) ;
 
 /*----------------------------------------- Анализ состояния объекта */
 
@@ -2338,12 +2301,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
          if(T.missile==NULL)  continue ;              /* Если ЗУР не нашлась среди объектов :-( */
 
-            r  =sqrt((T.target->x_base-this->x_base)*(T.target->x_base-this->x_base)+
-                     (T.target->y_base-this->y_base)*(T.target->y_base-this->y_base)+
-                     (T.target->z_base-this->z_base)*(T.target->z_base-this->z_base) ) ;
-            r_m=sqrt((T.missile->x_base-this->x_base)*(T.missile->x_base-this->x_base)+
-                     (T.missile->y_base-this->y_base)*(T.missile->y_base-this->y_base)+
-                     (T.missile->z_base-this->z_base)*(T.missile->z_base-this->z_base) ) ;
+            r  =sqrt((T.target->state_0.x-this->state_0.x)*(T.target->state_0.x-this->state_0.x)+
+                     (T.target->state_0.y-this->state_0.y)*(T.target->state_0.y-this->state_0.y)+
+                     (T.target->state_0.z-this->state_0.z)*(T.target->state_0.z-this->state_0.z) ) ;
+            r_m=sqrt((T.missile->state_0.x-this->state_0.x)*(T.missile->state_0.x-this->state_0.x)+
+                     (T.missile->state_0.y-this->state_0.y)*(T.missile->state_0.y-this->state_0.y)+
+                     (T.missile->state_0.z-this->state_0.z)*(T.missile->state_0.z-this->state_0.z) ) ;
 
          if(r < r_m) {                                              /* Если последняя ракета залпа пролетела цель - */
                           T.target=NULL ;                           /*  - исключаем цель из списка обстреливаемых   */
@@ -2370,15 +2333,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          if(!memicmp(OBJECTS[i]->Name, prefix,                      /* Исключение собственных ЗУР */
                                 strlen(prefix)))  continue ;
 /*- - - - - - - - - - - - - - - - - - - -  Выделение воздушных целей */
-         if(OBJECTS[i]->y_base<=0)  continue ;                      /* Если это - НЕ воздушная цель... */
+         if(OBJECTS[i]->state_0.y<=0)  continue ;                   /* Если это - НЕ воздушная цель... */
 
         if(this->ballistic_target==1) 
-         if(OBJECTS[i]->y_velocity>=0)  continue ;                  /* Если это - НЕ баллистическая цель... */
+         if(OBJECTS[i]->state_0.y_velocity>=0)  continue ;          /* Если это - НЕ баллистическая цель... */
 /*- - - - - - - - - - - - - - - -  Отсечение целей по зоне поражения */
-         if(OBJECTS[i]->y_base>this->h_firing_max)  continue ;      /* Если цель слишком высоко... */
+         if(OBJECTS[i]->state_0.y>this->h_firing_max)  continue ;      /* Если цель слишком высоко... */
 
-            r=sqrt((OBJECTS[i]->x_base-this->x_base)*(OBJECTS[i]->x_base-this->x_base)+
-                   (OBJECTS[i]->z_base-this->z_base)*(OBJECTS[i]->z_base-this->z_base) ) ;
+            r=sqrt((OBJECTS[i]->state_0.x-this->state_0.x)*(OBJECTS[i]->state_0.x-this->state_0.x)+
+                   (OBJECTS[i]->state_0.z-this->state_0.z)*(OBJECTS[i]->state_0.z-this->state_0.z) ) ;
          if(r<this->r_firing_min ||
             r>this->r_firing_max   )  continue ;                    /* Если цель вне зоны поражения... */
 /*- - - - - - - - - - - - - - - - - -  Если цель уже обстреливаается */
@@ -2415,17 +2378,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
           missile=this->missile_tmpl ;
 
-               dx=target->x_base-this->x_base ;
-               dy=target->y_base-this->y_base ;
-               dz=target->z_base-this->z_base ;
+               dx=target->state_0.x-this->state_0.x ;
+               dy=target->state_0.y-this->state_0.y ;
+               dz=target->state_0.z-this->state_0.z ;
 
-                a=target ->x_velocity*target ->x_velocity
-                 +target ->y_velocity*target ->y_velocity
-                 +target ->z_velocity*target ->z_velocity
-                 -missile->x_velocity*missile->x_velocity
-                 -missile->y_velocity*missile->y_velocity
-                 -missile->z_velocity*missile->z_velocity ;
-                b=2.*(target->x_velocity*dx+target->y_velocity*dy+target->z_velocity*dz) ;
+                a=target ->state_0.x_velocity*target ->state_0.x_velocity
+                 +target ->state_0.y_velocity*target ->state_0.y_velocity
+                 +target ->state_0.z_velocity*target ->state_0.z_velocity
+                 -missile->state_0.x_velocity*missile->state_0.x_velocity
+                 -missile->state_0.y_velocity*missile->state_0.y_velocity
+                 -missile->state_0.z_velocity*missile->state_0.z_velocity ;
+                b=2.*( target->state_0.x_velocity*dx
+                      +target->state_0.y_velocity*dy
+                      +target->state_0.z_velocity*dz ) ;
                 c=dx*dx+dy*dy+dz*dz ;
 
              tx_1=(-b-sqrt(b*b-4.*a*c))/(2.*a) ;
@@ -2436,9 +2401,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          else if(tx_2<0.           )   ;
          else if(tx_1>tx_2         )  tx_1=tx_2 ;
 
-              dx+=target->x_velocity*tx_1 ;
-              dy+=target->y_velocity*tx_1 ;
-              dz+=target->z_velocity*tx_1 ;
+              dx+=target->state_0.x_velocity*tx_1 ;
+              dy+=target->state_0.y_velocity*tx_1 ;
+              dz+=target->state_0.z_velocity*tx_1 ;
 
                r= sqrt(dx*dx+dz*dz) ;
             azim=atan2(dx, dz)*_RAD_TO_GRD ;
@@ -2450,7 +2415,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               "START %s;",
                                this->missile_type, this->traces[j].missile_name,
                                                    this->traces[j].missile_name, target->Name,
-                                                   this->traces[j].missile_name, this->x_base, this->y_base, this->z_base,
+                                                   this->traces[j].missile_name, this->state_0.x, this->state_0.y, this->state_0.z,
                                                    this->traces[j].missile_name ) ;
               strcat(callback, command) ;
 
@@ -2481,17 +2446,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
           missile=this->missile_tmpl ;
 
-               dx=target->x_base-this->x_base ;
-               dy=target->y_base-this->y_base ;
-               dz=target->z_base-this->z_base ;
+               dx=target->state_0.x-this->state_0.x ;
+               dy=target->state_0.y-this->state_0.y ;
+               dz=target->state_0.z-this->state_0.z ;
 
-                a=target ->x_velocity*target ->x_velocity
-                 +target ->y_velocity*target ->y_velocity
-                 +target ->z_velocity*target ->z_velocity
-                 -missile->x_velocity*missile->x_velocity
-                 -missile->y_velocity*missile->y_velocity
-                 -missile->z_velocity*missile->z_velocity ;
-                b=2.*(target->x_velocity*dx+target->y_velocity*dy+target->z_velocity*dz) ;
+                a=target ->state_0.x_velocity*target ->state_0.x_velocity
+                 +target ->state_0.y_velocity*target ->state_0.y_velocity
+                 +target ->state_0.z_velocity*target ->state_0.z_velocity
+                 -missile->state_0.x_velocity*missile->state_0.x_velocity
+                 -missile->state_0.y_velocity*missile->state_0.y_velocity
+                 -missile->state_0.z_velocity*missile->state_0.z_velocity ;
+                b=2.*( target->state_0.x_velocity*dx
+                      +target->state_0.y_velocity*dy
+                      +target->state_0.z_velocity*dz ) ;
                 c=dx*dx+dy*dy+dz*dz ;
 
              tx_1=(-b-sqrt(b*b-4.*a*c))/(2.*a) ;
@@ -2502,9 +2469,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          else if(tx_2<0.           )   ;
          else if(tx_1>tx_2         )  tx_1=tx_2 ;
 
-              dx+=target->x_velocity*tx_1 ;
-              dy+=target->y_velocity*tx_1 ;
-              dz+=target->z_velocity*tx_1 ;
+              dx+=target->state_0.x_velocity*tx_1 ;
+              dy+=target->state_0.y_velocity*tx_1 ;
+              dz+=target->state_0.z_velocity*tx_1 ;
 
                r= sqrt(dx*dx+dz*dz) ;
             azim=atan2(dx, dz)*_RAD_TO_GRD ;
@@ -2516,7 +2483,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               "START %s;",
                                this->missile_type, this->firing_channel->missile_name,
                                                    this->firing_channel->missile_name, target->Name,
-                                                   this->firing_channel->missile_name, this->x_base, this->y_base, this->z_base,
+                                                   this->firing_channel->missile_name, this->state_0.x, this->state_0.y, this->state_0.z,
                                                    this->firing_channel->missile_name ) ;
               strcat(callback, command) ;
 
@@ -2558,12 +2525,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          this->iShowTrace_() ;                                      /* Отображение траектории */
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
-     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
-                                             this->y_base, 
-                                             this->z_base ) ;
-     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
-                                             this->a_elev, 
-                                             this->a_roll ) ;
+     this->Features[i]->vBodyBasePoint(NULL, this->state.x, 
+                                             this->state.y, 
+                                             this->state.z ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->state.azim, 
+                                             this->state.elev, 
+                                             this->state.roll ) ;
                                          }
 
   return(0) ;
@@ -2599,15 +2566,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                               }
 /*------------------------------------------------- Сохранение точки */
 
-                  mTrace[mTrace_cnt].x_base    =this->x_base ;
-                  mTrace[mTrace_cnt].y_base    =this->y_base ;
-                  mTrace[mTrace_cnt].z_base    =this->z_base ;
-                  mTrace[mTrace_cnt].a_azim    =this->a_azim ;
-                  mTrace[mTrace_cnt].a_elev    =this->a_elev ;
-                  mTrace[mTrace_cnt].a_roll    =this->a_roll ;
-                  mTrace[mTrace_cnt].x_velocity=this->x_velocity ;
-                  mTrace[mTrace_cnt].y_velocity=this->y_velocity ;
-                  mTrace[mTrace_cnt].z_velocity=this->z_velocity ;
+                  mTrace[mTrace_cnt].x_base    =this->state.x ;
+                  mTrace[mTrace_cnt].y_base    =this->state.y ;
+                  mTrace[mTrace_cnt].z_base    =this->state.z ;
+                  mTrace[mTrace_cnt].a_azim    =this->state.azim ;
+                  mTrace[mTrace_cnt].a_elev    =this->state.elev ;
+                  mTrace[mTrace_cnt].a_roll    =this->state.roll ;
+                  mTrace[mTrace_cnt].x_velocity=this->state.x_velocity ;
+                  mTrace[mTrace_cnt].y_velocity=this->state.y_velocity ;
+                  mTrace[mTrace_cnt].z_velocity=this->state.z_velocity ;
                   mTrace[mTrace_cnt].color     =RGB(  0, 0, 127) ;
                          mTrace_cnt++ ;
 

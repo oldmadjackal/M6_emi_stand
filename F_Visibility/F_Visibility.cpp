@@ -1361,11 +1361,11 @@ return(0) ;
                                     Observers[i].y_base, 
                                     Observers[i].z_base ) ;
                 Summary.LoadMul    (&Summary, &Local) ;
-                  Local.Load4d_azim(-this->Object->a_azim) ;
+                  Local.Load4d_azim(-this->Object->state.azim) ;
                 Summary.LoadMul    (&Summary, &Local) ;
-                  Local.Load4d_elev(-this->Object->a_elev) ;
+                  Local.Load4d_elev(-this->Object->state.elev) ;
                 Summary.LoadMul    (&Summary, &Local) ;
-                  Local.Load4d_roll(-this->Object->a_roll) ;
+                  Local.Load4d_roll(-this->Object->state.roll) ;
                 Summary.LoadMul    (&Summary, &Local) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - Перерасчет координат */
          for(j=0 ; j<5 ; j++) {
@@ -1376,9 +1376,9 @@ return(0) ;
                           Point.SetCell (2, 0, points[j].z) ;
                           Point.SetCell (3, 0,  1) ;
                           Point.LoadMul (&Summary, &Point) ;
-              points[j].x=Point.GetCell (0, 0)+this->Object->x_base ;
-              points[j].y=Point.GetCell (1, 0)+this->Object->y_base ;
-              points[j].z=Point.GetCell (2, 0)+this->Object->z_base ;
+              points[j].x=Point.GetCell (0, 0)+this->Object->state.x ;
+              points[j].y=Point.GetCell (1, 0)+this->Object->state.y ;
+              points[j].z=Point.GetCell (2, 0)+this->Object->state.z ;
                               }
 /*- - - - - - - - - - - - - - - - - - - - - Отрисовка границ сектора */
              glColor4d(GetRValue(Sector_color)/256., 

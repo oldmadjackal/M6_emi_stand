@@ -332,10 +332,10 @@
 
                                  color=RGB(255, 0, 0) ;
 
-                 dx=data->threats[i]->x_base-data->Owner->x_base ;
-                 dz=data->threats[i]->z_base-data->Owner->z_base ;
+                 dx=data->threats[i]->state_0.x-data->Owner->state.x ;
+                 dz=data->threats[i]->state_0.z-data->Owner->state.z ;
 
-              angle=1.5*_PI-(atan2(dx, dz)-data->Owner->a_azim*_GRD_TO_RAD) ;
+              angle=1.5*_PI-(atan2(dx, dz)-data->Owner->state.azim*_GRD_TO_RAD) ;
 
                            Pen    =           CreatePen(PS_SOLID, 0, color) ;
                            Pen_prv=(HPEN)  SelectObject(hDC, Pen) ;

@@ -1020,18 +1020,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
          object=battle->mObjects[i].object ;
 
 /*------------------------ Расчет относительной скорости и положения */
-
-         v_x=object->x_velocity-this->Owner->x_velocity ;           /* Скорость объекта относительно носителя */
-         v_y=object->y_velocity-this->Owner->y_velocity ;
-         v_z=object->z_velocity-this->Owner->z_velocity ;
+                                                                    /* Скорость объекта относительно носителя */
+         v_x=object->state_0.x_velocity-this->Owner->state_0.x_velocity ;
+         v_y=object->state_0.y_velocity-this->Owner->state_0.y_velocity ;
+         v_z=object->state_0.z_velocity-this->Owner->state_0.z_velocity ;
 
          v  =sqrt(v_x*v_x+v_y*v_y+v_z*v_z) ;
 
       if(v==0)  continue ;                                          /* Если объект неподвижен относительно носителя... */
 
-         d_x=this->Owner->x_base-object->x_base ;                   /* Направление от объекта на носитель (не наоборот!) */
-         d_y=this->Owner->y_base-object->y_base ;
-         d_z=this->Owner->z_base-object->z_base ;
+         d_x=this->Owner->state_0.x-object->state_0.x ;             /* Направление от объекта на носитель (не наоборот!) */
+         d_y=this->Owner->state_0.y-object->state_0.y ;
+         d_z=this->Owner->state_0.z-object->state_0.z ;
 
          d  =sqrt(d_x*d_x+d_y*d_y+d_z*d_z) ;
       if(d==0.)  continue ;                                         /* Если метка объекта и носителя совпадают... */

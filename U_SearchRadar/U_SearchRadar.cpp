@@ -998,9 +998,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 //                 Oper_Matrix.Load4d_elev(center->a_elev) ;
 //                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                   Oper_Matrix.Load4d_azim( center->a_azim) ;
+                   Oper_Matrix.Load4d_azim( center->state_0.azim) ;
                     Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                   Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+                   Oper_Matrix.Load4d_base(-center->state_0.x, -center->state_0.y, -center->state_0.z) ;
                     Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 /*- - - - - - - - - - - - - - - - - - - -  Формирование списка целей */
         for(i=0 ; i<this->threats_cnt ; i++) {
@@ -1008,9 +1008,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                   target=this->threats[i] ;
 
                       Point.LoadZero(4, 1) ;
-                      Point.SetCell (0, 0, target->x_base) ;
-                      Point.SetCell (1, 0, target->y_base) ;
-                      Point.SetCell (2, 0, target->z_base) ;
+                      Point.SetCell (0, 0, target->state_0.x) ;
+                      Point.SetCell (1, 0, target->state_0.y) ;
+                      Point.SetCell (2, 0, target->state_0.z) ;
                       Point.SetCell (3, 0,   1   ) ;
 
                       Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */
@@ -1078,9 +1078,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 //           Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 //          Oper_Matrix.Load4d_elev(center->a_elev) ;
 //           Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-            Oper_Matrix.Load4d_azim( center->a_azim) ;
+            Oper_Matrix.Load4d_azim( center->state_0.azim) ;
              Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-            Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+            Oper_Matrix.Load4d_base(-center->state_0.x, -center->state_0.y, -center->state_0.z) ;
              Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 
 /*--------------------------------------------- Перебор объектов боя */
@@ -1091,17 +1091,17 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      if(object==NULL)  continue ;
 
 /*------------------------ Расчет относительной скорости и положения */
-
-         v_x=object->x_velocity-this->Owner->x_velocity ;           /* Скорость объекта относительно носителя */
-         v_y=object->y_velocity-this->Owner->y_velocity ;
-         v_z=object->z_velocity-this->Owner->z_velocity ;
+                                                                    /* Скорость объекта относительно носителя */
+         v_x=object->state_0.x_velocity-this->Owner->state.x_velocity ;
+         v_y=object->state_0.y_velocity-this->Owner->state.y_velocity ;
+         v_z=object->state_0.z_velocity-this->Owner->state.z_velocity ;
 
          v  =sqrt(v_x*v_x+v_y*v_y+v_z*v_z) ;
 
                       Point.LoadZero(4, 1) ;
-                      Point.SetCell (0, 0, object->x_base) ;
-                      Point.SetCell (1, 0, object->y_base) ;
-                      Point.SetCell (2, 0, object->z_base) ;
+                      Point.SetCell (0, 0, object->state_0.x) ;
+                      Point.SetCell (1, 0, object->state_0.y) ;
+                      Point.SetCell (2, 0, object->state_0.z) ;
                       Point.SetCell (3, 0,   1   ) ;
 
                       Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */

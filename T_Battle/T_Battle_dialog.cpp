@@ -638,8 +638,8 @@
 
          if(data->mObjects[i].object==NULL)  continue ;
 
-                     x=data->mObjects[i].object->x_base ;
-                     z=data->mObjects[i].object->z_base ;
+                     x=data->mObjects[i].object->state.x ;
+                     z=data->mObjects[i].object->state.z ;
 
                     if(x<x_min)  x_min=x ;
                     if(x>x_max)  x_max=x ;
@@ -652,8 +652,8 @@
 
          if(stricmp(MARKERS[i]->Type, "Marker"))  break ;
 
-                     x=MARKERS[i]->x_base ;
-                     z=MARKERS[i]->z_base ;
+                     x=MARKERS[i]->state.x ;
+                     z=MARKERS[i]->state.z ;
 
                     if(x<x_min)  x_min=x ;
                     if(x>x_max)  x_max=x ;
@@ -761,8 +761,8 @@
 
          if(data->mObjects[i].object==NULL)  continue ;
 
-                     x_scr=(data->mObjects[i].object->x_base-x_min)/dx ;
-                     z_scr=(data->mObjects[i].object->z_base-z_min)/dx ;
+                     x_scr=(data->mObjects[i].object->state.x-x_min)/dx ;
+                     z_scr=(data->mObjects[i].object->state.z-z_min)/dx ;
 
                  color=RGB(0, 0, 0) ;
 
@@ -806,9 +806,9 @@
 
             if(trace->points_cnt!=0)                                /* Если объект стоит на месте... */
              if(trace->points[trace->points_cnt-1].x==
-                 data->mObjects[i].object->x_base      &&
+                 data->mObjects[i].object->state.x     &&
                 trace->points[trace->points_cnt-1].z==
-                 data->mObjects[i].object->z_base        )  continue ;
+                 data->mObjects[i].object->state.z        )  continue ;
 
             if(trace->points_cnt==trace->points_max) {
                 trace->points_max+=  1000 ;
@@ -817,8 +817,8 @@
                                              trace->points_max*sizeof(*trace->points)) ;
                                                      }
 
-                trace->points[trace->points_cnt].x=data->mObjects[i].object->x_base ;
-                trace->points[trace->points_cnt].z=data->mObjects[i].object->z_base ;
+                trace->points[trace->points_cnt].x=data->mObjects[i].object->state.x ;
+                trace->points[trace->points_cnt].z=data->mObjects[i].object->state.z ;
                               trace->points_cnt++ ;
 
                  color=RGB(0, 0, 0) ;
@@ -865,8 +865,8 @@
 
        for(i=0 ; i<MARKERS_CNT ; i++ ) {
 
-                     x_scr=(MARKERS[i]->x_base-x_min)/dx ;
-                     z_scr=(MARKERS[i]->z_base-z_min)/dx ;
+                     x_scr=(MARKERS[i]->state.x-x_min)/dx ;
+                     z_scr=(MARKERS[i]->state.z-z_min)/dx ;
 
          if(!stricmp(MARKERS[i]->Type, "Marker")) {
                   MoveToEx(hDC, x_scr,   z_scr-3, NULL) ;

@@ -88,6 +88,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Features    =NULL ;
        Features_cnt=  0 ;
 
+      state.x         = 0. ;
+      state.y         = 0. ;
+      state.z         = 0. ;
+      state.azim      = 0. ;
+      state.elev      = 0. ;
+      state.roll      = 0. ;
+      state.x_velocity= 0. ;
+      state.y_velocity= 0. ;
+      state.z_velocity= 0. ;
+
        battle_state= 0 ; 
          land_state= 0 ; 
 
@@ -140,34 +150,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void  RSS_Object::vPush(void)
 
 {
-     x_base_stack    =x_base ;
-     y_base_stack    =y_base ;
-     z_base_stack    =z_base ;
-
-     a_azim_stack    =a_azim ;
-     a_elev_stack    =a_elev ;
-     a_roll_stack    =a_roll ;
-
-     x_velocity_stack=x_velocity ;
-     y_velocity_stack=y_velocity ;
-     z_velocity_stack=z_velocity ;
+     state_stack=state ;
 }
 
 
     void  RSS_Object::vPop(void)
 
 {
-     x_base    =x_base_stack ;
-     y_base    =y_base_stack ;
-     z_base    =z_base_stack ;
-
-     a_azim    =a_azim_stack ;
-     a_elev    =a_elev_stack ;
-     a_roll    =a_roll_stack ;
-
-     x_velocity=x_velocity_stack ;
-     y_velocity=y_velocity_stack ;
-     z_velocity=z_velocity_stack ;
+     state=state_stack ;
 }
 
 
@@ -233,13 +223,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
      int  RSS_Object::vGetPosition(RSS_Point *points)
 
 {
-        points->x=x_base ;
-        points->y=y_base ;
-        points->z=z_base ;
+        points->x   =state.x ;
+        points->y   =state.y ;
+        points->z   =state.z ;
 
-        points->azim=a_azim ;
-        points->elev=a_elev ;
-        points->roll=a_roll ;
+        points->azim=state.azim ;
+        points->elev=state.elev ;
+        points->roll=state.roll ;
 
     return(0) ;
 }
@@ -247,13 +237,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     void  RSS_Object::vSetPosition(RSS_Point *points)
 
 {
-        x_base=points->x ;
-        y_base=points->y ;
-        z_base=points->z ;
+        state.x   =points->x ;
+        state.y   =points->y ;
+        state.z   =points->z ;
 
-        a_azim=points->azim ;
-        a_elev=points->elev ;
-        a_roll=points->roll ;
+        state.azim=points->azim ;
+        state.elev=points->elev ;
+        state.roll=points->roll ;
 }
 
 
@@ -263,9 +253,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     int  RSS_Object::vGetVelocity(RSS_Vector *velocity)
 {
-        velocity->x=x_velocity ;
-        velocity->y=y_velocity ;
-        velocity->z=z_velocity ;
+        velocity->x=state.x_velocity ;
+        velocity->y=state.y_velocity ;
+        velocity->z=state.z_velocity ;
 
    return(0) ;
 }
@@ -388,12 +378,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           strupr(this->direct_select) ;
 
-       if(strchr(this->direct_select, 'X')!=NULL)  this->x_base=this->direct_target.x ;
-       if(strchr(this->direct_select, 'Y')!=NULL)  this->y_base=this->direct_target.y ;
-       if(strchr(this->direct_select, 'Z')!=NULL)  this->z_base=this->direct_target.z ;
-       if(strchr(this->direct_select, 'A')!=NULL)  this->a_azim=this->direct_target.azim ;
-       if(strchr(this->direct_select, 'E')!=NULL)  this->a_elev=this->direct_target.elev ;
-       if(strchr(this->direct_select, 'R')!=NULL)  this->a_roll=this->direct_target.roll ;
+       if(strchr(this->direct_select, 'X')!=NULL)  this->state.x   =this->direct_target.x ;
+       if(strchr(this->direct_select, 'Y')!=NULL)  this->state.y   =this->direct_target.y ;
+       if(strchr(this->direct_select, 'Z')!=NULL)  this->state.z   =this->direct_target.z ;
+       if(strchr(this->direct_select, 'A')!=NULL)  this->state.azim=this->direct_target.azim ;
+       if(strchr(this->direct_select, 'E')!=NULL)  this->state.elev=this->direct_target.elev ;
+       if(strchr(this->direct_select, 'R')!=NULL)  this->state.roll=this->direct_target.roll ;
 
           memset(this->direct_select, 0, sizeof(this->direct_select)) ;
 

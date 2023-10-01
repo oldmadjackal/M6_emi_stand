@@ -507,20 +507,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               object=(RSS_Object_Body *)vCreateObject(&create_data) ;
            if(object==NULL)  return ;
 /*- - - - - - - - - - - - Пропись базовой точки и ориентации объекта */
-       entry=strstr(buff, "X_BASE=") ; object->x_base=atof(entry+strlen("X_BASE=")) ;
-       entry=strstr(buff, "Y_BASE=") ; object->y_base=atof(entry+strlen("Y_BASE=")) ;
-       entry=strstr(buff, "Z_BASE=") ; object->z_base=atof(entry+strlen("Z_BASE=")) ;
-       entry=strstr(buff, "A_AZIM=") ; object->a_azim=atof(entry+strlen("A_AZIM=")) ;
-       entry=strstr(buff, "A_ELEV=") ; object->a_elev=atof(entry+strlen("A_ELEV=")) ;
-       entry=strstr(buff, "A_ROLL=") ; object->a_roll=atof(entry+strlen("A_ROLL=")) ;
+       entry=strstr(buff, "X_BASE=") ; object->state.x   =atof(entry+strlen("X_BASE=")) ;
+       entry=strstr(buff, "Y_BASE=") ; object->state.y   =atof(entry+strlen("Y_BASE=")) ;
+       entry=strstr(buff, "Z_BASE=") ; object->state.z   =atof(entry+strlen("Z_BASE=")) ;
+       entry=strstr(buff, "A_AZIM=") ; object->state.azim=atof(entry+strlen("A_AZIM=")) ;
+       entry=strstr(buff, "A_ELEV=") ; object->state.elev=atof(entry+strlen("A_ELEV=")) ;
+       entry=strstr(buff, "A_ROLL=") ; object->state.roll=atof(entry+strlen("A_ROLL=")) ;
 
    for(i=0 ; i<object->Features_cnt ; i++) {
-        object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                                  object->y_base, 
-                                                  object->z_base ) ;
-        object->Features[i]->vBodyAngles   (NULL, object->a_azim, 
-                                                  object->a_elev, 
-                                                  object->a_roll ) ;
+        object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                                  object->state.y, 
+                                                  object->state.z ) ;
+        object->Features[i]->vBodyAngles   (NULL, object->state.azim, 
+                                                  object->state.elev, 
+                                                  object->state.roll ) ;
                                            }
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                                                }                    /* END.1 */
@@ -713,9 +713,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "     E % 7.3lf\r\n" 
                     "     R % 7.3lf\r\n"
                     "\r\n",
-                        object->Name, object->Type, 
-                        object->x_base, object->y_base, object->z_base,
-                        object->a_azim, object->a_elev, object->a_roll
+                        object->Name,       object->Type, 
+                        object->state.x,    object->state.y,    object->state.z,
+                        object->state.azim, object->state.elev, object->state.roll
                     ) ;
 
            info=text ;
@@ -888,32 +888,34 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
    if(delta_flag) {
 
-          if(xyz_flag=='X')   object->x_base+=inverse*coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base+=inverse*coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base+=inverse*coord[0] ;
+          if(xyz_flag=='X')   object->state.x+=inverse*coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y+=inverse*coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z+=inverse*coord[0] ;
                   }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
    else           {
 
-          if(xyz_flag=='X')   object->x_base=coord[0] ;
-     else if(xyz_flag=='Y')   object->y_base=coord[0] ;                 
-     else if(xyz_flag=='Z')   object->z_base=coord[0] ;
+          if(xyz_flag=='X')   object->state.x=coord[0] ;
+     else if(xyz_flag=='Y')   object->state.y=coord[0] ;                 
+     else if(xyz_flag=='Z')   object->state.z=coord[0] ;
      else                   {
-                              object->x_base=coord[0] ;
-                              object->y_base=coord[1] ;
-                              object->z_base=coord[2] ;
+                              object->state.x=coord[0] ;
+                              object->state.y=coord[1] ;
+                              object->state.z=coord[2] ;
                             }
                   }
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyBasePoint("Body.Body", object->x_base, 
-                                                      object->y_base, 
-                                                      object->z_base ) ;
+     object->Features[i]->vBodyBasePoint("Body.Body", object->state.x, 
+                                                      object->state.y, 
+                                                      object->state.z ) ;
 
 /*------------------------------------------------------ Отображение */
 
                       this->kernel->vShow(NULL) ;
+
+            object->state_0=object->state ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1069,42 +1071,44 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - Приращения */
    if(delta_flag) {
 
-          if(xyz_flag=='A')   object->a_azim+=inverse*coord[0] ;
-     else if(xyz_flag=='E')   object->a_elev+=inverse*coord[0] ;                 
-     else if(xyz_flag=='R')   object->a_roll+=inverse*coord[0] ;
+          if(xyz_flag=='A')   object->state.azim+=inverse*coord[0] ;
+     else if(xyz_flag=='E')   object->state.elev+=inverse*coord[0] ;                 
+     else if(xyz_flag=='R')   object->state.roll+=inverse*coord[0] ;
                   }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Абсолютные значения */
    else           {
 
-          if(xyz_flag=='A')   object->a_azim=coord[0] ;
-     else if(xyz_flag=='E')   object->a_elev=coord[0] ;                 
-     else if(xyz_flag=='R')   object->a_roll=coord[0] ;
+          if(xyz_flag=='A')   object->state.azim=coord[0] ;
+     else if(xyz_flag=='E')   object->state.elev=coord[0] ;                 
+     else if(xyz_flag=='R')   object->state.roll=coord[0] ;
      else                   {
-                              object->a_azim=coord[0] ;
-                              object->a_elev=coord[1] ;
-                              object->a_roll=coord[2] ;
+                              object->state.azim=coord[0] ;
+                              object->state.elev=coord[1] ;
+                              object->state.roll=coord[2] ;
                             }
                   }
 /*- - - - - - - - - - - - - - - - - - - - - -  Нормализация значений */
-     while(object->a_azim> 180.)  object->a_azim-=360. ;
-     while(object->a_azim<-180.)  object->a_azim+=360. ;
+     while(object->state.azim> 180.)  object->state.azim-=360. ;
+     while(object->state.azim<-180.)  object->state.azim+=360. ;
 
-     while(object->a_elev> 180.)  object->a_elev-=360. ;
-     while(object->a_elev<-180.)  object->a_elev+=360. ;
+     while(object->state.elev> 180.)  object->state.elev-=360. ;
+     while(object->state.elev<-180.)  object->state.elev+=360. ;
 
-     while(object->a_roll> 180.)  object->a_roll-=360. ;
-     while(object->a_roll<-180.)  object->a_roll+=360. ;
+     while(object->state.roll> 180.)  object->state.roll-=360. ;
+     while(object->state.roll<-180.)  object->state.roll+=360. ;
 
 /*---------------------------------------------- Перенос на Свойства */
 
    for(i=0 ; i<object->Features_cnt ; i++)
-     object->Features[i]->vBodyAngles("Body.Body", object->a_azim, 
-                                                   object->a_elev, 
-                                                   object->a_roll ) ;
+     object->Features[i]->vBodyAngles("Body.Body", object->state.azim, 
+                                                   object->state.elev, 
+                                                   object->state.roll ) ;
 
 /*------------------------------------------------------ Отображение */
 
                 this->kernel->vShow(NULL) ;
+
+            object->state_0=object->state ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1227,13 +1231,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
    Parameters    =NULL ;
    Parameters_cnt=  0 ;
 
-      x_base=0 ;
-      y_base=0 ;
-      z_base=0 ;
-
-      a_azim=0 ;
-      a_elev=0 ;
-      a_roll=0 ;
+      state.x   =0 ;
+      state.y   =0 ;
+      state.z   =0 ;
+      state.azim=0 ;
+      state.elev=0 ;
+      state.roll=0 ;
 }
 
 
@@ -1283,12 +1286,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*----------------------------------------------------------- Данные */
 
     sprintf(field, "NAME=%s\n",       this->Name      ) ;  *text+=field ;
-    sprintf(field, "X_BASE=%.10lf\n", this->x_base    ) ;  *text+=field ;
-    sprintf(field, "Y_BASE=%.10lf\n", this->y_base    ) ;  *text+=field ;
-    sprintf(field, "Z_BASE=%.10lf\n", this->z_base    ) ;  *text+=field ;
-    sprintf(field, "A_AZIM=%.10lf\n", this->a_azim    ) ;  *text+=field ;
-    sprintf(field, "A_ELEV=%.10lf\n", this->a_elev    ) ;  *text+=field ;
-    sprintf(field, "A_ROLL=%.10lf\n", this->a_roll    ) ;  *text+=field ;
+    sprintf(field, "X_BASE=%.10lf\n", this->state.x   ) ;  *text+=field ;
+    sprintf(field, "Y_BASE=%.10lf\n", this->state.y   ) ;  *text+=field ;
+    sprintf(field, "Z_BASE=%.10lf\n", this->state.z   ) ;  *text+=field ;
+    sprintf(field, "A_AZIM=%.10lf\n", this->state.azim) ;  *text+=field ;
+    sprintf(field, "A_ELEV=%.10lf\n", this->state.elev) ;  *text+=field ;
+    sprintf(field, "A_ROLL=%.10lf\n", this->state.roll) ;  *text+=field ;
     sprintf(field, "MODEL=%s\n",      this->model_path) ;  *text+=field ;
 
   for(i=0 ; i<this->Parameters_cnt ; i++) {

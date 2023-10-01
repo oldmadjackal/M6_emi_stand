@@ -562,9 +562,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                 parent=FindObject(pars[2], 0) ;
                              if(parent==NULL)  return(-1) ;
 
-                                x=parent->x_base ;
-                                y=parent->y_base ;
-                                z=parent->z_base ;
+                                x=parent->state.x ;
+                                y=parent->state.y ;
+                                z=parent->state.z ;
                           }
 /*--------------------------------- Подготовка блока данных создания */
 
@@ -593,18 +593,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
       *pars[1]!=  0    )  object->range_max=strtod(pars[1], &end) ;
    else                   object->range_max=  object->hit_range ;
 
-                        object->x_base=x ;
-                        object->y_base=y ;
-                        object->z_base=z ;
+                        object->state.x=x ;
+                        object->state.y=y ;
+                        object->state.z=z ;
 
        for(i=0 ; i<object->Features_cnt ; i++)                      /* Перенос на Свойства */
-         object->Features[i]->vBodyBasePoint(NULL, object->x_base, 
-                                                   object->y_base, 
-                                                   object->z_base ) ;
+         object->Features[i]->vBodyBasePoint(NULL, object->state.x, 
+                                                   object->state.y, 
+                                                   object->state.z ) ;
 
 /*-------------------------------------------------- Отрисовка сцены */
 
                       this->kernel->vShow(NULL) ;
+
+            object->state_0=object->state ;
 
 /*-------------------------------------------------------------------*/
 
@@ -672,7 +674,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     "Range  % 5lf\r\n" 
                     "\r\n",
                         effect->Name, effect->Type, 
-                        effect->x_base, effect->y_base, effect->z_base,
+                        effect->state.x, effect->state.y, effect->state.z,
                         effect->range_max
                     ) ;
 
@@ -854,14 +856,6 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        range_max  = 3. ;
        range      = 0. ;
 
-        x_base    =0. ;
-        y_base    =0. ;
-        z_base    =0. ;
-
-        x_velocity=0. ;
-        y_velocity=0. ;
-        z_velocity=0. ;
-
         dlist1_idx=0 ;
         dlist2_idx=0 ;
 
@@ -1008,12 +1002,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 
    for(i=0 ; i<this->Features_cnt ; i++) {                          /* Отображение объекта */
-     this->Features[i]->vBodyBasePoint(NULL, this->x_base, 
-                                             this->y_base, 
-                                             this->z_base ) ;
-     this->Features[i]->vBodyAngles   (NULL, this->a_azim, 
-                                             this->a_elev, 
-                                             this->a_roll ) ;
+     this->Features[i]->vBodyBasePoint(NULL, this->state.x, 
+                                             this->state.y, 
+                                             this->state.z ) ;
+     this->Features[i]->vBodyAngles   (NULL, this->state.azim, 
+                                             this->state.elev, 
+                                             this->state.roll ) ;
      this->Features[i]->vShow         (NULL) ;
                                          }
 
@@ -1120,7 +1114,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           glMatrixMode(GL_MODELVIEW) ;
 
-          glTranslated(x_base, y_base-0.2, z_base) ;
+          glTranslated(state.x, state.y-0.2, state.z) ;
 
               glScaled(range, range, range) ;
 

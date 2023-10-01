@@ -367,9 +367,9 @@
 //                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 //                 Oper_Matrix.Load4d_elev(center->a_elev) ;
 //                  Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                   Oper_Matrix.Load4d_azim( center->a_azim) ;
+                   Oper_Matrix.Load4d_azim( center->state.azim) ;
                     Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
-                   Oper_Matrix.Load4d_base(-center->x_base, -center->y_base, -center->z_base) ;
+                   Oper_Matrix.Load4d_base(-center->state.x, -center->state.y, -center->state.z) ;
                     Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 
            for(i=0 ; i<data->threats_cnt ; i++) {
@@ -377,9 +377,9 @@
                   target=data->threats[i] ;
 
                       Point.LoadZero(4, 1) ;
-                      Point.SetCell (0, 0, target->x_base) ;
-                      Point.SetCell (1, 0, target->y_base) ;
-                      Point.SetCell (2, 0, target->z_base) ;
+                      Point.SetCell (0, 0, target->state_0.x) ;
+                      Point.SetCell (1, 0, target->state_0.y) ;
+                      Point.SetCell (2, 0, target->state_0.z) ;
                       Point.SetCell (3, 0,   1   ) ;
 
                       Point.LoadMul (&Sum_Matrix, &Point) ;         /* Рассчитываем координаты точки относительно носителя */

@@ -1186,15 +1186,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - Срабатывание по высоте */
   if(this->tripping_type==_BY_ALTITUDE)
    if(t2>5.) 
-    if(this->Owner->y_base<=this->tripping_altitude) {
+    if(this->Owner->state.y<=this->tripping_altitude) {
 
                                         blast=1 ;
 
-                                     k=(this->tripping_altitude-y)/(this->Owner->y_base-y) ;
-                   this->Owner->x_base=x+k*(this->Owner->x_base-x) ;
-                   this->Owner->z_base=z+k*(this->Owner->z_base-z) ;
-                   this->Owner->y_base=     this->tripping_altitude ;
-                                                     }
+                                      k=(this->tripping_altitude-y)/(this->Owner->state.y-y) ;
+                   this->Owner->state.x= x+k*(this->Owner->state.x-x) ;
+                   this->Owner->state.z= z+k*(this->Owner->state.z-z) ;
+                   this->Owner->state.y=      this->tripping_altitude ;
+                                                      }
 /*- - - - - - - - - - - - - - - - - - - - -  Срабатывание по времени */
   if(this->tripping_type==_BY_TIME)
    if(this->tripping_time> t1 &&
@@ -1229,19 +1229,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
           if(this->sub_object!=NULL) {
 
-                       s=sqrt((this->Owner->x_base-x)*(this->Owner->x_base-x)+
-                              (this->Owner->y_base-y)*(this->Owner->y_base-y)+
-                              (this->Owner->z_base-z)*(this->Owner->z_base-z) ) ;
-                      dx=this->sub_step*(this->Owner->x_base-x)/s ;
-                      dy=this->sub_step*(this->Owner->y_base-y)/s ;
-                      dz=this->sub_step*(this->Owner->z_base-z)/s ;
+                       s=sqrt((this->Owner->state.x-x)*(this->Owner->state.x-x)+
+                              (this->Owner->state.y-y)*(this->Owner->state.y-y)+
+                              (this->Owner->state.z-z)*(this->Owner->state.z-z) ) ;
+                      dx=this->sub_step*(this->Owner->state.x-x)/s ;
+                      dy=this->sub_step*(this->Owner->state.y-y)/s ;
+                      dz=this->sub_step*(this->Owner->state.z-z)/s ;
 
             for(i=0 ; i<this->sub_count ; i++) {
                            sprintf(sub_name, "%s_sub_%d", this->Owner->Name, i+1) ;
 
-                                    x_drop=this->Owner->x_base+dx*i ;
-                                    y_drop=this->Owner->y_base+dy*i ;
-                                    z_drop=this->Owner->z_base+dz*i ;
+                                    x_drop=this->Owner->state.x+dx*i ;
+                                    y_drop=this->Owner->state.y+dy*i ;
+                                    z_drop=this->Owner->state.z+dz*i ;
 
                            sprintf(text, "EXEC %s COPY %s %s %lf %lf %f;"
                                          "START %s;",
@@ -1256,16 +1256,16 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - - Выброс "блинчиками" */
    if(load_type==_PANCAKES_TYPE) {
 
-        Sum_Matrix.Load3d_azim(-this->Owner->a_azim) ;             /* Рассчёт матрицы преобразования */
-       Oper_Matrix.Load3d_elev(-this->Owner->a_elev) ;
+        Sum_Matrix.Load3d_azim(-this->Owner->state.azim) ;         /* Рассчёт матрицы преобразования */
+       Oper_Matrix.Load3d_elev(-this->Owner->state.elev) ;
         Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
 
-                       s=sqrt((this->Owner->x_base-x)*(this->Owner->x_base-x)+
-                              (this->Owner->y_base-y)*(this->Owner->y_base-y)+
-                              (this->Owner->z_base-z)*(this->Owner->z_base-z) ) ;
-                      dx=this->sub_step*(this->Owner->x_base-x)/s ;
-                      dy=this->sub_step*(this->Owner->y_base-y)/s ;
-                      dz=this->sub_step*(this->Owner->z_base-z)/s ;
+                       s=sqrt((this->Owner->state.x-x)*(this->Owner->state.x-x)+
+                              (this->Owner->state.y-y)*(this->Owner->state.y-y)+
+                              (this->Owner->state.z-z)*(this->Owner->state.z-z) ) ;
+                      dx=this->sub_step*(this->Owner->state.x-x)/s ;
+                      dy=this->sub_step*(this->Owner->state.y-y)/s ;
+                      dz=this->sub_step*(this->Owner->state.z-z)/s ;
 
      if(callback!=NULL) {
                            sprintf(text, "STOP %s;"
@@ -1290,9 +1290,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  Vect_Matrix.SetCell (2, 0, 0) ;
                  Vect_Matrix.LoadMul (&Sum_Matrix, &Vect_Matrix) ;
 
-                   x_drop=this->Owner->x_base+dx*n+Vect_Matrix.GetCell(0, 0) ;
-                   y_drop=this->Owner->y_base+dy*n+Vect_Matrix.GetCell(1, 0) ;
-                   z_drop=this->Owner->z_base+dz*n+Vect_Matrix.GetCell(2, 0) ;
+                   x_drop=this->Owner->state.x+dx*n+Vect_Matrix.GetCell(0, 0) ;
+                   y_drop=this->Owner->state.y+dy*n+Vect_Matrix.GetCell(1, 0) ;
+                   z_drop=this->Owner->state.z+dz*n+Vect_Matrix.GetCell(2, 0) ;
 
                            sprintf(sub_name, "%s_sub_%d_%d", this->Owner->Name, n+1, i+1) ;
 
@@ -1312,9 +1312,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                  }
 /*------------------------------------------------- Фиксация "следа" */
 
-        x=this->Owner->x_base ;
-        y=this->Owner->y_base ;
-        z=this->Owner->z_base ;
+        x=this->Owner->state.x ;
+        y=this->Owner->state.y ;
+        z=this->Owner->state.z ;
 
 /*-------------------------------------------------------------------*/
 

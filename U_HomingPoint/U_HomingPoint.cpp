@@ -854,9 +854,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*- - - - - - - - - - - - - - - - - - - - - - Канонизация параметров */
        if(this->method==_INERTIAL_METHOD) {
 
-                        this->x_t-=this->Owner->x_base ;
-                        this->y_t-=this->Owner->y_base ;
-                        this->z_t-=this->Owner->z_base ;
+                        this->x_t-=this->Owner->state.x ;
+                        this->y_t-=this->Owner->state.y ;
+                        this->z_t-=this->Owner->state.z ;
 
                                           }
        if(this->method==     _GPS_METHOD) {
@@ -913,9 +913,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     int  RSS_Unit_HomingPoint::vGetHomingDistance(double *distance)
 
 {
-    *distance=sqrt((this->x-this->Owner->x_base)*(this->x-this->Owner->x_base)+
-                   (this->y-this->Owner->y_base)*(this->y-this->Owner->y_base)+
-                   (this->z-this->Owner->z_base)*(this->z-this->Owner->z_base) ) ;
+    *distance=sqrt((this->x-this->Owner->state.x)*(this->x-this->Owner->state.x)+
+                   (this->y-this->Owner->state.y)*(this->y-this->Owner->state.y)+
+                   (this->z-this->Owner->state.z)*(this->z-this->Owner->state.z) ) ;
 
    return(0) ;
 }

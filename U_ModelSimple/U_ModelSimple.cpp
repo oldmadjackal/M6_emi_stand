@@ -965,8 +965,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------------------ Расчет отклонений */
 
-    this->Owner->a_azim+=this->Module->gGaussianValue(0., this->s_azim) ;
-    this->Owner->a_elev+=this->Module->gGaussianValue(0., this->s_elev) ;
+    this->Owner->state.azim+=this->Module->gGaussianValue(0., this->s_azim) ;
+    this->Owner->state.elev+=this->Module->gGaussianValue(0., this->s_elev) ;
 
 /*-------------------------------------------------------------------*/
 
@@ -1006,9 +1006,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             dt=t2-t1 ;
              f=engine_thrust/(mass+engine_mass) ;
-            Vy=     parent->y_velocity ;
-            Vn=sqrt(parent->x_velocity*parent->x_velocity+
-                    parent->z_velocity*parent->z_velocity ) ;
+            Vy=     parent->state.y_velocity ;
+            Vn=sqrt(parent->state.x_velocity*parent->state.x_velocity+
+                    parent->state.z_velocity*parent->state.z_velocity ) ;
 
 /*-------------------------------------------- Определение угла тяги */
 
@@ -1016,12 +1016,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
               else     t_s= 0 ;
 
               if(t1== 0 ) {                                         /* Старт */
-                             Ky=sin(parent->a_elev*_GRD_TO_RAD) ;
-                             Kn=cos(parent->a_elev*_GRD_TO_RAD) ;
+                             Ky=sin(parent->state.elev*_GRD_TO_RAD) ;
+                             Kn=cos(parent->state.elev*_GRD_TO_RAD) ;
                           }
          else if(t1< t_s) {                                         /* Движение по направляющей */
-                             Ky=sin(parent->a_elev*_GRD_TO_RAD) ;
-                             Kn=cos(parent->a_elev*_GRD_TO_RAD) ;
+                             Ky=sin(parent->state.elev*_GRD_TO_RAD) ;
+                             Kn=cos(parent->state.elev*_GRD_TO_RAD) ;
                           }
          else             {                                         /* Свободный полет */
                              Ky=Vy/sqrt(Vy*Vy+Vn*Vn) ;
@@ -1046,15 +1046,15 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------- Перевод в базовые координаты */
 
-             parent->x_velocity=Vn*sin(parent->a_azim*_GRD_TO_RAD) ;
-             parent->y_velocity=Vy ;
-             parent->z_velocity=Vn*cos(parent->a_azim*_GRD_TO_RAD) ;
+             parent->state.x_velocity=Vn*sin(parent->state.azim*_GRD_TO_RAD) ;
+             parent->state.y_velocity=Vy ;
+             parent->state.z_velocity=Vn*cos(parent->state.azim*_GRD_TO_RAD) ;
 
-             parent->a_elev    =atan2(Vy, Vn)*_RAD_TO_GRD ;
+             parent->state.elev      =atan2(Vy, Vn)*_RAD_TO_GRD ;
 
-             parent->x_base   +=dL*sin(parent->a_azim*_GRD_TO_RAD) ;
-             parent->y_base   +=dH ;
-             parent->z_base   +=dL*cos(parent->a_azim*_GRD_TO_RAD) ;
+             parent->state.x        +=dL*sin(parent->state.azim*_GRD_TO_RAD) ;
+             parent->state.y        +=dH ;
+             parent->state.z        +=dL*cos(parent->state.azim*_GRD_TO_RAD) ;
 
 /*-------------------------------------------------------------------*/
 

@@ -167,3 +167,7 @@
 /U_EngineSimple/*.aps
 /U_HomingPoint/*.aps
 /UpgradeLog.htm
+/.vs
+/O_ZRK/Release
+/O_ZRK/x64
+/U_ModelTable/Release

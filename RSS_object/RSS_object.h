@@ -30,13 +30,17 @@
 /*---------------------------------------- Описание элемента "Точка" */
 
    typedef struct {
-                     double  x ;
+                     double  x ;                  /* Положение */
                      double  y ;
                      double  z ;
 
-                     double  azim ;
+                     double  azim ;               /* Углы ориентации */
                      double  elev ;
                      double  roll ;
+
+                     double   x_velocity ;        /* Вектор скорости */
+                     double   y_velocity ;
+                     double   z_velocity ;
 
                         int  mark ;
 
@@ -120,26 +124,9 @@
 
                         int   land_state ;        /* Принадлежность объекта ландшафту */
 
-                     double   x_base ;            /* Координаты базовой точки */
-                     double   y_base ;
-                     double   z_base ;
-                     double   x_base_stack ;
-                     double   y_base_stack ;
-                     double   z_base_stack ; 
- 
-                     double   a_azim ;            /* Углы ориентации */
-                     double   a_elev ;
-                     double   a_roll ;
-                     double   a_azim_stack ;
-                     double   a_elev_stack ;
-                     double   a_roll_stack ;
-
-                     double   x_velocity ;        /* Вектор скорости */
-                     double   y_velocity ;
-                     double   z_velocity ;
-                     double   x_velocity_stack ;
-                     double   y_velocity_stack ;
-                     double   z_velocity_stack ;
+                  RSS_Point   state ;             /* Текущее состояние */
+                  RSS_Point   state_0 ;           /* Исходное состояние прирасчете модели */
+                  RSS_Point   state_stack ;       /* Сохраненное состояние */ 
 
                   RSS_Point   direct_target ;     /* Целевая точка программного управления */
                        char   direct_select[16] ;

@@ -557,13 +557,13 @@
                        data            =(UD_data_2Dpoint *)G_LIST[0]->data ;
 
        for(x0=0., z0=0., n=0 ; n<object->mSpawn_cnt ; n++) {        /* Рассчет средней точки */
-              x0+=object->mSpawn[n]->x_base/(double)object->mSpawn_cnt ;
-              z0+=object->mSpawn[n]->z_base/(double)object->mSpawn_cnt ;
+              x0+=object->mSpawn[n]->state.x/(double)object->mSpawn_cnt ;
+              z0+=object->mSpawn[n]->state.z/(double)object->mSpawn_cnt ;
                                                            }
 
        for(n=0 ; n<object->mSpawn_cnt ; n++) {                      /* Рассчет отклонений от средней точки */
-                    data[n].x=object->mSpawn[n]->x_base-x0 ;
-                    data[n].y=object->mSpawn[n]->z_base-z0 ;
+                    data[n].x=object->mSpawn[n]->state.x-x0 ;
+                    data[n].y=object->mSpawn[n]->state.z-z0 ;
                                              }
 
 #undef   G_LIST

@@ -1010,6 +1010,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
     for(i=0 ; i<OBJECTS_CNT ; i++) {
 
+        OBJECTS[i]->state_0=OBJECTS[i]->state ;
+
      if(attempt>0) {
 
          if(OBJECTS[i]->battle_state==_ACTIVE_STATE) {
@@ -1150,6 +1152,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------ Отметка существующих объектов */
 
       for(i=0 ; i<mObjects_cnt ; i++)  mObjects[i].wait=0 ;
+
+/*------------------------ Обновление индикаторов состояния объектов */
+
+      for(i=0 ; i<mObjects_cnt ; i++) 
+           mObjects[i].object->state_0=mObjects[i].object->state ;
 
 /*-------------------------------------------------- Обсчет объектов */
 
