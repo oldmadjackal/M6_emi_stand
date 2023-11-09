@@ -1227,6 +1227,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              sprintf(name, "%s_%d", S->object, S->cnt+1) ;
 
                 clone=S->templ->vCopy(name) ;
+             if(clone==NULL) {
+                      SEND_ERROR("SPAWN: Объект или один из его компонентов не поддерживает операции копирования") ;
+                                              exit_flag=1 ;  break ;
+                             }
+
                 clone->battle_state=_SPAWN_STATE ;
 
                 clone->vResetFeatures(NULL) ;                       /* Инициализация свойств объекта */ 

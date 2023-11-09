@@ -30,6 +30,12 @@
     <ClCompile Include="U_Program_LoneHunter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="U_Program_InterceptFAD.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="U_Program_Zigzag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">

@@ -986,7 +986,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       missile=(RSS_Object_Missile *)FindObject(name, 1) ;          /* Ищем объект-цель по имени */
+       missile=(RSS_Object_Missile *)FindObject(name, 1) ;          /* Ищем объект по имени */
     if(missile==NULL)  return(-1) ;
 
 /*---------------------------------------------- Контроль имени цели */

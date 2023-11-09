@@ -177,7 +177,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        unit=new RSS_Unit_Program ;
     if(unit==NULL) {
-               SEND_ERROR("Секция SEARCH_RADAR: Недостаточно памяти для создания компонента") ;
+               SEND_ERROR("Компонент PROGRAM: Недостаточно памяти для создания компонента") ;
                         return(NULL) ;
                    }
 
@@ -801,6 +801,12 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             data=this->ReadLoneHunter(path, error) ;
          if(data!=NULL || *error!=0)  break ;
+
+            data=this->ReadInterceptFAD(path, error) ;
+         if(data!=NULL || *error!=0)  break ;
+         
+            data=this->ReadZigzag(path, error) ;
+         if(data!=NULL || *error!=0)  break ;
          
              sprintf(error, "Неизвестная программы управления") ;
 
@@ -915,6 +921,58 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Копировать компонент		            */
+
+    class RSS_Unit *RSS_Unit_Program::vCopy(RSS_Object *owner)
+
+{
+   RSS_Unit_Program *unit  ;
+                int  status ;  
+
+
+       unit=(RSS_Unit_Program *)this->Module->vCreateObject(NULL) ;
+    if(unit==NULL)  return(NULL) ;
+
+        strcpy(unit->Name, this->Name) ;
+               unit->Owner=owner ;
+
+    if(this->embeded!=NULL) {                                       /* Копирование настроек встроенной программы */
+
+     do {
+            status=this->CopyColumnHunter(unit) ;
+         if(status)  break ;
+
+            status=this->CopyLoneHunter(unit) ;
+         if(status)  break ;
+
+            status=this->CopyInterceptFAD(unit) ;
+         if(status)  break ;
+         
+            status=this->CopyZigzag(unit) ;
+         if(status)  break ;
+         
+               SEND_ERROR("Section PROGRAM.vCopy: Неизвестная встроенная программа") ;
+                            return(NULL) ;
+
+        } while(0) ;
+
+         if(status==-1) {
+               SEND_ERROR("Section PROGRAM: Для встроенной программы не реализована процедура копирования настроек") ;
+                            return(NULL) ;
+                        }
+
+
+                            }
+    else                    {
+                                  return(NULL) ;
+                            }
+
+   return(unit) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                        Специальные действия                      */
 
      int  RSS_Unit_Program::vSpecial(char *oper, void *data)
@@ -958,8 +1016,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             status=this->StartLoneHunter(t) ;
          if(status)  break ;
+
+            status=this->StartInterceptFAD(t) ;
+         if(status)  break ;
          
-               SEND_ERROR("Section PROGRAM: Неизвестная встроенная программа") ;
+            status=this->StartZigzag(t) ;
+         if(status)  break ;
+         
+               SEND_ERROR("Section PROGRAM.vCalculateStart: Неизвестная встроенная программа") ;
                             return(-1) ;
 
         } while(0) ;
@@ -1032,8 +1096,14 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
             status=this->EmbededLoneHunter(t1, t2, callback, cb_size) ;
          if(status)  break ;
+
+            status=this->EmbededInterceptFAD(t1, t2, callback, cb_size) ;
+         if(status)  break ;
          
-               SEND_ERROR("Section PROGRAM: Неизвестная встроенная программа") ;
+            status=this->EmbededZigzag(t1, t2, callback, cb_size) ;
+         if(status)  break ;
+         
+               SEND_ERROR("Section PROGRAM.vCalculate: Неизвестная встроенная программа") ;
                             return(-1) ;
 
         } while(0) ;

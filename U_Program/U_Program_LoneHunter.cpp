@@ -297,6 +297,34 @@ typedef  struct {
 
 /********************************************************************/
 /*								    */
+/*                Копирование настроек компонента                   */
+
+     int  RSS_Unit_Program::CopyLoneHunter(RSS_Unit *copy)
+{
+
+/*------------------------------ Идентификация встроенной программы */
+
+#define  PROGRAM_NAME  ((RSS_Unit_Program_Embeded *)embeded)->program_name
+
+     if(stricmp(PROGRAM_NAME, "LONE_HUNTER"))  return(0) ;
+
+           return(-1) ;
+
+#define  P  ((RSS_Unit_Program_Embeded_LoneHunter *)this->embeded)
+
+
+#undef   P
+
+#undef  PROGRAM_NAME
+
+/*-------------------------------------------------------------------*/
+
+  return(1) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*             Подготовка расчета изменения состояния               */
 
      int  RSS_Unit_Program::StartLoneHunter(double  t)
@@ -344,7 +372,13 @@ typedef  struct {
                  int  n ;
                  int  i ;
 
+#define  PROGRAM_NAME  ((RSS_Unit_Program_Embeded *)embeded)->program_name
+
 #define  P  ((RSS_Unit_Program_Embeded_LoneHunter *)this->embeded)
+
+/*-------------------------------------------------- Проверка модели */
+
+     if(stricmp(PROGRAM_NAME, "LONE_HUNTER"))  return(0) ;
 
 /*------------------------------------------------------- Подготовка */
 
@@ -633,5 +667,7 @@ typedef  struct {
 
 #undef  P
 
-  return(0) ;
+#undef  PROGRAM_NAME
+
+  return(1) ;
 }

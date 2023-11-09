@@ -27,6 +27,7 @@
 #include "..\RSS_Kernel\RSS_Kernel.h"
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
+#include "..\F_Hit\F_Hit.h"
 
 #include "O_Flyer.h"
 
@@ -104,6 +105,18 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     " INFO/ <Имя> \n"
                     "   Выдать полную информацию по объекту в отдельное окно",
                     &RSS_Module_Flyer::cInfo },
+ { "copy",    "cp", "#COPY - копировать объект",
+                    " COPY <Имя образца> <Имя нового объекта>\n"
+                    "   Копировать объект",
+                    &RSS_Module_Flyer::cCopy },
+ { "owner",   "o",  "#OWNER - назначить носитель",
+                    " OWNER <Имя obъекта> <Носитель>\n"
+                    "   Назначить объект - носитель",
+                    &RSS_Module_Flyer::cOwner },
+ { "target",  "tg", "#TARGET - назначить цель",
+                    " TARGET <Имя> <Цель>\n"
+                    "   Назначить объект - цель",
+                    &RSS_Module_Flyer::cTarget },
  { "base",    "b", "#BASE - задать базовую точку объекта",
                     " BASE <Имя> <x> <y> <z>\n"
                     "   Задает базовую точку объекта\n"
@@ -750,7 +763,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                    /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*-------------------------------------------- Формирование описания */
@@ -798,6 +811,216 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      (WPARAM)_USER_SHOW_INFO, (LPARAM)info.c_str()) ;
                   }
 /*-------------------------------------------------------------------*/
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции COPY                    */
+/*								    */
+/*       COPY <Имя образца> <Имя нового объекта>                    */
+
+  int  RSS_Module_Flyer::cCopy(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+                   char  *pars[_PARS_MAX] ;
+                   char  *name ;
+                   char  *copy ;
+       RSS_Object_Flyer  *flyer ;
+             RSS_Object  *object ;
+                   char  *end ;
+                    int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                     copy=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: COPY <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       flyer=(RSS_Object_Flyer *)FindObject(name, 1) ;              /* Ищем объект-образец по имени */
+    if(flyer==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(copy==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-копии. \n"
+                                 "Например: COPY <Имя образца> <Имя нового объекта>") ;
+                                     return(-1) ;
+                   }
+
+       object=FindObject(copy, 0) ;                                 /* Ищем объект-копию по имени */
+    if(object!=NULL) {
+                       SEND_ERROR("Oбъект-копия уже существует") ;
+                                     return(-1) ;
+                     }
+/*---------------------------------------------- Копирование объекта */
+
+            object=flyer->vCopy(copy) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции OWNER                   */
+/*								    */
+/*       OWNER <Имя> <Носитель>                                     */
+
+  int  RSS_Module_Flyer::cOwner(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char  *owner ;
+   RSS_Object_Flyer  *flyer ;
+         RSS_Object  *object ;
+               char  *end ;
+                int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                    owner=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: OWNER <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       flyer=(RSS_Object_Flyer *)FindObject(name, 1) ;              /* Ищем объект-цель по имени */
+    if(flyer==NULL)  return(-1) ;
+
+/*------------------------------------------ Контроль имени носителя */
+
+    if(owner==NULL) {                                               /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта-носителя. \n"
+                                 "Например: OWNER <Имя_объекта> <Имя_носителя>") ;
+                                     return(-1) ;
+                    }
+
+       object=FindObject(owner, 0) ;                                /* Ищем объект-носитель по имени */
+    if(object==NULL)  return(-1) ;
+
+/*------------------------------------------------- Пропись носителя */
+
+          strcpy(flyer->owner, owner) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
+
+   return(0) ;
+}
+
+
+/********************************************************************/
+/*								    */
+/*		      Реализация инструкции TARGET                  */
+/*								    */
+/*       TARGET <Имя> <Цель>                                        */
+
+  int  RSS_Module_Flyer::cTarget(char *cmd)
+
+{
+#define   _PARS_MAX  10
+
+               char  *pars[_PARS_MAX] ;
+               char  *name ;
+               char  *target ;
+   RSS_Object_Flyer  *flyer ;
+         RSS_Object  *object ;
+               char  *end ;
+                int   i ;
+
+/*---------------------------------------- Разборка командной строки */
+/*- - - - - - - - - - - - - - - - - - - - - - - -  Разбор параметров */        
+    for(i=0 ; i<_PARS_MAX ; i++)  pars[i]=NULL ;
+
+    for(end=cmd, i=0 ; i<_PARS_MAX ; end++, i++) {
+      
+                pars[i]=end ;
+                   end =strchr(pars[i], ' ') ;
+                if(end==NULL)  break ;
+                  *end=0 ;
+                                                 }
+
+                     name=pars[0] ;
+                   target=pars[1] ;   
+
+/*------------------------------------------- Контроль имени объекта */
+
+    if(name==NULL) {                                                /* Если имя не задано... */
+                      SEND_ERROR("Не задано имя объекта. \n"
+                                 "Например: TARGET <Имя_объекта> ...") ;
+                                     return(-1) ;
+                   }
+
+       flyer=(RSS_Object_Flyer *)FindObject(name, 1) ;              /* Ищем объект по имени */
+    if(flyer==NULL)  return(-1) ;
+
+/*---------------------------------------------- Контроль имени цели */
+
+    if(target==NULL) {                                              /* Если имя не задано... */
+                        SEND_ERROR("Не задано имя объекта-цели. \n"
+                                   "Например: TARGET <Имя_объекта> <Имя_цели>") ;
+                                     return(-1) ;
+                    }
+
+       object=FindObject(target, 0) ;                               /* Ищем объект-цели по имени */
+    if(object==NULL)  return(-1) ;
+
+/*----------------------------------------------------- Пропись цели */
+
+               strcpy(flyer->target, target) ;
+
+   for(i=0 ; i<flyer->Features_cnt ; i++)
+     if(!stricmp(flyer->Features[i]->Type, "Hit")) 
+         strcpy(((RSS_Feature_Hit *)(flyer->Features[i]))->target, target) ;
+
+/*-------------------------------------------------------------------*/
+
+#undef   _PARS_MAX    
 
    return(0) ;
 }
@@ -913,7 +1136,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1106,7 +1329,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1254,7 +1477,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1414,7 +1637,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------------------- Разбор координат */
@@ -1521,7 +1744,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*--------------------------------------- Считывание данных из файла */
@@ -1602,7 +1825,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*------------------------------------ Контроль программы управления */
@@ -1695,7 +1918,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*--------------------------------------- Переход в диалоговый режим */
@@ -1766,7 +1989,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*----------------------------------------------- Установка значения */
@@ -1895,7 +2118,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                    }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*----------------------------------------------- Если задание цвета */
@@ -2066,7 +2289,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                                      return(-1) ;
                          }
 
-       object=FindObject(name) ;                                    /* Ищем объект по имени */
+       object=FindObject(name, 1) ;                                 /* Ищем объект по имени */
     if(object==NULL)  return(-1) ;
 
 /*---------------------------------------- Фиксация файла телеметрии */
@@ -2091,7 +2314,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*								    */
 /*		   Поиск обьекта типа FLYER по имени                */
 
-  RSS_Object_Flyer *RSS_Module_Flyer::FindObject(char *name)
+  RSS_Object_Flyer *RSS_Module_Flyer::FindObject(char *name, int  check_type)
 
 {
      char   text[1024] ;
@@ -2113,6 +2336,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                        }
 /*-------------------------------------------- Контроль типа объекта */ 
 
+    if(check_type)
      if(strcmp(OBJECTS[i]->Type, "Flyer")) {
 
            SEND_ERROR("Объект не является объектом типа FLYER") ;
@@ -2743,6 +2967,77 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /********************************************************************/
 /*								    */
+/*                        Копировать объект		            */
+
+    class RSS_Object *RSS_Object_Flyer::vCopy(char *name)
+
+{
+         RSS_Model_data  create_data ;
+       RSS_Object_Flyer *object ;
+               RSS_Unit *unit ;
+        RSS_Feature_Hit *hit_1 ;
+        RSS_Feature_Hit *hit_2 ;
+                    int  i ;
+
+/*------------------------------------- Копирование базового объекта */
+
+                 memset(&create_data, 0, sizeof(create_data)) ;
+
+ if(name!=NULL)  strcpy( create_data.name, name) ;
+                 strcpy( create_data.path, this->model_path) ;
+
+    for(i=0 ; i<this->Parameters_cnt ; i++) {
+         sprintf(create_data.pars[i].text,  "PAR%d", i) ;
+         sprintf(create_data.pars[i].value, "%lf", this->Parameters[i].value) ;
+                                            }
+
+                 create_data.pars[i].text [0]=0 ;
+                 create_data.pars[i].value[0]=0 ;
+
+       object=(RSS_Object_Flyer *)this->Module->vCreateObject(&create_data) ;
+    if(object==NULL)  return(NULL) ;
+ 
+            strcpy(object->owner,  this->owner) ;
+                   object->o_owner=this->o_owner ;
+            strcpy(object->target, this->target) ;
+
+                   object->v_abs            =this->v_abs ;          /* Нормальная скорость */
+                   object->g_ctrl           =this->g_ctrl ;         /* Нормальная траекторная перегрузка */
+
+   if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
+
+/*---------------------------------------------- Копирование свойств */
+
+    for(i=0 ; i<this->Features_cnt ; i++)
+      if(!stricmp(this->Features[i]->Type, "Hit"))
+             hit_1=(RSS_Feature_Hit *)this->Features[i] ;
+
+    for(i=0 ; i<object->Features_cnt ; i++)
+      if(!stricmp(object->Features[i]->Type, "Hit"))
+             hit_2=(RSS_Feature_Hit *)object->Features[i] ;
+
+           hit_2->hit_range =hit_1->hit_range ;
+           hit_2->any_target=hit_1->any_target ;
+           hit_2->any_weapon=hit_1->any_weapon ;
+
+/*---------------------------------------------- Копирование модулей */
+
+    for(i=0 ; i<Units.List_cnt ; i++) {
+                 
+        unit=((RSS_Unit *)(Units.List[i].object))->vCopy(object) ;
+     if(unit==NULL)   return(NULL) ;
+
+                  object->Units.Add(unit, "") ;
+
+                                      }
+/*-------------------------------------------------------------------*/
+
+   return(object) ;
+}
+
+
+/********************************************************************/
+/*								    */
 /*                    Сохранить состояние объекта                   */
 /*                    Восстановить состояние объекта                */
 
@@ -2836,9 +3131,63 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
      int  RSS_Object_Flyer::vCalculateStart(double  t)
 {
-  FILE *file ;
-  char  text[1024] ;
-   int  i ;
+    Matrix2d  Sum_Matrix ;
+    Matrix2d  Oper_Matrix ;  
+    Matrix2d  Velo_Matrix ;  
+        FILE *file ;
+        char  text[1024] ;
+         int  i ; 
+
+#define   OBJECTS       RSS_Kernel::kernel->kernel_objects 
+#define   OBJECTS_CNT   RSS_Kernel::kernel->kernel_objects_cnt 
+
+/*-------------------------------------- Привязка к объекту-носителю */
+
+      this->o_owner=NULL ;
+
+  if(this->owner[0]!=0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->owner)) {
+                       this->o_owner=OBJECTS[i] ;
+                                 break ;
+                                                     }
+                        }
+
+  if(this->o_owner!=NULL) {
+
+      this->state.x   =this->o_owner->state_0.x ;
+      this->state.y   =this->o_owner->state_0.y ;
+      this->state.z   =this->o_owner->state_0.z ;
+
+      this->state.azim=this->o_owner->state_0.azim ;
+      this->state.elev=this->o_owner->state_0.elev ;
+      this->state.roll=this->o_owner->state_0.roll ;
+                          }
+/*------------------------------------------ Привязка к объекту-цели */
+
+      this->o_target=NULL ;
+
+  if(this->target[0]!=0) {
+
+       for(i=0 ; i<OBJECTS_CNT ; i++)                               /* Ищем объект по имени */
+         if(!stricmp(OBJECTS[i]->Name, this->target)) {
+                       this->o_target=OBJECTS[i] ;
+                                 break ;
+                                                      }
+                         }
+/*-------------------------------------------- Перерасчет параметров */
+
+       Velo_Matrix.LoadZero   (3, 1) ;
+       Velo_Matrix.SetCell    (2, 0, this->v_abs) ;
+        Sum_Matrix.Load3d_azim(-this->state.azim) ;
+       Oper_Matrix.Load3d_elev(-this->state.elev) ;
+        Sum_Matrix.LoadMul    (&Sum_Matrix, &Oper_Matrix) ;
+       Velo_Matrix.LoadMul    (&Sum_Matrix, &Velo_Matrix) ;
+
+         this->state.x_velocity=Velo_Matrix.GetCell(0, 0) ;
+         this->state.y_velocity=Velo_Matrix.GetCell(1, 0) ;
+         this->state.z_velocity=Velo_Matrix.GetCell(2, 0) ;
 
 /*------------------------------------------------------- Подготовка */
 
@@ -2877,6 +3226,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
                                }
 /*-------------------------------------------------------------------*/
+
+#undef   OBJECTS
+#undef   OBJECTS_CNT
 
   return(0) ;
 }

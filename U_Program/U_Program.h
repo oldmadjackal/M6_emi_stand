@@ -52,21 +52,28 @@ typedef  struct {
                       HWND  hWnd ;                                 /* Окно индикатора */ 
 
     public:
-               virtual void  vFree              (void) ;                         /* Освободить ресурсы */
-               virtual void  vWriteSave         (std::string *) ;                /* Записать данные в строку */
-               virtual  int  vCalculateStart    (double) ;                       /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate         (double, double,                 /* Расчет изменения состояния */
-                                                         char *, int) ;
-               virtual  int  vCalculateShow     (double, double) ;               /* Отображение результата расчета изменения состояния */
-               virtual  int  vSpecial           (char *, void *) ;               /* Специальные действия */
+          virtual      void  vFree              (void) ;                         /* Освободить ресурсы */
+          virtual      void  vWriteSave         (std::string *) ;                /* Записать данные в строку */
+          virtual  RSS_Unit *vCopy              (RSS_Object *) ;                 /* Копировать компонент */
+          virtual       int  vCalculateStart    (double) ;                       /* Подготовка расчета изменения состояния */
+          virtual       int  vCalculate         (double, double, char *, int) ;  /* Расчет изменения состояния */
+          virtual       int  vCalculateShow     (double, double) ;               /* Отображение результата расчета изменения состояния */
+          virtual       int  vSpecial           (char *, void *) ;               /* Специальные действия */
+
+                        int  CopyColumnHunter   (RSS_Unit *) ;
+                        int  CopyLoneHunter     (RSS_Unit *) ;
+                        int  CopyInterceptFAD   (RSS_Unit *) ;
+                        int  CopyZigzag         (RSS_Unit *) ;
 
                         int  StartColumnHunter  (double  t) ;
                         int  StartLoneHunter    (double  t) ;
                         int  StartInterceptFAD  (double  t) ;
+                        int  StartZigzag        (double  t) ;
 
                         int  EmbededColumnHunter(double, double, char *, int) ;
                         int  EmbededLoneHunter  (double, double, char *, int) ;
                         int  EmbededInterceptFAD(double, double, char *, int) ;
+                        int  EmbededZigzag      (double, double, char *, int) ;
 
 	                     RSS_Unit_Program() ;           /* Конструктор */
 	                    ~RSS_Unit_Program() ;           /* Деструктор */
@@ -100,6 +107,7 @@ typedef  struct {
                     void *ReadColumnHunter(char *, char *) ;
                     void *ReadLoneHunter  (char *, char *) ;
                     void *ReadInterceptFAD(char *, char *) ;
+                    void *ReadZigzag      (char *, char *) ;
 
     public:
 	                  RSS_Module_Program() ;              /* Конструктор */

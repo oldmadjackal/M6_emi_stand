@@ -1,33 +1,33 @@
 /********************************************************************/
 /*								    */
-/*	         КОМПОНЕНТ "ПРОГРАММНОЕ УПРАВЛЕНИЕ"                 */
-/*								    */
-/*               Встроенная программа Column Hunter                 */
-/*								    */
+/*	МОДУЛЬ УПРАВЛЕНИЯ КОМПОНЕНТОМ "ПРОГРАММНОЕ УПРАВЛЕНИЕ"      */
+/*                                                                  */
+/*            Встроенная программа Inetrcept From Air Duty          */
+/*                                                                  */
 /*  Этапы программы:                                                */
 /*   0 - Выход в район патрулирования                               */
 /*   1 - Патрулирование по точкам маршрута в оба направления.       */
 /*       При обнаружении групповой цели ->2                         */
-/*   2 - Сближение с групповой целью (без обновления её координат)  */
+/*   2 - Сближение с целью (без обновления её координат)            */
 /*       По истечении времени сближения - анализ цели и определение */
-/*       её параметров (центр и главная ось). Если цель потеряна    */
-/*       возвращаемся к этапу 2                                     */
-/*   3 - Выход на главную ось цели с одновременным снижением до     */
-/*       минимально допустимой высоты                               */
+/*       её параметров. Если цель потеряна - возвращаемся к этапу 2 */
+/*   3 - Выход на цель с одновременным снижением до минимально      */
+/*       допустимой высоты                                          */
 /*   4 - Сброс боевой нагрузки                                      */
 /*   5 - Уход от цели со снижением                                  */
 /*                                                                  */
 /*  Параметры программы:                                            */
-/*    PROGRAM        - COLUMN_HUNTER                                */
+/*    PROGRAM        - INTERCEPT_FAD                                */
 /*    G              - ограничение перегрузки горизонтального       */
 /*                      <20 - единицы g, >20 - радиус поворота      */
 /*    E_MAX          - максимальный угол тангажа (+/-),             */
 /*    E_RATE         - максимальная скорость изменения тангажа грд/с*/ 
 /*    H_MIN          - минимальная высота начала выравнивания       */
 /*    ROUTE          - точка маршрута: X, Z (может быть несколько)  */
-/*    COLUMN_SPACING - максимальное расстояние между целями,        */
-/*                      входящими в одну колонну                    */
 /*    JUMP_DISTANCE  - дистанция выхода на высоту сброса            */
+/*    LOCK_MIN       - минимальная дальность захвата цели           */
+/*    LOCK_MAX       - максимальная дальность захвата цели          */
+/*    LOCK_ANGLE     - ширина углового поля захвата цели            */
 /*    DROP_DISTANCE  - дистанция сброса                             */
 /*    DROP_HEIGHT    - минимальная высота сброса                    */
 /*    DROPS_NUMBER   - число сбросов в одном заходе                 */
@@ -36,10 +36,11 @@
 /*    STAGE_0_EVENT  - команда при завершении этапа 0               */
 /*    STAGE_1_RADAR  - имя компонента поисковой системы для этапа 1 */
 /*    STAGE_2_TIME   - продолжительность этапа 2                    */
+/*    STAGE_1_EVENT  - команда при завершении этапа 1               */
 /*    STAGE_4_RADAR  - имя компонента поисковой системы для этапа 4 */
 /*    STAGE_4_EVENT  - команда при завершении этапа 4               */
 /*    STAGE_4_AFTER  - задержка исполнения команды STAGE_4_EVENT    */
-/*                                                                  */
+/*								    */
 /********************************************************************/
 
 
@@ -66,6 +67,8 @@
 #include "..\RSS_Model\RSS_Model.h"
 #include "..\F_Show\F_Show.h"
 
+#include "..\DCL_kernel\dcl.h"
+
 #include "U_Program.h"
 
 #pragma warning(disable : 4996)
@@ -78,7 +81,7 @@
 
 #define  _ROUTE_MAX  100
 #define  _DROPS_MAX   10
-   
+
 typedef  struct {
                    char  program_name[128] ;
 
@@ -94,7 +97,6 @@ typedef  struct {
                  double  e_max ;
                  double  e_rate ;
                  double  h_min ;
-                 double  column_spacing ;
                  double  jump_distance ;
                  double  drop_height ;
                  double  drop_distance ;
@@ -106,6 +108,7 @@ typedef  struct {
                     int  drops_cnt ;
 
                    char  stage_0_event[1024] ;
+                   char  stage_1_event[1024] ;
                    char  stage_4_event[1024] ;                  
                  double  stage_4_after ;
                    char  stage_1_radar[1024] ;
@@ -113,31 +116,42 @@ typedef  struct {
                    char  stage_4_radar[1024] ;
 
                  double  stage ;
+                 double  x_0 ;
+                 double  z_0 ;
+                   char  target[64] ;
+                 double  vx_target ;
+                 double  vz_target ;
                  double  x_direct ;
                  double  z_direct ;
                  double  a_direct ;
                  double  e_direct ;
                  double  check_time ;
+                 double  lock_min ;
+                 double  lock_max ;
+                 double  lock_angle ;
+                   char  lock_target[128] ;
+                   char  fired[512] ;
                     int  dropped ;
+                    int  stage_1_event_done ;
                     int  stage_4_event_done ;
 
-                } RSS_Unit_Program_Embeded_ColumnHunter ;
+                } RSS_Unit_Program_Embeded_InterceptFAD ;
 
 
 /********************************************************************/
 /*								    */
 /*	     Считывание настроек встроенной программы               */
 
-  void *RSS_Module_Program::ReadColumnHunter(char *path, char *error)
+  void *RSS_Module_Program::ReadInterceptFAD(char *path, char *error)
 
 {
-                                    FILE *file ;
-                                    void *data ;
-   RSS_Unit_Program_Embeded_ColumnHunter *data_ColumnHunter ;
-                                    char  text[256] ;
-                                    char *key ;
-                                    char *value ;
-                                    char *end ;
+                                          FILE *file ;
+                                          void *data ;
+         RSS_Unit_Program_Embeded_InterceptFAD *data_InterceptFAD ;
+                                          char  text[256] ;
+                                          char *key ;
+                                          char *value ;
+                                          char *end ;
 
 /*---------------------------------------------------- Инициализация */ 
 
@@ -182,18 +196,20 @@ typedef  struct {
                                               break ;
                                           }
 
-              if(stricmp(value, "COLUMN_HUNTER"))  break ;
+              if(stricmp(value, "INTERCEPT_FAD"))  break ;
 
-                 data_ColumnHunter=(RSS_Unit_Program_Embeded_ColumnHunter *)
-                                         calloc(1, sizeof(*data_ColumnHunter)) ;
-                 data             =data_ColumnHunter ;
+                 data_InterceptFAD=(RSS_Unit_Program_Embeded_InterceptFAD *)
+                                         calloc(1, sizeof(*data_InterceptFAD)) ;
+                 data             =data_InterceptFAD ;
 
-                     strcpy(data_ColumnHunter->program_name, value) ;
+                     strcpy(data_InterceptFAD->program_name, value) ;
 
                                 continue ;
                         }
 /*- - - - - - - - - - - - - - - - - - - - - - -  Параметры программы */ 
-#define  D  data_ColumnHunter
+#pragma warning(disable : 4701)
+
+#define  D  data_InterceptFAD
 
           if(!stricmp(key, "G"             ))   D->g=strtod(value, &end) ;
           else
@@ -213,9 +229,11 @@ typedef  struct {
                                               D->route[D->route_cnt].x=strtod(value, &end) ;
                                               D->route[D->route_cnt].z=strtod(end+1, &end) ;
                                                        D->route_cnt++ ;
-                                             }
+                                              }
           else
           if(!stricmp(key, "STAGE_0_EVENT" ))   strncpy(D->stage_0_event, value, sizeof(D->stage_0_event)-1) ;
+          else
+          if(!stricmp(key, "STAGE_1_EVENT" ))   strncpy(D->stage_1_event, value, sizeof(D->stage_1_event)-1) ;
           else
           if(!stricmp(key, "STAGE_4_EVENT" ))   strncpy(D->stage_4_event, value, sizeof(D->stage_0_event)-1) ;
           else
@@ -225,11 +243,17 @@ typedef  struct {
           else
           if(!stricmp(key, "STAGE_4_RADAR" ))   strncpy(D->stage_4_radar, value, sizeof(D->stage_4_radar)-1) ;
           else
-          if(!stricmp(key, "COLUMN_SPACING"))   D->column_spacing=strtod(value, &end) ;
-          else
           if(!stricmp(key, "STAGE_2_TIME"  ))   D->stage_2_time=strtod(value, &end) ;
           else
           if(!stricmp(key, "JUMP_DISTANCE" ))   D->jump_distance=strtod(value, &end) ;
+          else
+          if(!stricmp(key, "LOCK_MIN"      ))   D->lock_min=strtod(value, &end) ;
+          else
+          if(!stricmp(key, "LOCK_MAX"      ))   D->lock_max=strtod(value, &end) ;
+          else
+          if(!stricmp(key, "LOCK_ANGLE"    ))   D->lock_angle=strtod(value, &end) ;
+          else
+          if(!stricmp(key, "LOCK_TARGET"   ))   strncpy(D->lock_target, value, sizeof(D->lock_target)-1) ;
           else
           if(!stricmp(key, "DROP_HEIGHT"   ))   D->drop_height=strtod(value, &end) ;
           else
@@ -255,6 +279,8 @@ typedef  struct {
                                     } 
 
 #undef  D
+
+#pragma warning(default : 4701)
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/ 
       } while(1) ;
  
@@ -273,19 +299,19 @@ typedef  struct {
 /*								    */
 /*                Копирование настроек компонента                   */
 
-     int  RSS_Unit_Program::CopyColumnHunter(RSS_Unit *copy)
+     int  RSS_Unit_Program::CopyInterceptFAD(RSS_Unit *copy)
 {
 
 /*------------------------------ Идентификация встроенной программы */
 
 #define  PROGRAM_NAME  ((RSS_Unit_Program_Embeded *)embeded)->program_name
 
-     if(stricmp(PROGRAM_NAME, "COLUMN_HUNTER"))  return(0) ;
+     if(stricmp(PROGRAM_NAME, "INTERCEPT_FAD"))  return(0) ;
 
            return(-1) ;
 
+#define  P  ((RSS_Unit_Program_Embeded_InterceptFAD *)this->embeded)
 
-#define  P  ((RSS_Unit_Program_Embeded_ColumnHunter *)this->embeded)
 
 #undef   P
 
@@ -301,21 +327,23 @@ typedef  struct {
 /*								    */
 /*             Подготовка расчета изменения состояния               */
 
-     int  RSS_Unit_Program::StartColumnHunter(double  t)
+     int  RSS_Unit_Program::StartInterceptFAD(double  t)
 {
 
 /*----------------------------------- Обработка старта моделирования */
 
 #define  PROGRAM_NAME  ((RSS_Unit_Program_Embeded *)embeded)->program_name
 
-     if(stricmp(PROGRAM_NAME, "COLUMN_HUNTER"))  return(0) ;
+     if(stricmp(PROGRAM_NAME, "INTERCEPT_FAD"))  return(0) ;
 
+#define  P  ((RSS_Unit_Program_Embeded_InterceptFAD *)this->embeded)
 
-#define  P  ((RSS_Unit_Program_Embeded_ColumnHunter *)this->embeded)
                  P->stage             =0 ;
                  P->check_time        =0 ;
                  P->dropped           =0 ;
+                 P->stage_1_event_done=0 ;
                  P->stage_4_event_done=0 ;
+
 #undef   P
 
 #undef  PROGRAM_NAME
@@ -328,28 +356,29 @@ typedef  struct {
 
 /********************************************************************/
 /*                                                                  */
-/*               Встроенная программа Column Hunter                 */
+/*            Встроенная программа Intercept From Air Duty          */
 
-     int  RSS_Unit_Program::EmbededColumnHunter(double t1, double t2, char *callback, int cb_size)
+     int  RSS_Unit_Program::EmbededInterceptFAD(double t1, double t2, char *callback, int cb_size)
 {
                  int  status ;
                 char *g_type ;
      RSS_Unit_Target *targets ;
                  int  targets_cnt ;
-     RSS_Unit_Target *orders ;
-                 int  orders_cnt ;
-     RSS_Unit_Target  order_abs ;
-              double  distance ;
+     RSS_Unit_Target  target_abs ;
+              double  distance, distance_min ;
+              double  azim ;
                 char  text[1024] ;
                 char  error[1024] ;
+                 int  n ;
+                 int  i ;
 
 #define  PROGRAM_NAME  ((RSS_Unit_Program_Embeded *)embeded)->program_name
 
-#define  P  ((RSS_Unit_Program_Embeded_ColumnHunter *)this->embeded)
+#define  P  ((RSS_Unit_Program_Embeded_InterceptFAD *)this->embeded)
 
 /*-------------------------------------------------- Проверка модели */
 
-     if(stricmp(PROGRAM_NAME, "COLUMN_HUNTER"))  return(0) ;
+     if(stricmp(PROGRAM_NAME, "INTERCEPT_FAD"))  return(0) ;
 
 /*------------------------------------------------------- Подготовка */
 
@@ -368,7 +397,7 @@ typedef  struct {
    if(P->stage==0) {
 
             if(P->route_cnt<2) {
-                       SEND_ERROR("EmbededColumnHunter - Не задан маршрут патрулирования (минимум 2 точки)") ;
+                       SEND_ERROR("EmbededInterceptFAD - Не задан маршрут патрулирования (минимум 2 точки)") ;
                                       return(-1) ;
                                }
 
@@ -411,28 +440,33 @@ typedef  struct {
 
           status=Program_emb_GetTargets(P->stage_1_radar,  &targets, &targets_cnt, error) ;
        if(status) {
-                        sprintf(text, "EmbededColumnHunter - %s", error) ;
+                        sprintf(text, "EmbededInterceptFAD - %s", error) ;
                      SEND_ERROR(text) ;
                           return(-1) ;
                   }
 
        if(targets_cnt) {
 
-            Program_emb_DetectOrder( targets,  targets_cnt,
-                                    &orders,  &orders_cnt, P->column_spacing, error) ;
+                           n= 0 ;
+                distance_min=sqrt(targets[n].x*targets[n].x+targets[n].z*targets[n].z) ;
 
-          if(orders_cnt) {
+          for(i=1 ; i<targets_cnt ; i++) {                          /* Выбор ближайшей цели */
+                distance=sqrt(targets[i].x*targets[i].x+targets[i].z*targets[i].z) ;
+             if(distance<distance_min) {
+                                           distance=distance_min ;
+                                                 n = i ;
+                                       }
+                                         }
 
-               Program_emb_GetGlobalXYZ(&orders[0], &order_abs) ;
+               Program_emb_GetGlobalXYZ(&targets[n], &target_abs) ;
 
-                              P->stage     = 2 ;
+                              P->stage     = 2 ;                    /* Фиксируем параметры цели */
                               P->check_time=t1 ;
-                              P->x_direct  =order_abs.x ;
-                              P->z_direct  =order_abs.z ;
+                      strncpy(P->target, targets[n].target->Name, sizeof(P->target)-1) ;
+                              P->x_direct  =target_abs.x ;
+                              P->z_direct  =target_abs.z ;
 
-                            Program_emb_Log("Обнаружена групповая цель") ;
-                               free(orders) ;
-                         }
+                            Program_emb_Log("Обнаружена цель") ;
 
                                free(targets) ;
                        }
@@ -443,38 +477,48 @@ typedef  struct {
 
    else
    if(P->stage==2) {
+/*- - - - - - - - - - - - - - - - - - - Отработка событийной команды */
+     if(P->stage_1_event[0]  != 0 && 
+        P->stage_1_event_done== 0    ) {
+
+             P->stage_1_event_done=1 ;
+
+                   strcat(callback, P->stage_1_event) ;
+                   strcat(callback, ";") ;
+
+                                       }
 /*- - - - - - - - - - - - - - - - - - - - -  Движение в сторону цели */
         status=Program_emb_ToPoint(P->x_direct, P->z_direct, t2-t1, g_type, P->g) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - -  Анализ цели */
       if(t1>=P->check_time+P->stage_2_time) do {
 
-           Program_emb_GetTargets (P->stage_1_radar,  &targets, &targets_cnt, error) ;
+           Program_emb_GetTargets(P->stage_1_radar,  &targets, &targets_cnt, error) ;
 
          if(targets_cnt==0) {                                       /* Если цель потеряна... */
                                P->stage=1 ;
                                  break ;
                             }
+       
+          for(i=0 ; i<targets_cnt ; i++)                            /* Выбор отслеживаемой цели */
+            if(!stricmp(P->target, targets[i].target->Name))  break ;
 
-           Program_emb_DetectOrder(targets, targets_cnt,
-                                   &orders, &orders_cnt, P->column_spacing, error) ;
-
-         if(orders_cnt==0) {                                       /* Если цель потеряна... */
-                             free(targets) ;
+         if(i>=targets_cnt) {                                       /* Если цель потеряна... */
                                P->stage=1 ;
                                  break ;
-                           }
-        
-          Program_emb_GetGlobalXYZ(&orders[0], &order_abs) ;
+                            }
+
+
+               Program_emb_GetGlobalXYZ(&targets[i], &target_abs) ;
 
                               P->stage     = 3 ;
+                              P->vx_target =(target_abs.x-P->x_direct)/(t1-P->check_time) ;
+                              P->vz_target =(target_abs.z-P->z_direct)/(t1-P->check_time) ;
                               P->check_time=t1 ;
-                              P->x_direct  =order_abs.x ;
-                              P->z_direct  =order_abs.z ;
-                              P->a_direct  =orders[0].azim+EventObject->state.azim ;
+                              P->x_direct  =target_abs.x ;
+                              P->z_direct  =target_abs.z ;
                               P->e_direct  = -P->e_max ;
 
                                free(targets) ;
-                               free(orders) ;
 
                      Program_emb_Log("Выход на боевой курс...") ;
 
@@ -486,14 +530,31 @@ typedef  struct {
    else
    if(P->stage==3) {
 
-          status=Program_emb_ToLine(P->x_direct, P->z_direct, P->a_direct, t2-t1, g_type, P->g) ;
-       if(status) {
-                                 P->stage     =4 ;
-                                 P->dropped   =0 ;
-                                 P->check_time=0 ;
+                 Program_emb_ToPoint(P->x_direct+P->vx_target*(t1-P->check_time),
+                                     P->z_direct+P->vz_target*(t1-P->check_time), t2-t1, g_type, P->g) ;
 
-                      Program_emb_Log("Боевой курс") ;
-                  }
+       distance=Program_emb_Distance(P->x_direct+P->vx_target*(t1-P->check_time), 
+                                     P->z_direct+P->vz_target*(t1-P->check_time)) ;
+
+    if(distance<P->jump_distance) {                                 /* Подскок на высоту сброса */
+
+      if(EventObject->state.y > P->drop_height)   P->e_direct= 0 ;
+      else                                      {
+
+        if(P->e_direct==0) {
+                                  P->e_direct=P->e_max ;
+                              Program_emb_Log("Предпусковой подскок...") ;
+                           }
+                                                }    
+      
+    if(EventObject->state.y >= P->drop_height) {
+                                                  P->stage   = 4 ;
+                                                  P->e_direct= 0 ;
+                                                  P->fired[0]= 0 ;
+
+                     Program_emb_Log("Боевой курс...") ;
+                                               }
+                                  }
 
                    }
 /*----------------------------------------------- Выход точку сброса */
@@ -503,46 +564,36 @@ typedef  struct {
 /*- - - - - - - - - - - - - - - - - - - - - Движение на боевом курсе */
            Program_emb_GetTargets (P->stage_4_radar,  &targets, &targets_cnt, error) ;
 
-         if(targets_cnt==0) {                                       /* Если цель потеряна... */
+         if(targets_cnt==0) {                                       /* Если целей нет... */
                                P->stage=1 ;
                                  break ;
                             }
 
-           Program_emb_DetectOrder(targets, targets_cnt,
-                                   &orders, &orders_cnt, P->column_spacing, error) ;
+                distance_min= 0. ;
+                           n=-1 ;
 
-         if(orders_cnt==0) {                                       /* Если цель потеряна... */
-                             free(targets) ;
-                               P->stage=1 ;
-                                 break ;
+     for(i=0 ; i<targets_cnt ; i++) {                              /* Ищем ближайшую цель, подподающую под возможность поражения */
+
+          sprintf(text, "<%s>", targets[i].target->Name) ;
+       if(strstr(P->fired, text)!=NULL)  continue ;                /* Если цель уже обстреляна... */
+
+                distance= sqrt(targets[i].x*targets[i].x+targets[i].z*targets[i].z) ;
+                    azim=atan2(targets[i].x, targets[i].z)*_RAD_TO_GRD ;
+
+       if(P->lock_angle>0) {                                       /* Если боеприпас с зоной захвата... */
+
+          if(azim    >P->lock_angle/2.)  continue ;                /*  Если он за пределами угла захвата... */
+          if(distance<P->lock_min     )  continue ;                /*  Если он ближе дальности захвата... */
                            }
-        
-          Program_emb_GetGlobalXYZ(&orders[0], &order_abs) ;
-          Program_emb_ToPoint     (order_abs.x, order_abs.z, t2-t1, g_type, P->g) ;
 
-       distance=Program_emb_Distance(order_abs.x, order_abs.z) ;
-/*- - - - - - - - - - - - - - - - - - - - - Подскок на высоту сброса */
-    if(distance<P->jump_distance) {
+          if(distance_min==0 || distance_min>distance) {
+                            distance_min=distance ;
+                                      n = i ;
+                                                       }
+                                    }
 
-      if(EventObject->state.y > P->drop_height)  P->e_direct= 0 ;
-      else                                       P->e_direct=P->e_max ;       
-                                  }
-/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Сброс */
-    if(distance<P->drop_distance) {
-
-      if(P->dropped                     == 0 ||
-         P->check_time+P->drops_interval<=t1   ) {
-
-                    sprintf(text, "Сброс %d", P->dropped+1) ;
-            Program_emb_Log(text) ;
-
-                    sprintf(text, "start %s;", P->drops[P->dropped].weapon) ;
-                     strcat(callback, text) ;
-
-                      P->dropped++ ;
-                      P->check_time=t1 ;
-                                                 }
-      if(P->dropped==P->drops_number) {
+      if(         n==    -1         ||                             /* Если целей больше нет или кончились средства поражения */
+         P->dropped==P->drops_number  ) {
 
          Program_emb_Log("Уход от цели") ;
 
@@ -551,15 +602,46 @@ typedef  struct {
                      P->check_time= t1 ;
                      P->a_direct  = EventObject->state.azim+120. ;
                      P->e_direct  =-P->e_max ;
-                                      }
+                                        }
+/*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  Сброс */
+    if(distance_min<P->drop_distance) {
 
-                                  }
+      if(P->dropped                     == 0 ||
+         P->check_time+P->drops_interval<=t1   ) {
+
+                    sprintf(text, "Сброс %d", P->dropped+1) ;
+            Program_emb_Log(text) ;
+
+        if(P->lock_target[0]!=0) {
+                     strcat(callback, "exec ") ;
+                    sprintf(text, P->lock_target, P->drops[P->dropped].weapon,
+                                                      targets[n].target->Name) ;
+                     strcat(callback, text) ;
+                     strcat(callback, ";") ;
+                                 }
+ 
+                    sprintf(text, "start %s;", P->drops[P->dropped].weapon) ;
+                     strcat(callback, text) ;
+
+              sprintf(text, "<%s>", targets[n].target->Name) ;
+               strcat(P->fired, text) ;
+
+                      P->dropped++ ;
+                      P->check_time=t1 ;
+
+                            break ;
+                                                 }
+                                      }
+/*- - - - - - - - - - - - - - - - - - - - -  Движение в сторону цели */
+          Program_emb_GetGlobalXYZ(&targets[n], &target_abs) ;     /* Идем в сторону цели */
+          Program_emb_ToPoint     (target_abs.x, target_abs.z, t2-t1, g_type, P->g) ;
 /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
                      } while(0) ;
 /*----------------------------------------------------- Уход от цели */
 
   else 
   if(P->stage==5) {
+
 
      if(P->stage_4_event[0]           != 0 && 
         P->stage_4_event_done         == 0 && 
@@ -577,7 +659,7 @@ typedef  struct {
 /*------------------------ Неизвестная ветвь программного управления */
 
    else            {
-                       SEND_ERROR("EmbededColumnHunter - Unknown stage") ;
+                       SEND_ERROR("EmbededInterceptFAD - Unknown stage") ;
                                       return(-1) ;
                    }
 /*-------------------------------------------------------------------*/

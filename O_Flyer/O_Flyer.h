@@ -123,17 +123,18 @@
                       char  stream_path[FILENAME_MAX] ;        /* Файл телеметрии */
 
     public:
-               virtual void  vFree          (void) ;            /* Освободить ресурсы */
-               virtual void  vPush          (void) ;            /* Сохранить состояние объекта */
-               virtual void  vPop           (void) ;            /* Восстановить состояние объекта */
-               virtual void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
-               virtual  int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
-               virtual  int  vCalculate     (double, double,    /* Расчет изменения состояния */
+         virtual       void  vFree          (void) ;            /* Освободить ресурсы */
+         virtual RSS_Object *vCopy          (char *) ;          /* Копировать объект */
+         virtual       void  vPush          (void) ;            /* Сохранить состояние объекта */
+         virtual       void  vPop           (void) ;            /* Восстановить состояние объекта */
+         virtual       void  vWriteSave     (std::string *) ;   /* Записать данные в строку */
+         virtual        int  vCalculateStart(double) ;          /* Подготовка расчета изменения состояния */
+         virtual        int  vCalculate     (double, double,    /* Расчет изменения состояния */
                                                      char *, int) ;
-               virtual  int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
-               virtual  int  vEvent         (char *, double,    /* Обработка событий */
+         virtual        int  vCalculateShow (double, double) ;  /* Отображение результата расчета изменения состояния */
+         virtual        int  vEvent         (char *, double,    /* Обработка событий */
                                                      char *, int) ;
-               virtual  int  vSpecial       (char *, void *) ;  /* Специальные действия */
+         virtual        int  vSpecial       (char *, void *) ;  /* Специальные действия */
                         int  iExecuteProgram(double, double) ;  /* Отработка программного управления */
                         int  iSaveTracePoint(char *) ;          /* Сохранение точки траектории */
                        void  iShowTrace_    (void) ;            /* Отображение траектории с передачей контекста */
@@ -166,6 +167,9 @@
                      int  cHelp         (char *) ;                     /* Инструкция HELP */ 
                      int  cCreate       (char *) ;                     /* Инструкция CREATE */ 
                      int  cInfo         (char *) ;                     /* Инструкция INFO */ 
+                     int  cCopy         (char *) ;                     /* Инструкция COPY */ 
+                     int  cOwner        (char *) ;                     /* Инструкция OWNER */ 
+                     int  cTarget       (char *) ;                     /* Инструкция TARGET */ 
                      int  cBase         (char *) ;                     /* Инструкция BASE */ 
                      int  cAngle        (char *) ;                     /* Инструкция ANGLE */ 
                      int  cVelocity     (char *) ;                     /* Инструкция VELOCITY */
@@ -177,7 +181,7 @@
                      int  cTrace        (char *) ;                     /* Инструкция TRACE */
                      int  cStream       (char *) ;                     /* Инструкция STREAM */
 
-        RSS_Object_Flyer *FindObject    (char *) ;                     /* Поиск обьекта типа BODY по имени */
+        RSS_Object_Flyer *FindObject    (char *, int) ;                /* Поиск обьекта типа BODY по имени */
                      int  iReadProgram  (RSS_Object_Flyer *, char *) ; /* Считывание файла описания программы */
           class RSS_Unit *AddUnit       (RSS_Object_Flyer *,           /* Добавление компонента к объекту */
                                              char *, char *, char * ) ;

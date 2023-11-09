@@ -54,9 +54,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 {
 }
 
+
 /********************************************************************/
 /*								    */
-/*                        Копировать объект		            */
+/*                        Копировать компонент		            */
 
     class RSS_Unit *RSS_Unit::vCopy(RSS_Object *owner)
 

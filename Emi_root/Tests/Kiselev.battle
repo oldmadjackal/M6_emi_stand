@@ -1,0 +1,3 @@
+ T=0   start fighter
+ T=20  spawn bomber 3 30
+ T=300 exit
