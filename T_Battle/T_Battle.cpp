@@ -1156,7 +1156,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------ Обновление индикаторов состояния объектов */
 
       for(i=0 ; i<mObjects_cnt ; i++) 
-           mObjects[i].object->state_0=mObjects[i].object->state ;
+        if(mObjects[i].active)
+             mObjects[i].object->state_0=mObjects[i].object->state ;
 
 /*-------------------------------------------------- Обсчет объектов */
 
@@ -1786,7 +1787,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
           if(object==mObjects[i].object)  break ;
 
            if(i>=mObjects_cnt) {                                    /* Если объект уже включен в сценарий... */
-                                    sprintf(text, "Объекта '%s' не включен в сценарий", frame->object) ;
+                                    sprintf(text, "Объект '%s' не включен в сценарий", frame->object) ;
                                  SEND_ERROR(text) ;
                                      return(_EXIT_FRAME) ;
                               }

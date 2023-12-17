@@ -38,14 +38,29 @@ eye>1000
 ;------------------------- Перехватчик
 
 flyer cr fighter бла-рогов
-;bla unit radar SearchRadar
-;bla.radar range 500 30000
+fighter unit radar SearchRadar
+fighter.radar range 500 20000
 fighter unit control Program
 fighter.control embeded tests\kiselev_f.pgm
 
 fighter base 0 1000 0
 fighter angle/a 0
 fighter v 200
+
+missile cr AAM1 ракета-1 0.4 3
+AAM1 owner fighter
+AAM1 velocity 1000
+AAM1 control/g 250
+AAM1 homing/a
+;AAM1 homing/p 2
+AAM1 trace/c 170 170 0
+AAM1 mark 500
+hit radius AAM1 20
+scene visible AAM1 0
+
+AAM1 copy AAM2
+AAM1 copy AAM3
+AAM1 copy AAM4
 
 ;z 1000
 ;la bla
@@ -58,6 +73,9 @@ bomber.control embeded tests\kiselev_b.pgm
 bomber v 200
 bomber owner b1
 bomber target t1
+bomber program tests\hited.pgm
+bomber event HITED hited
+hit category/t bomber
 
 b1 base 0 100 40000
 b1 angle/a 180
@@ -66,11 +84,12 @@ b1 angle/a 180
 
 srand auto
 
-;bla.radar show 0
-;bla.control show 9
+fighter.radar show 0
+fighter.control show 9
+
 battle map 8
 battle map/c fighter green
+battle map/cq AAM# red
 battle map/cq bomber# blue
 battle map/t fighter
-battle map/t bomber#
 battle program tests\Kiselev.battle

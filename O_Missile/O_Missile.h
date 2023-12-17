@@ -66,6 +66,7 @@
                     double  z_trg_prv ;
 
                        int  g_over ;                          /* Маневр с максимальной перегрузкой */
+                    double  t_lost ;                          /* Момент времени потери цели */
 
    public:
 

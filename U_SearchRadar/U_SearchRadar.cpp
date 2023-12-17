@@ -898,6 +898,8 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        range_max=20000. ;
        velocity =    0. ;
 
+   memset(event_name, 0, sizeof(event_name)) ;
+
            hWnd =NULL ;
 }
 
@@ -1090,6 +1092,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
         object=battle->mObjects[i].object ;
      if(object==NULL)  continue ;
 
+     if(!stricmp(object->Module->category, "Effect"))  continue ;   /* Игнорируем объекты категории Effect */
+
+     if(object->state_0.y<=0.)  continue ;                          /* Игнорируем наземные и подземные объекты  */
+
 /*------------------------ Расчет относительной скорости и положения */
                                                                     /* Скорость объекта относительно носителя */
          v_x=object->state_0.x_velocity-this->Owner->state.x_velocity ;
@@ -1161,7 +1167,10 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------- Передача события на носитель */
 
     if(event_send) {
-                        this->Owner->vEvent(event_name, event_time, NULL, 0) ;
+
+      if(event_name[0]!=0)
+           this->Owner->vEvent(event_name, event_time, NULL, 0) ;
+
                            event_send=0 ;
                    }
 /*--------------------------------- Отображение данных на индикаторе */

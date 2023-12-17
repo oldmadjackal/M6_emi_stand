@@ -1965,13 +1965,13 @@ BOOL APIENTRY DllMain( HANDLE hModule,
            else 
            if(c_flag)            {
                                  }
+           else
            if(o_flag)            {
                                  }
            else
            if(w_flag)            {
                                  }
            else                  {
-
                                        trace_time=60. ;
                                          SEND_ERROR("Время трассировки - 60 секунд") ;
                                  }
@@ -2521,6 +2521,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 /*------------------------------------------------ Очистка контекста */
 
             xyz_trg_prv=0 ;
+              t_lost   =0. ;
 
     this->iSaveTracePoint("CLEAR") ;
 
@@ -2553,6 +2554,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     double  x2, y2, z2 ;
     double  s1, s2 ;
        int  prepare ;
+      char  command[128] ;       /* Команда обратной связи */ 
 
 /*------------------------------------------------------- Подготовка */
 
@@ -2578,11 +2580,22 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
    else
    if(this->homing_type==_AHEAD_HOMING) {
-/*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
+
                dx=o_target->state_0.x-this->state_0.x ;
                dy=o_target->state_0.y-this->state_0.y ;
                dz=o_target->state_0.z-this->state_0.z ;
+/*- - - - - - - - - - - - - - - - - - - - - Начальный момент времени */
+       if(xyz_trg_prv==0) {
+                            state_0.x+=state_0.x_velocity*(t2-t1) ;
+                            state_0.y+=state_0.y_velocity*(t2-t1) ;
+                            state_0.z+=state_0.z_velocity*(t2-t1) ;
+                               g_over = 0 ;
 
+                           xyz_trg_prv= 1 ;
+
+                                return(0) ; 
+                          }   
+/*- - - - - - - - - - - - Расчет углов наведения в упрежденную точку */
                 a=o_target->state_0.x_velocity*o_target->state_0.x_velocity
                  +o_target->state_0.y_velocity*o_target->state_0.y_velocity
                  +o_target->state_0.z_velocity*o_target->state_0.z_velocity
@@ -2615,6 +2628,21 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                      dv_s=sqrt(dv_x*dv_x+dv_y*dv_y+dv_z*dv_z) ;
 /*- - - - - - - - - - - Проверка ухода из поля видимости 90 градусов */
      if(dv_s>1.4*v_abs) {
+
+           if(t_lost==0.)  t_lost=t1 ;                              /* Фиксируем время потери цели */
+                                    
+           if(t1-t_lost > 3.) {                                     /* Если с момента потери цели прошло 3 секунды */
+
+             if(callback!=NULL) {                                   /*  Даем команду на "самоуничтожение" ракеты  */ 
+
+                  sprintf(command, "KILL %s;", this->Name) ;     
+
+               if(strlen(callback)+
+                  strlen(command ) < cb_size)  strcat(callback, command) ;
+                                }
+
+                              }
+
                                state.x+=state_0.x_velocity*(t2-t1) ;
                                state.y+=state_0.y_velocity*(t2-t1) ;
                                state.z+=state_0.z_velocity*(t2-t1) ;

@@ -2518,11 +2518,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                     frame.battle_flag=1 ;
            strncpy( frame.used, end, sizeof(frame.used)-1) ;
 /*- - - - - - - - - - - - - - - - - - - - -  Расшифровка подстановок */
-            end=strchr(frame.used, '*') ;
-         if(end!=NULL) {
-                           memmove(end+1, end+strlen(object->Name), strlen(end+1)+1) ;
-                            memcpy(end, object->Name, strlen(object->Name)) ;
-                       }
+//          end=strchr(frame.used, '*') ;
+//       if(end!=NULL) {
+//                         memmove(end+1, end+strlen(object->Name), strlen(end+1)+1) ;
+//                          memcpy(end, object->Name, strlen(object->Name)) ;
+//                     }
 /*- - - - - - - - - - - - - - - - - - - - Сохранение кадра программы */
          if(program->frames_cnt>=_PFRAMES_MAX) {
                sprintf(error, "Строка %d - количество кадров программы превышает допустимый предел - %d", row, _PFRAMES_MAX) ;
@@ -2972,30 +2972,31 @@ BOOL APIENTRY DllMain( HANDLE hModule,
     class RSS_Object *RSS_Object_Flyer::vCopy(char *name)
 
 {
-         RSS_Model_data  create_data ;
-       RSS_Object_Flyer *object ;
-               RSS_Unit *unit ;
-        RSS_Feature_Hit *hit_1 ;
-        RSS_Feature_Hit *hit_2 ;
-                    int  i ;
+           RSS_Model_data  create_data ;
+         RSS_Object_Flyer *object ;
+  RSS_Object_FlyerProgram *program ;
+                 RSS_Unit *unit ;
+          RSS_Feature_Hit *hit_1 ;
+          RSS_Feature_Hit *hit_2 ;
+                      int  i ;
 
 /*------------------------------------- Копирование базового объекта */
 
-                 memset(&create_data, 0, sizeof(create_data)) ;
+                    memset(&create_data, 0, sizeof(create_data)) ;
 
- if(name!=NULL)  strcpy( create_data.name, name) ;
-                 strcpy( create_data.path, this->model_path) ;
+     if(name!=NULL)  strcpy( create_data.name, name) ;
+                    strcpy( create_data.path, this->model_path) ;
 
-    for(i=0 ; i<this->Parameters_cnt ; i++) {
+  for(i=0 ; i<this->Parameters_cnt ; i++) {
          sprintf(create_data.pars[i].text,  "PAR%d", i) ;
          sprintf(create_data.pars[i].value, "%lf", this->Parameters[i].value) ;
-                                            }
+                                          }
 
                  create_data.pars[i].text [0]=0 ;
                  create_data.pars[i].value[0]=0 ;
 
-       object=(RSS_Object_Flyer *)this->Module->vCreateObject(&create_data) ;
-    if(object==NULL)  return(NULL) ;
+        object=(RSS_Object_Flyer *)this->Module->vCreateObject(&create_data) ;
+     if(object==NULL)  return(NULL) ;
  
             strcpy(object->owner,  this->owner) ;
                    object->o_owner=this->o_owner ;
@@ -3004,7 +3005,20 @@ BOOL APIENTRY DllMain( HANDLE hModule,
                    object->v_abs            =this->v_abs ;          /* Нормальная скорость */
                    object->g_ctrl           =this->g_ctrl ;         /* Нормальная траекторная перегрузка */
 
-   if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
+     if(RSS_Kernel::battle)  object->battle_state=_SPAWN_STATE ;
+
+  for(i=0 ; i<_PROGRAMS_MAX ; i++)                                  /* Программы управления */
+    if(this->programs[i]!=NULL) {
+
+              program =new RSS_Object_FlyerProgram ;
+       strcpy(program->name,      this->programs[i]->name) ; 
+       memcpy(program->frames,    this->programs[i]->frames, sizeof(this->programs[i]->frames)) ; 
+              program->frames_cnt=this->programs[i]->frames_cnt ;
+
+              object->programs[i]=program ;        
+                                }
+
+       memcpy(object->events, this->events, sizeof(this->events)) ; /* Программы реакции на события */
 
 /*---------------------------------------------- Копирование свойств */
 
@@ -3261,6 +3275,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 /*------------------------------------- Обработка целевого состояния */
 
+  if(program==NULL)                                                 /* Если не действует событийная программы управления... */
    if(this->direct_select[0]!=0) {
 /*- - - - - - - - - - - - - - - - - - - -  Расчёт заданных положений */
           strupr(this->direct_select) ;
@@ -3570,9 +3585,11 @@ BOOL APIENTRY DllMain( HANDLE hModule,
        Matrix2d  Velo_Matrix ;  
             int  v_flag ;    /* Флаг перерасчета проекций скорости */
            char  used[1024] ;
+           char  frame_used[1024] ;
          double  x_new, y_new, z_new, a_new, e_new, r_new, g_new, v_new ;
          double  value ;
-            int  status ;
+            int  status ;      
+           char *end ;
             int  i ;
 
 #define  FRAME program->frames[i]
@@ -3604,10 +3621,19 @@ BOOL APIENTRY DllMain( HANDLE hModule,
              v_flag=0 ;
 
    for(i=p_frame ; i<program->frames_cnt ; i++) {
+/*- - - - - - - - - - - - - - - - - - - - -  Расшифровка подстановок */
+           memset(frame_used,   0,                     sizeof(used)  ) ;
+          strncpy(frame_used, program->frames[i].used, sizeof(used)-1) ;
+
+        end=strchr(frame_used, '*') ;
+     if(end!=NULL) {
+                       memmove(end+1, end+strlen(this->Name), strlen(end+1)+1) ;
+                        memcpy(end, this->Name, strlen(this->Name)) ;
+                   }
 /*- - - - - - - - - - - - - - - - - - - - - - - - -  Оператор BATTLE */
      if(program->frames[i].battle_flag) {
-
-             strcat(this->battle_cb, program->frames[i].used) ;
+             
+             strcat(this->battle_cb, frame_used) ;
              strcat(this->battle_cb, ";") ;
                         p_frame++ ;
                          continue ;
@@ -3810,6 +3836,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if( (value>=x_new && value<=x_prv) ||
            (value>=x_prv && value<=x_new)   )  status=0 ;
+       else                                    status=1 ;
 
        if(!status)   p_frame++ ;
                                   }
@@ -3820,6 +3847,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if( (value>=y_new && value<=y_prv) ||
            (value>=y_prv && value<=y_new)   )  status=0 ;
+       else                                    status=1 ;
 
        if(!status)   p_frame++ ;
                                   }
@@ -3830,6 +3858,7 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
        if( (value>=z_new && value<=z_prv) ||
            (value>=z_prv && value<=z_new)   )  status=0 ;
+       else                                    status=1 ;
 
        if(!status)   p_frame++ ;
                                   }

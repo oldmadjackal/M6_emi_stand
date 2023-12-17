@@ -766,8 +766,8 @@
 
                  color=RGB(0, 0, 0) ;
 
-          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцвети - */
-            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                              */
+          for(j=0 ; j<data->mMapColors_cnt ; j++)                   /* Если имя или шаблон имени объекта есть в списке расцветки - */
+            if(strchr(data->mMapColors[j].object, '#')!=NULL) {     /*  - устанавливаем цвет по нему                               */
                  if( strlen(data->mObjects[i].object->Name)>=
                      strlen(data->mMapColors[j].object    )  )
                   if(!memicmp(data->mMapColors[j].object,
